@@ -14,9 +14,11 @@ void Element::preCompute()
 					nodes[0]->pos.z - nodes[3]->pos.z,nodes[1]->pos.z - nodes[3]->pos.z,nodes[2]->pos.z - nodes[3]->pos.z);
 	undeformShapeMatInv = undeformShapeMat.inverse();
 	undeformVolume = (1.0/6.0) * undeformShapeMat.determinant();
+
+	preComputeUndeformedStiffnessMat();
 }
 
-void Element::preComputeShapeFuncDeriv()
+void Element::preComputeUndeformedStiffnessMat()
 {
 	//inv is the inverse of the matrix relating volume coords to cartesian coords
 	Matrix4d inv =	  Matrix4d
@@ -37,11 +39,27 @@ void Element::preComputeShapeFuncDeriv()
 	};
 
 	strainMat = GenMatrix<float,6,12>(strainMatrix);
+	strainMat.scalarMul(1/(2 * undeformVolume));
 
 	//material constants
+	float c1 = E*(1-v)/((1-2*v)*(1+v)),
+		  c2 = E*v/((1-2*v)*(1+v)),
+		  c3 = (c1 - c2)/2;
+
+
 	float C[6][6] = 
-	{
+	{ 
+		{ c1, c2, c2, 0, 0, 0 },
+		{c2, c1, c2, 0, 0, 0 },
+		{c2, c2, c1, 0, 0, 0 },
+		{0, 0, 0, c3, 0, 0 },
+		{0, 0, 0, 0, c3, 0 },
+		{0, 0, 0, 0, 0, c3 }
 	};
+
+	matConstantsMat = GenMatrix<float,6,6>(C);
+
+	undeformStiffnessMat = strainMat.transpose() * matConstantsMat * strainMat;
 }
 
 Matrix3d Element::computeDeformationMat()

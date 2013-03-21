@@ -29,6 +29,13 @@ public:
 	GenMatrix<T,M,N> transpose();
 	GenMatrix<T,M,N> inverse();
 
+	void scalarMul(T k)
+	{
+		for(int i=0;i<N;i++)
+			for(int j=0;j<M;j++)
+				mat[i][j] *= k;
+	}
+
 };
 
 template<class T,int N, int M>

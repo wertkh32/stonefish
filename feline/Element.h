@@ -13,10 +13,12 @@ class Element
 	Matrix3d undeformShapeMat,
 		     undeformShapeMatInv;
 	GenMatrix<float,6,12> strainMat;
-	GenMatrix<float,6,6> materialConstantsMat;
+	GenMatrix<float,6,6> matConstantsMat;
+	GenMatrix<float,12,12> undeformStiffnessMat;
 	float undeformVolume;
+	float E, v; // E is Young's Modulus, v is Poisson's Ratio
 	void preCompute();
-	void preComputeShapeFuncDeriv();
+	void preComputeUndeformedStiffnessMat();
 
 public:
 	Element(Node* n1, Node* n2, Node* n3, Node* n4);
