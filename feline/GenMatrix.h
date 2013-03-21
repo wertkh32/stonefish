@@ -96,7 +96,7 @@ GenMatrix<T,M,N> GenMatrix<T,N,M>::inverse()
 		for(int i = 0; i < n; i++)
 		{
 			float a = result[i][i];
-			for(j = 0; j < 2*n; j++)
+			for(int j = 0; j < 2*n; j++)
 				result[i][j] /= a;
 		}
 	}

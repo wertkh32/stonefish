@@ -2,6 +2,8 @@
 #include "includes.h"
 #include "Node.h"
 #include "Matrix3d.h"
+#include "Matrix4d.h"
+#include "GenMatrix.h"
 
 class Element
 {
@@ -10,6 +12,8 @@ class Element
 	Matrix3d stiffnessMat;
 	Matrix3d undeformShapeMat,
 		     undeformShapeMatInv;
+	GenMatrix<float,6,12> strainMat;
+	GenMatrix<float,6,6> materialConstantsMat;
 	float undeformVolume;
 	void preCompute();
 	void preComputeShapeFuncDeriv();
