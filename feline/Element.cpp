@@ -1,8 +1,15 @@
 #include "Element.h"
 
 
-Element::Element(Node* n1, Node* n2, Node* n3, Node* n4)
+Element::Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, float _density)
 {
+	nodes[0] = n1;
+	nodes[1] = n2;
+	nodes[2] = n3;
+	nodes[3] = n4;
+	E =_E;
+	v = _v;
+	density = _density;
 	
 }
 
@@ -16,6 +23,7 @@ void Element::preCompute()
 	undeformVolume = (1.0/6.0) * undeformShapeMat.determinant();
 
 	preComputeUndeformedStiffnessMat();
+	preComputeMassMat();
 }
 
 void Element::preComputeUndeformedStiffnessMat()
@@ -60,6 +68,28 @@ void Element::preComputeUndeformedStiffnessMat()
 	matConstantsMat = GenMatrix<float,6,6>(C);
 
 	undeformStiffnessMat = strainMat.transpose() * matConstantsMat * strainMat;
+}
+
+void Element::preComputeMassMat()
+{
+	float mass[12][12] = 
+	{
+		{ 2, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0 },
+		{ 0, 2, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0 },
+		{ 0, 0, 2, 0, 0, 1, 0, 0, 1, 0, 0, 1 },
+		{ 1, 0, 0, 2, 0, 0, 1, 0, 0, 1, 0, 0 },
+		{ 0, 1, 0, 0, 2, 0, 0, 1, 0, 0, 1, 0 },
+		{ 0, 0, 1, 0, 0, 2, 0, 0, 1, 0, 0, 1 },
+		{ 1, 0, 0, 1, 0, 0, 2, 0, 0, 1, 0, 0 },
+		{ 0, 1, 0, 0, 1, 0, 0, 2, 0, 0, 1, 0 },
+		{ 0, 0, 1, 0, 0, 1, 0, 0, 2, 0, 0, 1 },
+		{ 1, 0, 0, 1, 0, 0, 1, 0, 0, 2, 0, 0 },
+		{ 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 2, 0 },
+		{ 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 2 }
+	};
+
+	massMat = GenMatrix<float,12,12>(mass);
+	massMat.scalarMul( (density * undeformVolume) / 20.);
 }
 
 Matrix3d Element::computeDeformationMat()
