@@ -11,6 +11,7 @@ Element::Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, flo
 	v = _v;
 	density = _density;
 	
+	preCompute();
 }
 
 void Element::preCompute()

@@ -23,14 +23,15 @@ class Element
 	void preComputeUndeformedStiffnessMat();
 	void preComputeMassMat();
 
-	GenMatrix<float,12,12>* getStiffnessMat(){return &undeformStiffnessMat;}
-	GenMatrix<float,12,12>* getMassMat(){return &massMat;}
-
 public:
 	Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, float _density);
 	Matrix3d computeDeformationMat();
 	//computeundeformstiffnessmat B^T * c * B where B = LN
 	//computestiffnessmat dfe/dx |x = x*
+
+	GenMatrix<float,12,12>* getStiffnessMat(){return &undeformStiffnessMat;}
+	GenMatrix<float,12,12>* getMassMat(){return &massMat;}
+
 	~Element(void);
 };
 
