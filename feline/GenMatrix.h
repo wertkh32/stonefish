@@ -1,5 +1,4 @@
 #pragma once
-#include "vector3.h"
 
 template <class T,int N, int M>
 class GenMatrix
@@ -46,7 +45,7 @@ GenMatrix<T,N,K> GenMatrix<T,N,M>::operator*(GenMatrix<T,M,K> mat2)
 	for(int i = 0; i<N; i++)
 		for(int j = 0; j<K; j++)
 			for(int k = 0; k<M; k++)
-				result(i,j) += mat(i,k) * mat2(k,j);
+				result(i,j) += mat[i][k] * mat2(k,j);
 	return result;
 }
 
@@ -106,5 +105,7 @@ GenMatrix<T,M,N> GenMatrix<T,N,M>::inverse()
 			for(int j = 0; j < 2*n; j++)
 				result[i][j] /= a;
 		}
+
+		return GenMatrix<T,M,N>(result);
 	}
 }

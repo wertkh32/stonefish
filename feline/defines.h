@@ -5,4 +5,6 @@
 #define TO_RAD(a) ((a)*(M_PI/180.))
 #define INF 10000000
 
-#define MAX_ELEMENT 10
+#define MAX_ELEMENTS 10
+#define MAX_NODES 100
+#define FPS 60
