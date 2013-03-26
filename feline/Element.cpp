@@ -51,10 +51,10 @@ void Element::preComputeUndeformedStiffnessMat()
 	strainMat.scalarMul(1/(2 * undeformVolume));
 
 	//material constants
-	float c1 = E*(1-v)/((1-2*v)*(1+v)),
-		  c2 = E*v/((1-2*v)*(1+v)),
+	float c1 = E*(1-v)/((1.0-2.0*v)*(1.0+v)),
+		  c2 = E*v/((1.0-2.0*v)*(1.0+v)),
 		  c3 = (c1 - c2)/2;
-
+	//printf("%f %f %f\n",c1,c2,c3);
 
 	float C[6][6] = 
 	{ 
@@ -69,6 +69,13 @@ void Element::preComputeUndeformedStiffnessMat()
 	matConstantsMat = GenMatrix<float,6,6>(C);
 
 	undeformStiffnessMat = strainMat.transpose() * matConstantsMat * strainMat;
+	/*
+	for(int i=0;i<12;i++)
+		for(int j=0;j<12;j++)
+		{
+			printf("%f ",undeformStiffnessMat(i,j));
+		}
+	*/
 }
 
 void Element::preComputeMassMat()
@@ -102,6 +109,35 @@ Matrix3d Element::computeDeformationMat()
 	return deformShapeMat * undeformShapeMatInv;
 }
 
+void
+Element::renderElement()
+{
+	glPushMatrix();
+	glBegin(GL_LINES);
+	glVertex3fv(nodes[3]->pos_t.coords);
+	glVertex3fv(nodes[0]->pos_t.coords);
+
+	glVertex3fv(nodes[3]->pos_t.coords);
+	glVertex3fv(nodes[1]->pos_t.coords);
+
+	glVertex3fv(nodes[3]->pos_t.coords);
+	glVertex3fv(nodes[2]->pos_t.coords);
+
+
+	glVertex3fv(nodes[0]->pos_t.coords);
+	glVertex3fv(nodes[1]->pos_t.coords);
+
+	glVertex3fv(nodes[1]->pos_t.coords);
+	glVertex3fv(nodes[2]->pos_t.coords);
+
+	glVertex3fv(nodes[2]->pos_t.coords);
+	glVertex3fv(nodes[0]->pos_t.coords);
+
+	glEnd();
+
+	
+	glPopMatrix();
+}
 
 Element::~Element(void)
 {

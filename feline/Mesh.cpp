@@ -9,7 +9,7 @@ Mesh::Mesh(Node node_list[], int n)
 
 	globalStiffness = (float**)malloc(sizeof(float*) * n * 3);
 	globalMass = (float**)malloc(sizeof(float*) * n * 3);
-	for(int i=0;i<n;i++)
+	for(int i=0;i<n * 3;i++)
 	{
 		globalStiffness[i] = (float*)malloc(sizeof(float) * n * 3);
 		globalMass[i] = (float*)malloc(sizeof(float) * n * 3);
@@ -33,7 +33,7 @@ Mesh::assembleGlobalMass()
 				for(int j=0;j<3;j++)
 					for(int k=0;k<3;k++)
 					{
-						globalMass[nodeIndices[i][a]+j][nodeIndices[i][b]+k] += (*masse)(a + j, b + k);
+						globalMass[nodeIndices[i][a] * 3 + j][nodeIndices[i][b] * 3 + k] += (*masse)(a + j, b + k);
 					}
 			
 	}

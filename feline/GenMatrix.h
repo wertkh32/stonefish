@@ -11,9 +11,8 @@ public:
 	GenMatrix(void)
 	{
 		for(int i=0;i<N;i++)
-		for(int j=0;j<M;j++)
-			if(i==j) mat[i][j] = 1;
-			else mat[i][j] = 0;
+			for(int j=0;j<M;j++)
+				mat[i][j] = 0;
 	}
 
 	GenMatrix(T m[N][M])
@@ -23,10 +22,17 @@ public:
 				mat[i][j] = m[i][j];
 	}
 
+	GenMatrix(GenMatrix<T,N,M>& m)
+	{
+		for(int i=0;i<N;i++)
+			for(int j=0;j<M;j++)
+				mat[i][j] = m(i,j);
+	}
+
 	T& operator()(int x, int y){return mat[x][y];}
 	
 	template<int K>
-	GenMatrix<T,N,K> operator*(GenMatrix<T,M,K> mat2);
+	GenMatrix<T,N,K> operator*(GenMatrix<T,M,K>& mat2);
 
 	GenMatrix<T,M,N> transpose();
 	GenMatrix<T,M,N> inverse();
@@ -42,7 +48,7 @@ public:
 
 template<class T,int N, int M>
 template<int K>
-GenMatrix<T,N,K> GenMatrix<T,N,M>::operator*(GenMatrix<T,M,K> mat2)
+GenMatrix<T,N,K> GenMatrix<T,N,M>::operator*(GenMatrix<T,M,K>& mat2)
 {
 	GenMatrix<T,N,K> result;
 	for(int i = 0; i<N; i++)
@@ -67,7 +73,7 @@ template<class T,int N, int M>
 GenMatrix<T,M,N> GenMatrix<T,N,M>::inverse()
 {
 	//////////////////////////////////////////
-	//simulate find of inverse using a double width matrix in form
+	//simulate find of inverse using a float width matrix in form
 	//[A | I] -> [I | A^-1]
 	//idea from http://programming-technique.blogspot.sg/2011/09/numerical-methods-inverse-of-nxn-matrix.html
 	//////////////////////////////////////////
@@ -243,7 +249,7 @@ template<class T>
 void GenMatrixDyn<T>::inverse(GenMatrixDyn<T>* out)
 {
 	//////////////////////////////////////////
-	//simulate find of inverse using a double width matrix in form
+	//simulate find of inverse using a float width matrix in form
 	//[A | I] -> [I | A^-1]
 	//idea from http://programming-technique.blogspot.sg/2011/09/numerical-methods-inverse-of-nxn-matrix.html
 	//////////////////////////////////////////

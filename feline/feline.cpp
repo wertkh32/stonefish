@@ -1,6 +1,17 @@
 #include "includes.h"
+#include "Integrator.h"
 
 /* GLUT callback Handlers */
+static Integrator* inte;
+static Mesh* tet;
+Node nodelist[] =
+{
+	Node(vector3<float>(1,1,0),vector3<float>(),vector3<float>(0,-0.1,0),10),
+	Node(vector3<float>(1,0,0),vector3<float>(),vector3<float>(),10),
+	Node(vector3<float>(1,0,1),vector3<float>(),vector3<float>(),10),
+	Node(vector3<float>(0,0,0),vector3<float>(),vector3<float>(),10)
+	//Node(vector3<float>(0,1,1),vector3<float>(),vector3<float>(),10)
+};
 
 static void 
 resize(int width, int height)
@@ -22,12 +33,18 @@ display(void)
   
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3d(1,0,0);
-
+	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(0,0,-10);
-    glutSolidSphere(3,30,30);
-    glPopMatrix();
+    glTranslatef(0,0,-5);
+	//glRotatef(60,0,1,1);
+    //glutSolidSphere(3,30,30);
+	inte->timeStep();
+	
+	for(int i=0;i<tet->getNoOfElements();i++)
+		tet->elements[i]->renderElement();
+
+	glPopMatrix();
 
     glutSwapBuffers();
 }
@@ -92,6 +109,11 @@ void init_general(){
     glDepthFunc(GL_LESS);     
 }
 
+void timer(int fps) {
+	
+    glutPostRedisplay();
+    glutTimerFunc(1000/FPS, timer, FPS);
+}
 
 /* Program entry point */
 
@@ -108,8 +130,32 @@ main(int argc, char *argv[])
     glutReshapeFunc(resize);
     glutDisplayFunc(display);
     glutKeyboardFunc(key);
-    glutIdleFunc(idle);
+    glutTimerFunc(1000/FPS, timer, FPS);
 
+	tet = new Mesh(nodelist,4);
+	tet->addElement(0,1,2,3,0.1,0.1,10);
+	inte = new Integrator(tet);
+	
+	//conjugate gradient test
+	/* works
+	float **t = (float**)malloc(sizeof(float*) * 2);
+	t[0] = (float*)malloc(sizeof(float) * 2);
+	t[1] = (float*)malloc(sizeof(float) * 2);
+
+	t[0][0] = 1.0;
+	t[0][1] = 2.0;
+
+	t[1][0] = 2.0;
+	t[1][1] = 1.0;
+
+	float b[2] = {8,7};
+	float x[2] = {0,0};
+
+	ConjugateGradientSolver cg(2,t);
+	cg.solve(x,b);
+
+	printf("%f %f\n", x[0],x[1]);
+	*/
 
     init_general();
     init_light();

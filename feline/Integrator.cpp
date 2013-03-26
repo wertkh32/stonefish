@@ -14,6 +14,7 @@ Integrator::Integrator(Mesh* _mesh)
 	extforces = (float*)malloc(sizeof(float) * n * 3);
 	x0 = (float*)malloc(sizeof(float) * n * 3);
 	xt = (float*)malloc(sizeof(float) * n * 3);
+	v = (float*)malloc(sizeof(float) * n * 3);
 	fu = (float*)malloc(sizeof(float) * n * 3);
 	b = (float*)malloc(sizeof(float) * n * 3);
 
@@ -56,7 +57,7 @@ void
 Integrator::assembleDampingMat()
 {
 	//damping mat. constant values for now
-	float alpha = 0.5, beta = 0.5;
+	float alpha = 0.8, beta = 0.8;
 
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)
@@ -85,15 +86,24 @@ void
 Integrator::assembleExtForces()
 {
 	//just gravity for now
+		for(int i=0;i<n;i++)
+	{
+		extforces[i * 3] = mesh->nodes[i]->force.x;
+		extforces[i * 3 + 1] = mesh->nodes[i]->force.y;
+		extforces[i * 3 + 2] = mesh->nodes[i]->force.z;
+	}
+
+/*
 	for(int i=0;i<n * 3; i++)
-		if(i%3==1)
-		{
-			extforces[i] = GRAVITY * mesh->nodes[i]->mass;
-		}
-		else
+	//	if(i%3==1)
+	//	{
+	//		extforces[i] += GRAVITY * mesh->nodes[i]->mass;
+	//	}
+	//	else
 		{
 			extforces[i] = 0;
 		}
+		*/
 }
 
 void
@@ -132,10 +142,11 @@ Integrator::timeStep()
 		b[i] = 0;
 		for(int j=0;j<n*3;j++)
 		{
-			b[i] += (globalMass[i][j] * v[j] - dt * (globalStiffness[i][j] * xt[j]));
+			b[i] += (globalMass[i][j] * v[j] - dt * (globalStiffness[i][j] * (xt[j]-x0[j])));
 		}
 
-		b[i] -= dt * (fu[i] - extforces[i]);
+		//b[i] += -dt * (fu[i] - extforces[i]);
+		b[i] += dt * (extforces[i]);
 	}
 	
 	solver->solve(v,b);

@@ -31,6 +31,7 @@ public:
 
 	GenMatrix<float,12,12>* getStiffnessMat(){return &undeformStiffnessMat;}
 	GenMatrix<float,12,12>* getMassMat(){return &massMat;}
+	void renderElement();
 
 	~Element(void);
 };

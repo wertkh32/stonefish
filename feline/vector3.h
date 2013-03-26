@@ -160,7 +160,7 @@ vector3<T>& vector3<T>::operator*=(vector3<T>& v){
 
 template <class T>
 inline
-vector3<T>& vector3<T>::operator+=(T k){
+vector3<T>& vector3<T>::operator*=(T k){
 	*this = *this * k;
 	return *this;
 }
