@@ -6,11 +6,11 @@ static Integrator* inte;
 static Mesh* tet;
 Node nodelist[] =
 {
-	Node(vector3<float>(1,1,0),vector3<float>(),vector3<float>(0,-0.1,0),10),
-	Node(vector3<float>(1,0,0),vector3<float>(),vector3<float>(),10),
+	Node(vector3<float>(1,1,0),vector3<float>(),vector3<float>(),10),
+	Node(vector3<float>(1,0,0),vector3<float>(),vector3<float>(0,2,0),10),
 	Node(vector3<float>(1,0,1),vector3<float>(),vector3<float>(),10),
-	Node(vector3<float>(0,0,0),vector3<float>(),vector3<float>(),10)
-	//Node(vector3<float>(0,1,1),vector3<float>(),vector3<float>(),10)
+	Node(vector3<float>(0,0,0),vector3<float>(),vector3<float>(),10),
+	Node(vector3<float>(1,-1,0),vector3<float>(),vector3<float>(),10)
 };
 
 static void 
@@ -37,7 +37,7 @@ display(void)
     glPushMatrix();
     glColor3f(1.0,0,0);
     glTranslatef(0,0,-5);
-	//glRotatef(60,0,1,1);
+	glRotatef(10,1,1,0);
     //glutSolidSphere(3,30,30);
 	inte->timeStep();
 	
@@ -132,8 +132,9 @@ main(int argc, char *argv[])
     glutKeyboardFunc(key);
     glutTimerFunc(1000/FPS, timer, FPS);
 
-	tet = new Mesh(nodelist,4);
-	tet->addElement(0,1,2,3,0.1,0.1,10);
+	tet = new Mesh(nodelist,5);
+	tet->addElement(0,1,2,3,0.1,0.3,10);
+	tet->addElement(4,1,2,3,0.1,0.3,10);
 	inte = new Integrator(tet);
 	
 	//conjugate gradient test

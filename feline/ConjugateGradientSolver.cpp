@@ -51,7 +51,7 @@ ConjugateGradientSolver::solve(float* x, float* b)
 		for(int i=0;i<n;i++)
 			x[i] = x[i] + alpha*d[i];
 
-		if(it%20==0)
+		if(it%10==0)
 		{
 			//refresh r of its horrible floating point errors
 			for(int i=0;i<n;i++)
