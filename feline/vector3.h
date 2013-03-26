@@ -41,6 +41,8 @@ public:
 	inline vector3<T>& operator=(vector3<T>&); //ensure well defined assignment
 	inline vector3<T> operator*(T);		//scalar mul
 	inline vector3<T> operator*(vector3<T>& v);//scalar mul
+	inline vector3<T>& operator*=(vector3<T>& v);//add
+	inline vector3<T>& operator*=(T);//add
 	inline vector3<T> operator/(T);		//scalar divide
 	inline vector3<T> operator+(vector3<T>& v);//add
 	inline vector3<T>& operator+=(vector3<T>& v);//add
@@ -146,6 +148,20 @@ template <class T>
 inline
 vector3<T>& vector3<T>::operator+=(vector3<T>& v){
 	*this = *this + v;
+	return *this;
+}
+
+template <class T>
+inline
+vector3<T>& vector3<T>::operator*=(vector3<T>& v){
+	*this = *this * v;
+	return *this;
+}
+
+template <class T>
+inline
+vector3<T>& vector3<T>::operator+=(T k){
+	*this = *this * k;
 	return *this;
 }
 

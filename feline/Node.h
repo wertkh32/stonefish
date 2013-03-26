@@ -7,7 +7,7 @@ class Node
 	//implements a node
 public:
 	float mass;
-	vector3<float> pos, pos_t, force;
+	vector3<float> pos, pos_t, vec_t,force;
 	Node(void);
 	~Node(void);
 };

@@ -5,7 +5,7 @@ Mesh::Mesh(Node node_list[], int n)
 {
 	for(int i=0;i<n;i++)
 		nodes.push(node_list+i);
-	max_index = n;
+	numnodes = n;
 
 	globalStiffness = (float**)malloc(sizeof(float*) * n * 3);
 	globalMass = (float**)malloc(sizeof(float*) * n * 3);
@@ -19,7 +19,7 @@ Mesh::Mesh(Node node_list[], int n)
 	resetGlobalMass();
 }
 
-void
+float**
 Mesh::assembleGlobalMass()
 {
 	resetGlobalMass();
@@ -37,9 +37,11 @@ Mesh::assembleGlobalMass()
 					}
 			
 	}
+
+	return globalMass;
 }
 
-void
+float**
 Mesh::assembleGlobalStiffness()
 {
 	resetGlobalStiffness();
@@ -57,21 +59,23 @@ Mesh::assembleGlobalStiffness()
 					}
 			
 	}
+
+	return globalStiffness;
 }
 
 void
 Mesh::resetGlobalStiffness()
 {
-	for(int i=0;i<max_index;i++)
-		for(int j=0;j<max_index;j++)
+	for(int i=0;i<numnodes;i++)
+		for(int j=0;j<numnodes;j++)
 			globalStiffness[i][j] = 0.0;
 }
 
 void
 Mesh::resetGlobalMass()
 {
-	for(int i=0;i<max_index;i++)
-		for(int j=0;j<max_index;j++)
+	for(int i=0;i<numnodes;i++)
+		for(int j=0;j<numnodes;j++)
 			globalMass[i][j] = 0.0;
 }
 

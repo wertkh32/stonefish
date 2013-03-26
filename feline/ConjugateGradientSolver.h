@@ -6,7 +6,7 @@
 //use pure arrays
 class ConjugateGradientSolver
 {
-	float *r, *x, *d;
+	float *r, *x, *d, *q;
 	float** A;
 	int n;
 public:

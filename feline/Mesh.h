@@ -5,7 +5,7 @@
 
 class Mesh
 {
-	int max_index;
+	int numnodes;
 public:
 	QuickArray<Element*,MAX_ELEMENTS> elements;
 	int nodeIndices[MAX_ELEMENTS][4];
@@ -14,13 +14,13 @@ public:
 
 
 	int getNoOfElements(){return elements.size();}
-	int getNoOfNodes(){return max_index;}
+	int getNoOfNodes(){return numnodes;}
 	
 	void addElement(int ind0, int ind1, int ind2, int ind3, float _E, float _v, float density);
 	void resetGlobalStiffness();
 	void resetGlobalMass();
-	void assembleGlobalMass();
-	void assembleGlobalStiffness();
+	float** assembleGlobalMass();
+	float** assembleGlobalStiffness();
 
 	Mesh(Node nodes[], int n);
 	~Mesh(void);

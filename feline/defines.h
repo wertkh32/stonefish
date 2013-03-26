@@ -8,3 +8,4 @@
 #define MAX_ELEMENTS 10
 #define MAX_NODES 100
 #define FPS 60
+#define GRAVITY 9.81

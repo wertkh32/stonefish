@@ -5,9 +5,10 @@ ConjugateGradientSolver::ConjugateGradientSolver(int _n, float** _A)
 {
 	n = _n;
 	A = _A;
-	r = new float[n];
-	x = new float[n];
-	d = new float[n];
+	r = (float*)malloc(sizeof(float) * n); 
+	x = (float*)malloc(sizeof(float) * n); 
+	d = (float*)malloc(sizeof(float) * n); 
+	q = (float*)malloc(sizeof(float) * n); 
 }
 
 void
@@ -20,7 +21,6 @@ void
 ConjugateGradientSolver::solve(float* x, float* b)
 {
 	float deltaOld, deltaNew, delta0,alpha,beta;
-	float* q = new float[n];
 	int it;
 	
 	for(int i=0;i<n;i++)
@@ -28,6 +28,7 @@ ConjugateGradientSolver::solve(float* x, float* b)
 		r[i]=0;
 		d[i]=0;
 		x[i]=0;
+		q[i]=0;
 	}
 
 	for(int i=0; i<n;i++)
