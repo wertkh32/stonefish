@@ -7,7 +7,7 @@ class Integrator
 	Mesh* mesh;
 	int n;
 	double dt;
-	double **globalStiffness, ** globalMass, **globalDamping, **A;	
+	double **globalStiffness, ** globalMass, **globalDamping, **Rot, **A;	
 	double *extforces, *intforces, *x0, *xt, *fu, *b, *v;
 	ConjugateGradientSolver* solver;
 
@@ -17,6 +17,7 @@ public:
 	void assembleDampingMat();
 	void assembleDisplacement();
 	void assembleUndeformForces();
+	void assembleRotations();
 	void assembleA();
 	void timeStep();
 	void updateNodes();

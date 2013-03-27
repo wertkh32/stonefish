@@ -27,6 +27,10 @@ Integrator::Integrator(Mesh* _mesh)
 	for(int i=0;i<n * 3;i++)
 		A[i] = (double*)malloc(sizeof(double) * n * 3);
 
+	Rot = (double**)malloc(sizeof(double*) * n * 3);
+	for(int i=0;i<n * 3;i++)
+		Rot[i] = (double*)malloc(sizeof(double) * n * 3);
+
 	solver = new ConjugateGradientSolver(n * 3, A);
 
 	assembleDampingMat();
@@ -68,6 +72,12 @@ Integrator::assembleDampingMat()
 			//printf("la %lf ", globalDamping[i][j]);
 		}
 
+}
+
+void
+Integrator::assembleRotations()
+{
+	for(int i=0;i<n;i++);
 }
 
 void

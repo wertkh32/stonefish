@@ -1,5 +1,6 @@
 #include "includes.h"
 #include "Integrator.h"
+#include "PolarDecompose.h"
 
 /* GLUT callback Handlers */
 static Integrator* inte;
@@ -213,7 +214,22 @@ main(int argc, char *argv[])
 			printf("%f ",in(i,j));
 		printf("\n");
 	}*/
+	//polar decompose test
+	/*test ok
+	Matrix3d h(4,0,0,
+			0,4,0,
+			0,0,4);
+	Matrix3d R, S;
 
+	PolarDecompose::compute(h,R,S);
+
+	for(int i=0;i<3;i++)
+	{
+		for(int j=0;j<3;j++)
+			printf("%lf ",R(i,j));
+		printf("\n");
+	}
+	*/
     init_general();
     init_light();
     init_material();
