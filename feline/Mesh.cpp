@@ -7,26 +7,26 @@ Mesh::Mesh(Node node_list[], int n)
 		nodes.push(node_list+i);
 	numnodes = n;
 
-	globalStiffness = (float**)malloc(sizeof(float*) * n * 3);
-	globalMass = (float**)malloc(sizeof(float*) * n * 3);
+	globalStiffness = (double**)malloc(sizeof(double*) * n * 3);
+	globalMass = (double**)malloc(sizeof(double*) * n * 3);
 	for(int i=0;i<n * 3;i++)
 	{
-		globalStiffness[i] = (float*)malloc(sizeof(float) * n * 3);
-		globalMass[i] = (float*)malloc(sizeof(float) * n * 3);
+		globalStiffness[i] = (double*)malloc(sizeof(double) * n * 3);
+		globalMass[i] = (double*)malloc(sizeof(double) * n * 3);
 	}
 
 	resetGlobalStiffness();
 	resetGlobalMass();
 }
 
-float**
+double**
 Mesh::assembleGlobalMass()
 {
 	resetGlobalMass();
 
 	for(int i=0;i<elements.size();i++)
 	{
-		GenMatrix<float,12,12>* masse = elements[i]->getMassMat();
+		GenMatrix<double,12,12>* masse = elements[i]->getMassMat();
 
 		for(int a=0;a<4;a++)
 			for(int b=0;b<4;b++)
@@ -41,21 +41,22 @@ Mesh::assembleGlobalMass()
 	return globalMass;
 }
 
-float**
+double**
 Mesh::assembleGlobalStiffness()
 {
 	resetGlobalStiffness();
 
 	for(int i=0;i<elements.size();i++)
 	{
-		GenMatrix<float,12,12>* stiffe = elements[i]->getStiffnessMat();
+		GenMatrix<double,12,12>* stiffe = elements[i]->getStiffnessMat();
 
 		for(int a=0;a<4;a++)
 			for(int b=0;b<4;b++)
 				for(int j=0;j<3;j++)
 					for(int k=0;k<3;k++)
 					{
-						globalStiffness[nodeIndices[i][a]+j][nodeIndices[i][b]+k] += (*stiffe)(a + j, b + k);
+						globalStiffness[nodeIndices[i][a] * 3+j][nodeIndices[i][b] * 3+k] += (*stiffe)(a + j, b + k);
+						//printf("%lf ",(*stiffe)(a+j,b+k));
 					}
 			
 	}
@@ -66,21 +67,21 @@ Mesh::assembleGlobalStiffness()
 void
 Mesh::resetGlobalStiffness()
 {
-	for(int i=0;i<numnodes;i++)
-		for(int j=0;j<numnodes;j++)
+	for(int i=0;i<numnodes * 3;i++)
+		for(int j=0;j<numnodes * 3;j++)
 			globalStiffness[i][j] = 0.0;
 }
 
 void
 Mesh::resetGlobalMass()
 {
-	for(int i=0;i<numnodes;i++)
-		for(int j=0;j<numnodes;j++)
+	for(int i=0;i<numnodes * 3;i++)
+		for(int j=0;j<numnodes * 3;j++)
 			globalMass[i][j] = 0.0;
 }
 
 void
-Mesh::addElement(int ind0, int ind1, int ind2, int ind3, float _E, float _v, float density)
+Mesh::addElement(int ind0, int ind1, int ind2, int ind3, double _E, double _v, double density)
 {
 	nodeIndices[elements.size()][0] = ind0;
 	nodeIndices[elements.size()][1] = ind1;

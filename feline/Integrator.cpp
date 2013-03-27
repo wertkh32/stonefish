@@ -10,21 +10,22 @@ Integrator::Integrator(Mesh* _mesh)
 	globalMass = mesh->assembleGlobalMass();
 
 	dt = 1./FPS;
+	//printf("%lf ",dt);
 
-	extforces = (float*)malloc(sizeof(float) * n * 3);
-	x0 = (float*)malloc(sizeof(float) * n * 3);
-	xt = (float*)malloc(sizeof(float) * n * 3);
-	v = (float*)malloc(sizeof(float) * n * 3);
-	fu = (float*)malloc(sizeof(float) * n * 3);
-	b = (float*)malloc(sizeof(float) * n * 3);
+	extforces = (double*)malloc(sizeof(double) * n * 3);
+	x0 = (double*)malloc(sizeof(double) * n * 3);
+	xt = (double*)malloc(sizeof(double) * n * 3);
+	v = (double*)malloc(sizeof(double) * n * 3);
+	fu = (double*)malloc(sizeof(double) * n * 3);
+	b = (double*)malloc(sizeof(double) * n * 3);
 
-	globalDamping = (float**)malloc(sizeof(float*) * n * 3);
+	globalDamping = (double**)malloc(sizeof(double*) * n * 3);
 	for(int i=0;i<n * 3;i++)
-		globalDamping[i] = (float*)malloc(sizeof(float) * n * 3);
+		globalDamping[i] = (double*)malloc(sizeof(double) * n * 3);
 
-	A = (float**)malloc(sizeof(float*) * n * 3);
+	A = (double**)malloc(sizeof(double*) * n * 3);
 	for(int i=0;i<n * 3;i++)
-		A[i] = (float*)malloc(sizeof(float) * n * 3);
+		A[i] = (double*)malloc(sizeof(double) * n * 3);
 
 	solver = new ConjugateGradientSolver(n * 3, A);
 
@@ -49,6 +50,7 @@ Integrator::assembleUndeformForces()
 		for(int j=0;j<n*3;j++)
 		{
 			fu[i] += globalStiffness[i][j] *x0[j];
+			printf("[%.0lf] ", globalStiffness[i][j]);
 		}
 	}
 }
@@ -57,12 +59,13 @@ void
 Integrator::assembleDampingMat()
 {
 	//damping mat. constant values for now
-	float alpha = 0.8, beta = 0.8;
+	double alpha = 0.5, beta = 0.5;
 
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)
 		{
-			globalDamping[i][j] = globalStiffness[i][j] * alpha + globalMass[i][j] * beta;
+			globalDamping[i][j] = globalStiffness[i][j] * alpha;// + globalMass[i][j] * beta;
+			//printf("la %lf ", globalDamping[i][j]);
 		}
 
 }
@@ -113,6 +116,7 @@ Integrator::assembleA()
 		for(int j=0;j<n*3;j++)
 		{
 			A[i][j] = globalMass[i][j] + globalDamping[i][j] * dt + globalStiffness[i][j] * dt * dt;
+			//printf("%lf ",A[i][j]);
 		}
 }
 
@@ -121,9 +125,11 @@ Integrator::updateNodes()
 {
 	for(int i=0;i<n;i++)
 	{
-		vector3<float> temp(v[i * 3],v[i * 3 + 1],v[i * 3 + 2]);
+		vector3<double> temp(v[i * 3],v[i * 3 + 1],v[i * 3 + 2]);
 		mesh->nodes[i]->pos_t += (temp * dt);
 		mesh->nodes[i]->vec_t = temp;
+
+		//printf("%lf, %lf, %lf\n", temp.x,temp.y,temp.z);
 	}
 }
 
@@ -142,11 +148,11 @@ Integrator::timeStep()
 		b[i] = 0;
 		for(int j=0;j<n*3;j++)
 		{
-			b[i] += (globalMass[i][j] * v[j] - dt * (globalStiffness[i][j] * (xt[j]-x0[j])));
+			b[i] += (globalMass[i][j] * v[j] + dt * (globalStiffness[i][j] * (xt[j] - x0[j])));
 		}
 
-		//b[i] += -dt * (fu[i] - extforces[i]);
-		b[i] += dt * (extforces[i]);
+		//b[i] += dt * (fu[i] - extforces[i]);
+		b[i] -= dt* extforces[i];
 	}
 	
 	solver->solve(v,b);

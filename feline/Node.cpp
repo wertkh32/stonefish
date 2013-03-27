@@ -6,7 +6,7 @@ Node::Node(void)
 {
 }
 
-Node::Node(vector3<float> _pos, vector3<float> _vel, vector3<float> _force, float _mass)
+Node::Node(vector3<double> _pos, vector3<double> _vel, vector3<double> _force, double _mass)
 :pos(_pos), pos_t(_pos), force(_force), mass(_mass), vec_t(_vel)
 {
 }

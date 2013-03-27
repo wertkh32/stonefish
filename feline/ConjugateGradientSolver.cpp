@@ -1,14 +1,14 @@
 #include "ConjugateGradientSolver.h"
 
 
-ConjugateGradientSolver::ConjugateGradientSolver(int _n, float** _A)
+ConjugateGradientSolver::ConjugateGradientSolver(int _n, double** _A)
 {
 	n = _n;
 	A = _A;
-	r = (float*)malloc(sizeof(float) * n); 
-	x = (float*)malloc(sizeof(float) * n); 
-	d = (float*)malloc(sizeof(float) * n); 
-	q = (float*)malloc(sizeof(float) * n); 
+	r = (double*)malloc(sizeof(double) * n); 
+	x = (double*)malloc(sizeof(double) * n); 
+	d = (double*)malloc(sizeof(double) * n); 
+	q = (double*)malloc(sizeof(double) * n); 
 }
 
 void
@@ -18,9 +18,9 @@ ConjugateGradientSolver::initSolver()
 }
 
 void
-ConjugateGradientSolver::solve(float* x, float* b)
+ConjugateGradientSolver::solve(double* x, double* b)
 {
-	float deltaOld, deltaNew, delta0,alpha,beta;
+	double deltaOld, deltaNew, delta0,alpha,beta;
 	int it;
 	
 	for(int i=0;i<n;i++)
@@ -43,6 +43,7 @@ ConjugateGradientSolver::solve(float* x, float* b)
 
 	while(it < MAX_ITER && deltaNew > EPSILON*EPSILON*delta0)
 	{
+		it++;
 		for(int i=0;i<n;i++)
 			q[i] = dot(A[i],d,n);
 
@@ -53,7 +54,7 @@ ConjugateGradientSolver::solve(float* x, float* b)
 
 		if(it%10==0)
 		{
-			//refresh r of its horrible floating point errors
+			//refresh r of its horrible doubleing point errors
 			for(int i=0;i<n;i++)
 				r[i] = b[i] - dot(A[i],x,n);
 		}
@@ -70,7 +71,6 @@ ConjugateGradientSolver::solve(float* x, float* b)
 		for(int i=0;i<n;i++)
 			d[i] = r[i] + beta * d[i];
 
-		it++;
 	}
 
 

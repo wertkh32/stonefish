@@ -73,7 +73,7 @@ template<class T,int N, int M>
 GenMatrix<T,M,N> GenMatrix<T,N,M>::inverse()
 {
 	//////////////////////////////////////////
-	//simulate find of inverse using a float width matrix in form
+	//simulate find of inverse using a double width matrix in form
 	//[A | I] -> [I | A^-1]
 	//idea from http://programming-technique.blogspot.sg/2011/09/numerical-methods-inverse-of-nxn-matrix.html
 	//////////////////////////////////////////
@@ -101,7 +101,7 @@ GenMatrix<T,M,N> GenMatrix<T,N,M>::inverse()
 			{
 				if(i!=j)
 				{
-					float ratio = result[j][i]/result[i][i];
+					T ratio = result[j][i]/result[i][i];
 					for(int k = 0; k < 2*n; k++)
 						result[j][k] -= ratio * result[i][k];
 				}
@@ -110,7 +110,7 @@ GenMatrix<T,M,N> GenMatrix<T,N,M>::inverse()
 
 		for(int i = 0; i < n; i++)
 		{
-			float a = result[i][i];
+			T a = result[i][i];
 			for(int j = 0; j < 2*n; j++)
 				result[i][j] /= a;
 		}
@@ -249,7 +249,7 @@ template<class T>
 void GenMatrixDyn<T>::inverse(GenMatrixDyn<T>* out)
 {
 	//////////////////////////////////////////
-	//simulate find of inverse using a float width matrix in form
+	//simulate find of inverse using a double width matrix in form
 	//[A | I] -> [I | A^-1]
 	//idea from http://programming-technique.blogspot.sg/2011/09/numerical-methods-inverse-of-nxn-matrix.html
 	//////////////////////////////////////////
@@ -277,7 +277,7 @@ void GenMatrixDyn<T>::inverse(GenMatrixDyn<T>* out)
 			{
 				if(i!=j)
 				{
-					float ratio = result[j][i]/result[i][i];
+					double ratio = result[j][i]/result[i][i];
 					for(int k = 0; k < 2*n; k++)
 						result[j][k] -= ratio * result[i][k];
 				}
@@ -286,7 +286,7 @@ void GenMatrixDyn<T>::inverse(GenMatrixDyn<T>* out)
 
 		for(int i = 0; i < n; i++)
 		{
-			float a = result[i][i];
+			double a = result[i][i];
 			for(int j = 0; j < 2*n; j++)
 				result[i][j] /= a;
 		}

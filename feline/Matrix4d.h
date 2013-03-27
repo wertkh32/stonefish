@@ -3,22 +3,22 @@
 class Matrix4d
 {
 public:
-	float mat[4][4];
+	double mat[4][4];
 	Matrix4d(void);
-	Matrix4d(float[4][4]);
+	Matrix4d(double[4][4]);
 	Matrix4d(const Matrix4d& m);
-	Matrix4d(float a00,float a01,float a02,float a03,
-			 float a10,float a11,float a12,float a13,
-			 float a20,float a21,float a22,float a23,
-			 float a30,float a31,float a32,float a33);
+	Matrix4d(double a00,double a01,double a02,double a03,
+			 double a10,double a11,double a12,double a13,
+			 double a20,double a21,double a22,double a23,
+			 double a30,double a31,double a32,double a33);
 
 	inline Matrix4d transpose();
-	inline float determinant();
+	inline double determinant();
 	inline Matrix4d operator*(Matrix4d&);
-	inline Matrix4d operator*(float);
+	inline Matrix4d operator*(double);
 	inline Matrix4d operator+(Matrix4d&);
 	inline Matrix4d operator-(Matrix4d&);
-	float& operator()(int i,int j){return mat[i][j];}
+	double& operator()(int i,int j){return mat[i][j];}
 
 	Matrix4d inverse();
 
@@ -26,7 +26,7 @@ public:
 };
 
 inline
-float Matrix4d::determinant()
+double Matrix4d::determinant()
 {
 	return (mat[0][0] * (-mat[2][3] * mat[3][2] * mat[1][1] + mat[2][2] * mat[3][3] * mat[1][1] + mat[2][3] * mat[3][1] * mat[1][2] - mat[2][2] * mat[3][1] * mat[1][3] - mat[3][3] * mat[1][2] * mat[2][1] + mat[3][2] * mat[1][3] * mat[2][1]) + 
 			mat[0][1] * (mat[2][3] * mat[3][2] * mat[1][0] - mat[2][2] * mat[3][3] * mat[1][0] - mat[2][3] * mat[3][0] * mat[1][2] + mat[2][2] * mat[3][0] * mat[1][3] + mat[3][3] * mat[1][2] * mat[2][0] - mat[3][2] * mat[1][3] * mat[2][0]) + 
@@ -44,7 +44,7 @@ return Matrix4d(mat[0][0],mat[1][0],mat[2][0],mat[3][0],
 
 inline
 Matrix4d Matrix4d::operator*(Matrix4d& mm){
-	float m[4][4]={0};
+	double m[4][4]={0};
 	for(int i=0;i<4;i++)
 		for(int j=0;j<4;j++)
 			for(int k=0;k<4;k++)
@@ -53,7 +53,7 @@ Matrix4d Matrix4d::operator*(Matrix4d& mm){
 }
 
 inline
-Matrix4d Matrix4d::operator*(float k){
+Matrix4d Matrix4d::operator*(double k){
 	for(int i=0;i<4;i++)
 		for(int j=0;j<4;j++)
 				mat[i][j] *= k;
@@ -62,7 +62,7 @@ Matrix4d Matrix4d::operator*(float k){
 
 inline
 Matrix4d Matrix4d::operator+(Matrix4d& mm){
-	float m[4][4];
+	double m[4][4];
 	for(int i=0;i<4;i++)
 		for(int j=0;j<4;j++)
 			m[i][j] = mat[i][j]+mm.mat[i][j];
@@ -71,7 +71,7 @@ Matrix4d Matrix4d::operator+(Matrix4d& mm){
 
 inline
 Matrix4d Matrix4d::operator-(Matrix4d& mm){
-	float m[4][4];
+	double m[4][4];
 	for(int i=0;i<4;i++)
 		for(int j=0;j<4;j++)
 			m[i][j] = mat[i][j]-mm.mat[i][j];

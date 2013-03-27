@@ -6,9 +6,9 @@ class Integrator
 {
 	Mesh* mesh;
 	int n;
-	float dt;
-	float **globalStiffness, ** globalMass, **globalDamping, **A;	
-	float *extforces, *intforces, *x0, *xt, *fu, *b, *v;
+	double dt;
+	double **globalStiffness, ** globalMass, **globalDamping, **A;	
+	double *extforces, *intforces, *x0, *xt, *fu, *b, *v;
 	ConjugateGradientSolver* solver;
 
 public:

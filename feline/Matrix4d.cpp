@@ -16,16 +16,16 @@ Matrix4d::Matrix4d(const Matrix4d& mm)
 			mat[i][j]=mm.mat[i][j];
 }
 
-Matrix4d::Matrix4d(float m[4][4]){
+Matrix4d::Matrix4d(double m[4][4]){
 for(int i=0;i<4;i++)
 	for(int j=0;j<4;j++)
 		mat[i][j]=m[i][j];
 }
 
-Matrix4d::Matrix4d(float a00,float a01,float a02,float a03,
-					float a10,float a11,float a12,float a13,
-					float a20,float a21,float a22,float a23,
-					float a30,float a31,float a32,float a33)
+Matrix4d::Matrix4d(double a00,double a01,double a02,double a03,
+					double a10,double a11,double a12,double a13,
+					double a20,double a21,double a22,double a23,
+					double a30,double a31,double a32,double a33)
 {
 	mat[0][0]=a00;mat[0][1]=a01;mat[0][2]=a02;mat[0][3]=a03;
 	mat[1][0]=a10;mat[1][1]=a11;mat[1][2]=a12;mat[1][3]=a13;
@@ -37,7 +37,7 @@ Matrix4d::Matrix4d(float a00,float a01,float a02,float a03,
 Matrix4d Matrix4d::inverse()
 {
 	//from Mathematica
-	float result[4][4];
+	double result[4][4];
 
 	result[0][0] = -mat[2][3] * mat[3][2] * mat[1][1] + mat[2][2] * mat[3][3] * mat[1][1] + mat[2][3] * mat[3][1] * mat[1][2] - mat[2][2] * mat[3][1] * mat[1][3] - mat[3][3] * mat[1][2] * mat[2][1] + mat[3][2] * mat[1][3] * mat[2][1];
 	result[0][1] = mat[0][1] * mat[2][3] * mat[3][2] - mat[0][1] * mat[2][2] * mat[3][3] - mat[2][3] * mat[3][1] * mat[0][2] + mat[2][2] * mat[3][1] * mat[0][3] + mat[3][3] * mat[0][2] * mat[2][1] - mat[3][2] * mat[0][3] * mat[2][1];
@@ -56,7 +56,7 @@ Matrix4d Matrix4d::inverse()
 	result[3][2] = mat[0][1] * mat[3][2] * mat[1][0] - mat[3][1] * mat[0][2] * mat[1][0] - mat[0][0] * mat[3][2] * mat[1][1] + mat[3][0] * mat[0][2] * mat[1][1] - mat[0][1] * mat[3][0] * mat[1][2] + mat[0][0] * mat[3][1] * mat[1][2];
 	result[3][3] = -mat[0][1] * mat[2][2] * mat[1][0] + mat[0][0] * mat[2][2] * mat[1][1] - mat[0][2] * mat[1][1] * mat[2][0] + mat[0][1] * mat[1][2] * mat[2][0] + mat[0][2] * mat[1][0] *mat[2][1] - mat[0][0] * mat[1][2] * mat[2][1];
 
-	float d = 1.0 / (mat[0][0] * result[0][0] + mat[0][1] * result[1][0] + mat[0][2] * result[2][0] + mat[0][3] * result[3][0]);
+	double d = 1.0 / (mat[0][0] * result[0][0] + mat[0][1] * result[1][0] + mat[0][2] * result[2][0] + mat[0][3] * result[3][0]);
 
 	for(int i=0; i<4; i++)
 	  for(int j=0; j<4; j++)

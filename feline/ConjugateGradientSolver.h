@@ -6,16 +6,16 @@
 //use pure arrays
 class ConjugateGradientSolver
 {
-	float *r, *x, *d, *q;
-	float** A;
+	double *r, *x, *d, *q;
+	double** A;
 	int n;
 public:
-	ConjugateGradientSolver(int _n, float** A);
+	ConjugateGradientSolver(int _n, double** A);
 	~ConjugateGradientSolver(void);
-	void solve(float* x, float* b);
-	float dot(float* a, float* b, int k)
+	void solve(double* x, double* b);
+	double dot(double* a, double* b, int k)
 	{
-		float r=0;
+		double r=0;
 		for(int i=0;i<k;i++)
 			r+=a[i]*b[i];
 		return r;

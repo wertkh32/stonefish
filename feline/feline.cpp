@@ -4,13 +4,27 @@
 /* GLUT callback Handlers */
 static Integrator* inte;
 static Mesh* tet;
+/*
 Node nodelist[] =
 {
-	Node(vector3<float>(1,1,0),vector3<float>(),vector3<float>(),10),
-	Node(vector3<float>(1,0,0),vector3<float>(),vector3<float>(0,2,0),10),
-	Node(vector3<float>(1,0,1),vector3<float>(),vector3<float>(),10),
-	Node(vector3<float>(0,0,0),vector3<float>(),vector3<float>(),10),
-	Node(vector3<float>(1,-1,0),vector3<float>(),vector3<float>(),10)
+	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(),10),
+	Node(vector3<double>(1,0,0),vector3<double>(),vector3<double>(0,2,0),10),
+	Node(vector3<double>(1,0,1),vector3<double>(),vector3<double>(),10),
+	Node(vector3<double>(0,0,0),vector3<double>(),vector3<double>(),10),
+	Node(vector3<double>(1,-1,0),vector3<double>(),vector3<double>(),10)
+};
+*/
+
+Node nodelist[] =
+{
+	Node(vector3<double>(0,0,0),vector3<double>(),vector3<double>(),10),
+	Node(vector3<double>(1,0,0),vector3<double>(),vector3<double>(),10),
+	Node(vector3<double>(1,0,1),vector3<double>(),vector3<double>(),10),
+	Node(vector3<double>(0,0,1),vector3<double>(),vector3<double>(),10),
+	Node(vector3<double>(0,1,0),vector3<double>(),vector3<double>(0,-0.001,0),10),
+	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(),10),
+	Node(vector3<double>(1,1,1),vector3<double>(),vector3<double>(),10),
+	Node(vector3<double>(0,1,1),vector3<double>(),vector3<double>(),10),
 };
 
 static void 
@@ -130,18 +144,24 @@ main(int argc, char *argv[])
     glutReshapeFunc(resize);
     glutDisplayFunc(display);
     glutKeyboardFunc(key);
-    glutTimerFunc(1000/FPS, timer, FPS);
+    glutTimerFunc(1000./FPS, timer, FPS);
 
-	tet = new Mesh(nodelist,5);
-	tet->addElement(0,1,2,3,0.1,0.3,10);
-	tet->addElement(4,1,2,3,0.1,0.3,10);
+	//order of the nodes matter D:
+	tet = new Mesh(nodelist,8);
+	tet->addElement(0,5,7,2,1,0.4,600);
+	tet->addElement(0,4,5,7,1,0.4,600);
+	tet->addElement(5,7,6,2,1,0.4,600);
+	tet->addElement(0,7,2,3,1,0.4,600);
+	tet->addElement(0,5,2,1,1,0.4,600);
+
 	inte = new Integrator(tet);
 	
 	//conjugate gradient test
-	/* works
-	float **t = (float**)malloc(sizeof(float*) * 2);
-	t[0] = (float*)malloc(sizeof(float) * 2);
-	t[1] = (float*)malloc(sizeof(float) * 2);
+	// works
+	/*
+	double **t = (double**)malloc(sizeof(double*) * 2);
+	t[0] = (double*)malloc(sizeof(double) * 2);
+	t[1] = (double*)malloc(sizeof(double) * 2);
 
 	t[0][0] = 1.0;
 	t[0][1] = 2.0;
@@ -149,14 +169,43 @@ main(int argc, char *argv[])
 	t[1][0] = 2.0;
 	t[1][1] = 1.0;
 
-	float b[2] = {8,7};
-	float x[2] = {0,0};
+	double b[2] = {8,7};
+	double x[2] = {0,0};
 
 	ConjugateGradientSolver cg(2,t);
 	cg.solve(x,b);
 
 	printf("%f %f\n", x[0],x[1]);
 	*/
+
+	//matrix3d test
+	//test ok
+	/*
+	Matrix3d in = Matrix3d(2,0,0,
+							0,2,0,
+							0,0,2).inverse();
+
+	for(int i=0;i<3;i++)
+	{
+		for(int j=0;j<3;j++)
+			printf("%f ",in(i,j));
+		printf("\n");
+	}
+	*/
+	//matrix4d test
+	//test ok
+	/*
+	Matrix4d in = Matrix4d(2,0,0,0,
+			0,2,0,0,
+			0,0,2,0,
+			0,0,0,2).inverse();
+
+	for(int i=0;i<4;i++)
+	{
+		for(int j=0;j<4;j++)
+			printf("%f ",in(i,j));
+		printf("\n");
+	}*/
 
     init_general();
     init_light();
