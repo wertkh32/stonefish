@@ -17,6 +17,12 @@ ConjugateGradientSolver::initSolver()
 	
 }
 
+void ConjugateGradientSolver::removeRows(int r)
+{
+	for(int i=0;i<n;i++)
+		A[r][i] = 0.0;
+}
+
 void
 ConjugateGradientSolver::solve(double* x, double* b)
 {

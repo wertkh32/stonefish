@@ -21,5 +21,6 @@ public:
 		return r;
 	}
 	void initSolver();
+	void removeRows(int r);
 };
 

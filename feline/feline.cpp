@@ -21,10 +21,10 @@ Node nodelist[] =
 	Node(vector3<double>(1,0,0),vector3<double>(),vector3<double>(),10),
 	Node(vector3<double>(1,0,1),vector3<double>(),vector3<double>(),10),
 	Node(vector3<double>(0,0,1),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(0,1,0),vector3<double>(),vector3<double>(0,-0.001,0),10),
-	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(1,1,1),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(0,1,1),vector3<double>(),vector3<double>(),10),
+	Node(vector3<double>(0,1,0),vector3<double>(),vector3<double>(0,-10,0),10),
+	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(0,-10,0),10),
+	Node(vector3<double>(1,1,1),vector3<double>(),vector3<double>(0,-10,0),10),
+	Node(vector3<double>(0,1,1),vector3<double>(),vector3<double>(0,-10,0),10),
 };
 
 static void 
@@ -44,7 +44,8 @@ resize(int width, int height)
 static void 
 display(void)
 {
-  
+  //static int i = 0;
+  //i++;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3d(1,0,0);
 	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
@@ -57,6 +58,11 @@ display(void)
 	
 	for(int i=0;i<tet->getNoOfElements();i++)
 		tet->elements[i]->renderElement();
+
+	//if(i>100)
+	//{
+	//	tet->nodes[6]->force = vector3<double>();
+	//}
 
 	glPopMatrix();
 
@@ -149,6 +155,7 @@ main(int argc, char *argv[])
 	//order of the nodes matter D:
 	tet = new Mesh(nodelist,8);
 	tet->addElement(0,5,7,2,1,0.4,600);
+	tet->addElement(1,3,4,6,1,0.4,600);
 	tet->addElement(0,4,5,7,1,0.4,600);
 	tet->addElement(5,7,6,2,1,0.4,600);
 	tet->addElement(0,7,2,3,1,0.4,600);

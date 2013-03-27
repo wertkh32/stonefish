@@ -148,11 +148,11 @@ Integrator::timeStep()
 		b[i] = 0;
 		for(int j=0;j<n*3;j++)
 		{
-			b[i] += (globalMass[i][j] * v[j] + dt * (globalStiffness[i][j] * (xt[j] - x0[j])));
+			b[i] += (globalMass[i][j] * v[j] - dt * (globalStiffness[i][j] * (xt[j] - x0[j])));
 		}
 
 		//b[i] += dt * (fu[i] - extforces[i]);
-		b[i] -= dt* extforces[i];
+		b[i] = dt* extforces[i];
 	}
 	
 	solver->solve(v,b);
