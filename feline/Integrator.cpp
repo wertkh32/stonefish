@@ -77,7 +77,32 @@ Integrator::assembleDampingMat()
 void
 Integrator::assembleRotations()
 {
-	for(int i=0;i<n;i++);
+
+	for(int i=0;i<mesh->elements.size();i++)
+	{
+		GenMatrix<double,12,12> rot;
+		Matrix3d R,S,F = mesh->elements[i]->computeDeformationMat();
+		PolarDecompose::compute(F,R,S);
+
+		for(int a=0;a<4;a++)
+		{
+			for(int j=0;j<3;j++)
+				for(int k=0;k<3;k++)
+				{
+					rot(a * 3 + j, a * 3 + k) = R(j,k);
+				}
+		}
+
+		for(int a=0;a<4;a++)
+			for(int b=0;b<4;b++)
+				for(int j=0;j<3;j++)
+					for(int k=0;k<3;k++)
+					{
+						Rot[mesh->nodeIndices[i][a] * 3 + j][mesh->nodeIndices[i][b] * 3 + k] += rot(a + j, b + k);
+					}
+			
+	}
+
 }
 
 void

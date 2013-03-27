@@ -21,7 +21,6 @@ public:
 	void resetGlobalMass();
 	double** assembleGlobalMass();
 	double** assembleGlobalStiffness();
-
 	Mesh(Node nodes[], int n);
 	~Mesh(void);
 };

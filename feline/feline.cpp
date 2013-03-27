@@ -22,10 +22,10 @@ Node nodelist[] =
 	Node(vector3<double>(1,0,0),vector3<double>(),vector3<double>(),10),
 	Node(vector3<double>(1,0,1),vector3<double>(),vector3<double>(),10),
 	Node(vector3<double>(0,0,1),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(0,1,0),vector3<double>(),vector3<double>(0,-10,0),10),
-	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(0,-10,0),10),
-	Node(vector3<double>(1,1,1),vector3<double>(),vector3<double>(0,-10,0),10),
-	Node(vector3<double>(0,1,1),vector3<double>(),vector3<double>(0,-10,0),10),
+	Node(vector3<double>(0,1,0),vector3<double>(),vector3<double>(0,10,0),10),
+	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(0,10,0),10),
+	Node(vector3<double>(1,1,1),vector3<double>(),vector3<double>(0,10,0),10),
+	Node(vector3<double>(0,1,1),vector3<double>(),vector3<double>(0,10,0),10),
 };
 
 static void 

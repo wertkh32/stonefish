@@ -1,6 +1,7 @@
 #pragma once
 #include "Mesh.h"
 #include "ConjugateGradientSolver.h"
+#include "PolarDecompose.h"
 
 class Integrator
 {
