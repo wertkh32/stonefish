@@ -21,7 +21,7 @@ void Element::preCompute()
 					nodes[0]->pos.y - nodes[3]->pos.y,nodes[1]->pos.y - nodes[3]->pos.y,nodes[2]->pos.y - nodes[3]->pos.y,
 					nodes[0]->pos.z - nodes[3]->pos.z,nodes[1]->pos.z - nodes[3]->pos.z,nodes[2]->pos.z - nodes[3]->pos.z);
 	undeformShapeMatInv = undeformShapeMat.inverse();
-	undeformVolume = (1.0/6.0) * undeformShapeMat.determinant();
+	undeformVolume = (1.0/6.0) * fabs(undeformShapeMat.determinant());
 
 	preComputeUndeformedStiffnessMat();
 	preComputeMassMat();
@@ -55,7 +55,7 @@ void Element::preComputeUndeformedStiffnessMat()
 	//material constants
 	double c1 = (E*(1-v))/((1.0-2.0*v)*(1.0+v)),
 		  c2 = (E*v)/((1.0-2.0*v)*(1.0+v)),
-		  c3 = (c1 - c2)/2;
+		  c3 = (c1 - c2)/2.0;
 	//printf("%f %f %f\n",c1,c2,c3);
 
 	double C[6][6] = 
@@ -71,6 +71,7 @@ void Element::preComputeUndeformedStiffnessMat()
 	matConstantsMat = GenMatrix<double,6,6>(C);
 
 	undeformStiffnessMat = strainMat.transpose() * matConstantsMat * strainMat;
+	undeformStiffnessMat.scalarMul(undeformVolume);
 	/*
 	for(int i=0;i<12;i++)
 		for(int j=0;j<12;j++)
@@ -99,7 +100,7 @@ void Element::preComputeMassMat()
 	};
 
 	massMat = GenMatrix<double,12,12>(mass);
-	massMat.scalarMul( (density * undeformVolume) / 20.);
+	//massMat.scalarMul( (density * undeformVolume) / 20.);
 	
 	/*
 	for(int i=0;i<12;i++)
@@ -118,6 +119,24 @@ Matrix3d Element::computeDeformationMat()
 					nodes[0]->pos_t.y - nodes[3]->pos_t.y,nodes[1]->pos_t.y - nodes[3]->pos_t.y,nodes[2]->pos_t.y - nodes[3]->pos_t.y,
 					nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
 	return deformShapeMat * undeformShapeMatInv;
+}
+
+void Element::getRKRTandRK(GenMatrix<double,12,12>& RK, GenMatrix<double,12,12>& RKRT)
+{
+	Matrix3d F,R,S;
+	GenMatrix<double,12,12> Rot;
+	F = computeDeformationMat();
+	PolarDecompose::compute(F,R,S);
+	
+	for(int i=0;i<4;i++)
+		for(int j=0;j<3;j++)
+			for(int k=0;k<3;k++)
+			{
+				Rot(i * 3 + j, i * 3 + k) = R(j,k);
+			}
+
+	RK = Rot * undeformStiffnessMat;
+	RKRT = RK * Rot.transpose();
 }
 
 void

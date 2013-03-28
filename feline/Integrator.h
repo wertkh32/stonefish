@@ -8,9 +8,9 @@ class Integrator
 	Mesh* mesh;
 	int n;
 	double dt;
-	double **globalStiffness, ** globalMass, **globalDamping, **Rot, **A;	
+	double **globalStiffness, ** globalMass, **globalDamping, **RK, **RKRT, **A;	
 	double *extforces, *intforces, *x0, *xt, *fu, *b, *v;
-	ConjugateGradientSolver* solver;
+	//ConjugateGradientSolver* solver;
 
 public:
 	Integrator(Mesh* _mesh);
@@ -22,6 +22,7 @@ public:
 	void assembleA();
 	void timeStep();
 	void updateNodes();
+	void debug();
 
 	~Integrator(void);
 };

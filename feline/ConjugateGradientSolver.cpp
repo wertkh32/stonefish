@@ -58,7 +58,7 @@ ConjugateGradientSolver::solve(double* x, double* b)
 		for(int i=0;i<n;i++)
 			x[i] = x[i] + alpha*d[i];
 
-		if(it%10==0)
+		if(it%20==0)
 		{
 			//refresh r of its horrible doubleing point errors
 			for(int i=0;i<n;i++)

@@ -9,23 +9,23 @@ static Mesh* tet;
 Node nodelist[] =
 {
 	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(1,0,0),vector3<double>(),vector3<double>(0,2,0),10),
+	Node(vector3<double>(1,0,0),vector3<double>(),vector3<double>(),10),
 	Node(vector3<double>(1,0,1),vector3<double>(),vector3<double>(),10),
 	Node(vector3<double>(0,0,0),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(1,-1,0),vector3<double>(),vector3<double>(),10)
+	//Node(vector3<double>(1,-1,0),vector3<double>(),vector3<double>(),10)
 };
 */
 
 Node nodelist[] =
 {
-	Node(vector3<double>(0,0,0),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(1,0,0),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(1,0,1),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(0,0,1),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(0,1,0),vector3<double>(),vector3<double>(0,10,0),10),
-	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(0,10,0),10),
-	Node(vector3<double>(1,1,1),vector3<double>(),vector3<double>(0,10,0),10),
-	Node(vector3<double>(0,1,1),vector3<double>(),vector3<double>(0,10,0),10),
+	Node(vector3<double>(0,0,0),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(1,0,0),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(1,0,1),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(0,0,1),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(0,1,0),vector3<double>(),vector3<double>(0,10,0),100),
+	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(0,10,0),100),
+	Node(vector3<double>(1,1,1),vector3<double>(),vector3<double>(0,10,0),100),
+	Node(vector3<double>(0,1,1),vector3<double>(),vector3<double>(0,10,0),100),
 };
 
 static void 
@@ -45,25 +45,28 @@ resize(int width, int height)
 static void 
 display(void)
 {
-  //static int i = 0;
-  //i++;
+  static int i = 0;
+  i++;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3d(1,0,0);
 	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     glPushMatrix();
     glColor3f(1.0,0,0);
     glTranslatef(0,0,-5);
-	glRotatef(10,1,1,0);
+	glRotatef(45,1,1,0);
     //glutSolidSphere(3,30,30);
+	//inte->debug();
 	inte->timeStep();
+	//inte->debug();
 	
 	for(int i=0;i<tet->getNoOfElements();i++)
 		tet->elements[i]->renderElement();
 
-	//if(i>100)
-	//{
-	//	tet->nodes[6]->force = vector3<double>();
-	//}
+	if(i>10)
+	{
+		for(int i=0;i<8;i++)
+		tet->nodes[i]->force = vector3<double>();
+	}
 
 	glPopMatrix();
 
@@ -154,14 +157,17 @@ main(int argc, char *argv[])
     glutTimerFunc(1000./FPS, timer, FPS);
 
 	//order of the nodes matter D:
+	//tet = new Mesh(nodelist,4);
+	//tet->addElement(0,1,2,3,0.1,0.45,600);
+	
 	tet = new Mesh(nodelist,8);
-	tet->addElement(0,5,7,2,1,0.4,600);
-	tet->addElement(1,3,4,6,1,0.4,600);
-	tet->addElement(0,4,5,7,1,0.4,600);
-	tet->addElement(5,7,6,2,1,0.4,600);
-	tet->addElement(0,7,2,3,1,0.4,600);
-	tet->addElement(0,5,2,1,1,0.4,600);
-
+	tet->addElement(0,5,7,2,1,0.2,600);
+	tet->addElement(1,3,4,6,1,0.2,600);
+	tet->addElement(0,4,5,7,1,0.2,600);
+	tet->addElement(5,7,6,2,1,0.2,600);
+	tet->addElement(0,7,2,3,1,0.2,600);
+	tet->addElement(0,5,2,1,1,0.2,600);
+	
 	inte = new Integrator(tet);
 	
 	//conjugate gradient test

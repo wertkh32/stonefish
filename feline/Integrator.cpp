@@ -7,6 +7,7 @@ Integrator::Integrator(Mesh* _mesh)
 	n = mesh->getNoOfNodes();
 	//K is constant -> linear FEM. nonlinear FEM later.
 	globalStiffness = mesh->assembleGlobalStiffness();
+	//NON-LINEAR TIME!!!
 	globalMass = mesh->assembleGlobalMass();
 
 	dt = 1./FPS;
@@ -27,15 +28,19 @@ Integrator::Integrator(Mesh* _mesh)
 	for(int i=0;i<n * 3;i++)
 		A[i] = (double*)malloc(sizeof(double) * n * 3);
 
-	Rot = (double**)malloc(sizeof(double*) * n * 3);
+	RK = (double**)malloc(sizeof(double*) * n * 3);
 	for(int i=0;i<n * 3;i++)
-		Rot[i] = (double*)malloc(sizeof(double) * n * 3);
+		RK[i] = (double*)malloc(sizeof(double) * n * 3);
 
-	solver = new ConjugateGradientSolver(n * 3, A);
+	RKRT = (double**)malloc(sizeof(double*) * n * 3);
+	for(int i=0;i<n * 3;i++)
+	RKRT[i] = (double*)malloc(sizeof(double) * n * 3);
 
-	assembleDampingMat();
-	assembleUndeformForces();
-	assembleA();
+	
+	//assembleDampingMat();
+	//assembleUndeformForces();
+	//assembleA();
+	//solver = new ConjugateGradientSolver(n * 3, A);
 }
 
 void
@@ -47,29 +52,30 @@ Integrator::assembleUndeformForces()
 		x0[i * 3 + 1] = mesh->nodes[i]->pos.y;
 		x0[i * 3 + 2] = mesh->nodes[i]->pos.z;
 	}
-
+	
 	for(int i=0;i<n *3;i++)
 	{
 		fu[i] = 0;
 		for(int j=0;j<n*3;j++)
 		{
-			fu[i] += globalStiffness[i][j] *x0[j];
-			printf("[%.0lf] ", globalStiffness[i][j]);
+			fu[i] += RK[i][j] * x0[j];
 		}
 	}
+	
 }
 
 void
 Integrator::assembleDampingMat()
 {
 	//damping mat. constant values for now
-	double alpha = 0.5, beta = 0.5;
+	double alpha = 0.0, beta = 0.8;
 
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)
 		{
-			globalDamping[i][j] = globalStiffness[i][j] * alpha;// + globalMass[i][j] * beta;
+			globalDamping[i][j] = RKRT[i][j] * alpha + globalMass[i][j] * beta;
 			//printf("la %lf ", globalDamping[i][j]);
+			//printf("la %lf ", RKRT[i][j]);
 		}
 
 }
@@ -78,30 +84,29 @@ void
 Integrator::assembleRotations()
 {
 
+	for(int i=0;i<n*3;i++)
+		for(int j=0;j<n*3;j++)
+		{
+			RK[i][j] = 0.0;
+			RKRT[i][j] = 0.0;
+		}
+
 	for(int i=0;i<mesh->elements.size();i++)
 	{
-		GenMatrix<double,12,12> rot;
-		Matrix3d R,S,F = mesh->elements[i]->computeDeformationMat();
-		PolarDecompose::compute(F,R,S);
-
-		for(int a=0;a<4;a++)
-		{
-			for(int j=0;j<3;j++)
-				for(int k=0;k<3;k++)
-				{
-					rot(a * 3 + j, a * 3 + k) = R(j,k);
-				}
-		}
+		GenMatrix<double,12,12> rk, rkrt;
+		mesh->elements[i]->getRKRTandRK(rk,rkrt);
 
 		for(int a=0;a<4;a++)
 			for(int b=0;b<4;b++)
 				for(int j=0;j<3;j++)
 					for(int k=0;k<3;k++)
 					{
-						Rot[mesh->nodeIndices[i][a] * 3 + j][mesh->nodeIndices[i][b] * 3 + k] += rot(a + j, b + k);
+						RK[mesh->nodeIndices[i][a] * 3 + j][mesh->nodeIndices[i][b] * 3 + k] += rk(a * 3 + j, b * 3 + k);
+						RKRT[mesh->nodeIndices[i][a] * 3 + j][mesh->nodeIndices[i][b] * 3 + k] += rkrt(a * 3 + j, b * 3 + k);
 					}
 			
 	}
+
 
 }
 
@@ -123,25 +128,14 @@ Integrator::assembleDisplacement()
 void
 Integrator::assembleExtForces()
 {
-	//just gravity for now
-		for(int i=0;i<n;i++)
+
+	for(int i=0;i<n;i++)
 	{
 		extforces[i * 3] = mesh->nodes[i]->force.x;
 		extforces[i * 3 + 1] = mesh->nodes[i]->force.y;
 		extforces[i * 3 + 2] = mesh->nodes[i]->force.z;
 	}
 
-/*
-	for(int i=0;i<n * 3; i++)
-	//	if(i%3==1)
-	//	{
-	//		extforces[i] += GRAVITY * mesh->nodes[i]->mass;
-	//	}
-	//	else
-		{
-			extforces[i] = 0;
-		}
-		*/
 }
 
 void
@@ -150,7 +144,7 @@ Integrator::assembleA()
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)
 		{
-			A[i][j] = globalMass[i][j] + globalDamping[i][j] * dt + globalStiffness[i][j] * dt * dt;
+			A[i][j] = globalMass[i][j] + globalDamping[i][j] * dt + RKRT[i][j] /*globalStiffness[i][j]*/ * dt * dt;
 			//printf("%lf ",A[i][j]);
 		}
 }
@@ -171,27 +165,99 @@ Integrator::updateNodes()
 void
 Integrator::timeStep()
 {
+	assembleDisplacement();
+	assembleRotations();
+	assembleDampingMat();
+	assembleUndeformForces();
+	assembleA();
 	//Av(t + 1) = b; (3.13)
 	//where
 	//A = (M + tC + t2K); 
 	//b = Mv(t) - dt(Kx(t) + fu - fext)
 	assembleExtForces();
-	assembleDisplacement();
+
+
+	ConjugateGradientSolver solver(n*3,A);
 
 	for(int i=0;i<n*3;i++)
 	{
 		b[i] = 0;
 		for(int j=0;j<n*3;j++)
 		{
-			b[i] += (globalMass[i][j] * v[j] - dt * (globalStiffness[i][j] * (xt[j] - x0[j])));
+			b[i] += globalMass[i][j] * v[j];
 		}
 
-		//b[i] += dt * (fu[i] - extforces[i]);
-		b[i] = dt* extforces[i];
+		for(int j=0;j<n*3;j++)
+		{
+			b[i] += dt * (-RKRT[i][j]* xt[j]);
+		}
+
+	
+		b[i] += dt * (fu[i] + extforces[i]);
 	}
 	
-	solver->solve(v,b);
+	solver.solve(v,b);
 	updateNodes();
+}
+
+void
+Integrator::debug()
+{
+	printf("RKRT\n");
+	for(int i=0;i<n*3;i++)
+	{
+		for(int j=0;j<n*3;j++)
+		{
+			printf("%.2lf ", RKRT[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+
+	printf("Mass\n");
+	for(int i=0;i<n*3;i++)
+	{
+		for(int j=0;j<n*3;j++)
+		{
+			printf("%.2lf ", globalMass[i][j]);
+		}
+		printf("\n");
+	}
+	printf("\n");
+
+	printf("Stiffness\n");
+	for(int i=0;i<n*3;i++)
+	{
+		for(int j=0;j<n*3;j++)
+		{
+			printf("%.2lf ", globalStiffness[i][j]);
+		}
+		printf("\n");
+	}
+
+	printf("A\n");
+	for(int i=0;i<n*3;i++)
+	{
+		for(int j=0;j<n*3;j++)
+		{
+			printf("%.2lf ", A[i][j]);
+		}
+		printf("\n");
+	}
+
+		printf("x\n");
+	for(int i=0;i<n*3;i++)
+		printf("%.2lf ",xt[i]);
+			printf("\n");
+				printf("V\n");
+	for(int i=0;i<n*3;i++)
+		printf("%.2lf ",v[i]);
+			printf("\n");
+
+	printf("b\n");
+	for(int i=0;i<n*3;i++)
+		printf("%.2lf ",b[i]);
+			printf("\n");
 }
 
 Integrator::~Integrator(void)
