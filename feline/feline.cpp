@@ -5,6 +5,7 @@
 /* GLUT callback Handlers */
 static Integrator* inte;
 static Mesh* tet;
+static bool start = false;
 /*
 Node nodelist[] =
 {
@@ -46,14 +47,15 @@ static void
 display(void)
 {
   static int i = 0;
+  if(start == false) return;
   i++;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3d(1,0,0);
 	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(0,0,-5);
-	glRotatef(45,1,1,0);
+    glTranslatef(0,-1,-5);
+	glRotatef(20,1,1,0);
     //glutSolidSphere(3,30,30);
 	//inte->debug();
 	inte->timeStep();
@@ -83,6 +85,9 @@ key(unsigned char key, int x, int y)
         case 'q':
             exit(0);
             break;
+		case ' ':
+			start = true;
+			break;
     }
 
     glutPostRedisplay();
@@ -173,23 +178,22 @@ main(int argc, char *argv[])
 	//conjugate gradient test
 	// works
 	/*
-	double **t = (double**)malloc(sizeof(double*) * 2);
-	t[0] = (double*)malloc(sizeof(double) * 2);
-	t[1] = (double*)malloc(sizeof(double) * 2);
+	double **t = (double**)malloc(sizeof(double*) * 3);
+	t[0] = (double*)malloc(sizeof(double) * 3);
+	t[1] = (double*)malloc(sizeof(double) * 3);
+	t[2] = (double*)malloc(sizeof(double) * 3);
 
-	t[0][0] = 1.0;
-	t[0][1] = 2.0;
+	t[0][0] = 2.0;t[0][1] = 1.0;t[0][2] = -1.0;
+	t[1][0] = -3.0;t[1][1] = -1.0;t[1][2] = 2.0;
+	t[2][0] = -2.0;t[2][1] = 1.0;t[2][2] = 2.0;
 
-	t[1][0] = 2.0;
-	t[1][1] = 1.0;
+	double b[3] = {8,-11,-3};
+	double x[3] = {0,0,0};
 
-	double b[2] = {8,7};
-	double x[2] = {0,0};
-
-	ConjugateGradientSolver cg(2,t);
+	ConjugateGradientSolver cg(3,t);
 	cg.solve(x,b);
 
-	printf("%f %f\n", x[0],x[1]);
+	printf("%f %f %f\n", x[0],x[1],x[2]);
 	*/
 
 	//matrix3d test

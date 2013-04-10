@@ -12,7 +12,6 @@ public:
 	QuickArray<Node*,MAX_NODES> nodes;
 	double **globalStiffness, **globalMass;
 
-
 	int getNoOfElements(){return elements.size();}
 	int getNoOfNodes(){return numnodes;}
 	

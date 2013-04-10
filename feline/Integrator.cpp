@@ -6,7 +6,7 @@ Integrator::Integrator(Mesh* _mesh)
 	mesh = _mesh;
 	n = mesh->getNoOfNodes();
 	//K is constant -> linear FEM. nonlinear FEM later.
-	globalStiffness = mesh->assembleGlobalStiffness();
+	//globalStiffness = mesh->assembleGlobalStiffness();
 	//NON-LINEAR TIME!!!
 	globalMass = mesh->assembleGlobalMass();
 
