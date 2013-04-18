@@ -3,6 +3,7 @@
 #include "ConjugateGradientSolver.h"
 #include "PolarDecompose.h"
 
+
 class Integrator
 {
 	Mesh* mesh;
@@ -11,9 +12,10 @@ class Integrator
 	double **globalStiffness, ** globalMass, **globalDamping, **RK, **RKRT, **A;	
 	double *extforces, *intforces, *x0, *xt, *fu, *b, *v;
 	//ConjugateGradientSolver* solver;
+	ConstrainedRows* rowSet;
 
 public:
-	Integrator(Mesh* _mesh);
+	Integrator(Mesh* _mesh, ConstrainedRows* r=0);
 	void assembleExtForces();
 	void assembleDampingMat();
 	void assembleDisplacement();

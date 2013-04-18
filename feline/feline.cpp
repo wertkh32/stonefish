@@ -5,7 +5,7 @@
 /* GLUT callback Handlers */
 static Integrator* inte;
 static Mesh* tet;
-static bool start = false;
+static int iter = 10;
 /*
 Node nodelist[] =
 {
@@ -20,14 +20,25 @@ Node nodelist[] =
 Node nodelist[] =
 {
 	Node(vector3<double>(0,0,0),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(0,0,1),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(0,1,0),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(0,1,1),vector3<double>(),vector3<double>(0,0,0),100),
+
 	Node(vector3<double>(1,0,0),vector3<double>(),vector3<double>(0,0,0),100),
 	Node(vector3<double>(1,0,1),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(0,0,1),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(0,1,0),vector3<double>(),vector3<double>(0,10,0),100),
-	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(0,10,0),100),
-	Node(vector3<double>(1,1,1),vector3<double>(),vector3<double>(0,10,0),100),
-	Node(vector3<double>(0,1,1),vector3<double>(),vector3<double>(0,10,0),100),
-};
+	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(1,1,1),vector3<double>(),vector3<double>(0,0,0),100),
+
+	Node(vector3<double>(2,0,0),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(2,0,1),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(2,1,0),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(2,1,1),vector3<double>(),vector3<double>(0,0,0),100),
+
+	Node(vector3<double>(3,0,0),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(3,0,1),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(3,1,0),vector3<double>(),vector3<double>(0,0,0),100),
+	Node(vector3<double>(3,1,1),vector3<double>(),vector3<double>(0,0,0),100),
+}; 
 
 static void 
 resize(int width, int height)
@@ -46,28 +57,33 @@ resize(int width, int height)
 static void 
 display(void)
 {
-  static int i = 0;
-  if(start == false) return;
-  i++;
+
+  iter++;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3d(1,0,0);
 	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(0,-1,-5);
+    glTranslatef(-3,-1,-10);
 	glRotatef(20,1,1,0);
     //glutSolidSphere(3,30,30);
 	//inte->debug();
-	inte->timeStep();
+
 	//inte->debug();
-	
+	inte->timeStep();
+
 	for(int i=0;i<tet->getNoOfElements();i++)
 		tet->elements[i]->renderElement();
 
-	if(i>10)
+	if(iter>=10)
 	{
 		for(int i=0;i<8;i++)
 		tet->nodes[i]->force = vector3<double>();
+	}
+	else
+	{
+		for(int i=0;i<8;i++)
+		tet->nodes[i]->force = vector3<double>(-50,50,0);
 	}
 
 	glPopMatrix();
@@ -86,8 +102,9 @@ key(unsigned char key, int x, int y)
             exit(0);
             break;
 		case ' ':
-			start = true;
+			iter = 0;
 			break;
+
     }
 
     glutPostRedisplay();
@@ -146,6 +163,31 @@ void timer(int fps) {
 
 /* Program entry point */
 
+void makelever(Mesh** m, int n)
+{
+	Node* list = (Node*)malloc(sizeof(Node) * 4 * (n+1));
+	for(int i=0;i<n+1;i++)
+	{
+		list[i*4 + 0] = Node(vector3<double>(i,0,0),vector3<double>(),vector3<double>(0,0,0),100);
+		list[i*4 + 1] = Node(vector3<double>(i,0,1),vector3<double>(),vector3<double>(0,0,0),100);
+		list[i*4 + 2] = Node(vector3<double>(i,1,0),vector3<double>(),vector3<double>(0,0,0),100);
+		list[i*4 + 3] = Node(vector3<double>(i,1,1),vector3<double>(),vector3<double>(0,0,0),100);
+	}
+
+	*m = new Mesh(list, 4 * (n+1));
+
+	for(int i=0;i<n;i++)
+	{
+		int next = i * 4;
+			(*m)->addElement(1 + next,0 + next,4 + next,2 + next,50,0.1,100);
+			(*m)->addElement(1 + next,5 + next,4 + next,7 + next,50,0.1,100);
+			(*m)->addElement(2 + next,3 + next,7 + next,1 + next,50,0.1,100);
+			(*m)->addElement(2 + next,6 + next,7 + next,4 + next,50,0.1,100);
+			(*m)->addElement(1 + next,2 + next,7 + next,4 + next,50,0.1,100);
+	}
+}
+
+
 int 
 main(int argc, char *argv[])
 {
@@ -161,19 +203,16 @@ main(int argc, char *argv[])
     glutKeyboardFunc(key);
     glutTimerFunc(1000./FPS, timer, FPS);
 
-	//order of the nodes matter D:
-	//tet = new Mesh(nodelist,4);
-	//tet->addElement(0,1,2,3,0.1,0.45,600);
-	
-	tet = new Mesh(nodelist,8);
-	tet->addElement(0,5,7,2,1,0.2,600);
-	tet->addElement(1,3,4,6,1,0.2,600);
-	tet->addElement(0,4,5,7,1,0.2,600);
-	tet->addElement(5,7,6,2,1,0.2,600);
-	tet->addElement(0,7,2,3,1,0.2,600);
-	tet->addElement(0,5,2,1,1,0.2,600);
-	
-	inte = new Integrator(tet);
+
+	makelever(&tet,10);
+
+	ConstrainedRows rows;
+	rows.add(40);
+	rows.add(41);
+	rows.add(42);
+	rows.add(43);
+
+	inte = new Integrator(tet, &rows);
 	
 	//conjugate gradient test
 	// works

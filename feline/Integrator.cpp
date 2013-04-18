@@ -1,10 +1,12 @@
 ﻿#include "Integrator.h"
 
 
-Integrator::Integrator(Mesh* _mesh)
+Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 {
+	rowSet = r;
 	mesh = _mesh;
 	n = mesh->getNoOfNodes();
+
 	//K is constant -> linear FEM. nonlinear FEM later.
 	//globalStiffness = mesh->assembleGlobalStiffness();
 	//NON-LINEAR TIME!!!
@@ -68,7 +70,7 @@ void
 Integrator::assembleDampingMat()
 {
 	//damping mat. constant values for now
-	double alpha = 0.0, beta = 0.8;
+	double alpha = 0.1, beta = 0.3;
 
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)
@@ -196,7 +198,14 @@ Integrator::timeStep()
 		b[i] += dt * (fu[i] + extforces[i]);
 	}
 	
-	solver.solve(v,b);
+	if(rowSet)
+	{
+		solver.solveWithConstraints(v,b,rowSet);
+	}
+	else
+	{
+		solver.solve(v,b);
+	}
 	updateNodes();
 }
 
