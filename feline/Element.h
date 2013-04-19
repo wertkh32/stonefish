@@ -28,7 +28,11 @@ class Element
 public:
 	Element(Node* n1, Node* n2, Node* n3, Node* n4, double _E, double _v, double _density);
 	Matrix3d computeDeformationMat();
+	Matrix3d computeDeformShapeMat();
 
+	Matrix3d& getUndeformShapeMat(){return undeformShapeMat;}
+	Matrix3d& getUndeformShapeMatInv(){return undeformShapeMatInv;}
+	Node** getNodes(){return nodes;}
 	//computeundeformstiffnessmat B^T * c * B where B = LN
 	//computestiffnessmat dfe/dx |x = x*
 

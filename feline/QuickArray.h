@@ -9,8 +9,8 @@ public:
 
 	QuickArray()
 	{
-		for(int i=0;i<N;i++)
-			varr[i]=0;
+		//for(int i=0;i<N;i++)
+		//	varr[i]=0;
 		sz=0;
 	}
 

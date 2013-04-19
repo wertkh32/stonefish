@@ -121,6 +121,15 @@ Matrix3d Element::computeDeformationMat()
 	return deformShapeMat * undeformShapeMatInv;
 }
 
+Matrix3d Element::computeDeformShapeMat()
+{
+	Matrix3d deformShapeMat 
+				   (nodes[0]->pos_t.x - nodes[3]->pos_t.x,nodes[1]->pos_t.x - nodes[3]->pos_t.x,nodes[2]->pos_t.x - nodes[3]->pos_t.x,
+					nodes[0]->pos_t.y - nodes[3]->pos_t.y,nodes[1]->pos_t.y - nodes[3]->pos_t.y,nodes[2]->pos_t.y - nodes[3]->pos_t.y,
+					nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
+	return deformShapeMat;
+}
+
 void Element::getRKRTandRK(GenMatrix<double,12,12>& RK, GenMatrix<double,12,12>& RKRT)
 {
 	Matrix3d F,R,S;

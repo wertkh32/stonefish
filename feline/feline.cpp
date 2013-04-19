@@ -1,11 +1,13 @@
 #include "includes.h"
 #include "Integrator.h"
 #include "PolarDecompose.h"
+#include "Model.h"
 
 /* GLUT callback Handlers */
 static Integrator* inte;
 static Mesh* tet;
 static int iter = 10;
+Model * mod;
 /*
 Node nodelist[] =
 {
@@ -16,29 +18,6 @@ Node nodelist[] =
 	//Node(vector3<double>(1,-1,0),vector3<double>(),vector3<double>(),10)
 };
 */
-
-Node nodelist[] =
-{
-	Node(vector3<double>(0,0,0),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(0,0,1),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(0,1,0),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(0,1,1),vector3<double>(),vector3<double>(0,0,0),100),
-
-	Node(vector3<double>(1,0,0),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(1,0,1),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(1,1,1),vector3<double>(),vector3<double>(0,0,0),100),
-
-	Node(vector3<double>(2,0,0),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(2,0,1),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(2,1,0),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(2,1,1),vector3<double>(),vector3<double>(0,0,0),100),
-
-	Node(vector3<double>(3,0,0),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(3,0,1),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(3,1,0),vector3<double>(),vector3<double>(0,0,0),100),
-	Node(vector3<double>(3,1,1),vector3<double>(),vector3<double>(0,0,0),100),
-}; 
 
 static void 
 resize(int width, int height)
@@ -57,18 +36,18 @@ resize(int width, int height)
 static void 
 display(void)
 {
-
+static float rot = 0.0;
+//rot += 0.3;
   iter++;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glColor3d(1,0,0);
-	glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(-3,-1,-10);
-	glRotatef(20,1,1,0);
+    glTranslatef(0,-1,-5);
+	glRotatef(20 + rot,1,1,0);
     //glutSolidSphere(3,30,30);
 	//inte->debug();
-
 	//inte->debug();
 	inte->timeStep();
 
@@ -77,14 +56,16 @@ display(void)
 
 	if(iter>=10)
 	{
-		for(int i=0;i<8;i++)
+		for(int i=2;i<8;i++)
 		tet->nodes[i]->force = vector3<double>();
 	}
 	else
 	{
-		for(int i=0;i<8;i++)
-		tet->nodes[i]->force = vector3<double>(-50,50,0);
+		for(int i=2;i<8;i++)
+		tet->nodes[i]->force = vector3<double>(0,100,0);
 	}
+	mod->interpolateVerts();
+	mod->render();
 
 	glPopMatrix();
 
@@ -120,7 +101,7 @@ void init_light(){
      const GLfloat light_ambient[]  = { 0.0f, 0.0f, 0.0f, 1.0f };
      const GLfloat light_diffuse[]  = { 1.0f, 1.0f, 1.0f, 1.0f };
      const GLfloat light_specular[] = { 1.0f, 1.0f, 1.0f, 1.0f };
-     const GLfloat light_position[] = { 2.0f, 5.0f, 5.0f, 0.0f };
+     const GLfloat light_position[] = { -2.0f, 10.0f, 5.0f, 0.0f };
 
      glEnable(GL_NORMALIZE);
      glEnable(GL_LIGHTING);
@@ -148,8 +129,10 @@ void init_material(){
 
 void init_general(){
     glClearColor(1,1,1,1);
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
+    //glEnable(GL_CULL_FACE);
+    //glCullFace(GL_BACK);
+	//glFrontFace(GL_CCW);
+
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LESS);     
@@ -179,11 +162,53 @@ void makelever(Mesh** m, int n)
 	for(int i=0;i<n;i++)
 	{
 		int next = i * 4;
-			(*m)->addElement(1 + next,0 + next,4 + next,2 + next,50,0.1,100);
-			(*m)->addElement(1 + next,5 + next,4 + next,7 + next,50,0.1,100);
-			(*m)->addElement(2 + next,3 + next,7 + next,1 + next,50,0.1,100);
-			(*m)->addElement(2 + next,6 + next,7 + next,4 + next,50,0.1,100);
-			(*m)->addElement(1 + next,2 + next,7 + next,4 + next,50,0.1,100);
+			(*m)->addElement(1 + next,0 + next,4 + next,2 + next,50,0.05,100);
+			(*m)->addElement(1 + next,5 + next,4 + next,7 + next,50,0.05,100);
+			(*m)->addElement(2 + next,3 + next,7 + next,1 + next,50,0.05,100);
+			(*m)->addElement(2 + next,6 + next,7 + next,4 + next,50,0.05,100);
+			(*m)->addElement(1 + next,2 + next,7 + next,4 + next,50,0.05,100);
+	}
+}
+
+void makebox(Mesh** m)
+{
+	makelever(m, 1);
+}
+
+void sphereFunc(vertArray* v,	edgeArray* e,	faceArray* f)
+{
+	double r = 0.499;
+	int n = 8;
+	double tx = 0.5, ty = 0.5, tz = 0.5; 
+	for(int i=0;i<n;i++)
+		for(int j=0;j<2*n;j++)
+		{
+
+                vector3<double> v1 = vector3<double>(r*sin(i*M_PI/n)*cos(j*M_PI/n) + tx,              r*cos(i*M_PI/n)*cos(j*M_PI/n) + ty,       r*sin(j*M_PI/n) + tz);
+
+                vector3<double> v2 = vector3<double>(r*sin((i+1)*M_PI/n)*cos(j*M_PI/n) + tx,          r*cos((i+1)*M_PI/n)*cos(j*M_PI/n) + ty,    r*sin(j*M_PI/n) + tz);
+
+                vector3<double> v3 = vector3<double>(r*sin((i+1)*M_PI/n)*cos((j+1)*M_PI/n) + tx,      r*cos((i+1)*M_PI/n)*cos((j+1)*M_PI/n) + ty,    r*sin((j+1)*M_PI/n) + tz);
+
+                vector3<double> v4 = vector3<double>(r*sin(i*M_PI/n)*cos((j+1)*M_PI/n)+ tx,           r*cos(i*M_PI/n)*cos((j+1)*M_PI/n) + ty,       r*sin((j+1)*M_PI/n) + tz);
+
+				vertex vv1 = {v1,v1};
+				vertex vv2 = {v2,v2};
+				vertex vv3 = {v3,v3};
+				vertex vv4 = {v4,v4};
+
+				v->push(vv1);
+				v->push(vv2);
+				v->push(vv3);
+				v->push(vv4);
+		}
+
+	for(int i=0;i<v->size();i+=4)
+	{
+		face f1 = {&((*v)[i]),&((*v)[i+1]),&((*v)[i+2]),&((*v)[i+3])};
+		//face f2 = {&((*v)[i+1]),&((*v)[i+2]),&((*v)[i+3])};
+		f->push(f1);
+		//f->push(f2);
 	}
 }
 
@@ -203,15 +228,22 @@ main(int argc, char *argv[])
     glutKeyboardFunc(key);
     glutTimerFunc(1000./FPS, timer, FPS);
 
+	mod = new Model(sphereFunc,makebox);
 
-	makelever(&tet,10);
+	//makelever(&tet,10);
 
 	ConstrainedRows rows;
-	rows.add(40);
-	rows.add(41);
-	rows.add(42);
-	rows.add(43);
 
+	rows.add(0);
+	rows.add(1);
+	rows.add(4);
+	rows.add(5);
+
+	//rows.add(40);
+	//rows.add(41);
+	//rows.add(42);
+	//rows.add(43);
+	tet = mod->mesh;
 	inte = new Integrator(tet, &rows);
 	
 	//conjugate gradient test
