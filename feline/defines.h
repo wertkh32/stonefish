@@ -5,7 +5,7 @@
 #define TO_RAD(a) ((a)*(M_PI/180.))
 #define INF 10000000
 
-#define MAX_ELEMENTS 100
+#define MAX_ELEMENTS 500
 #define MAX_NODES 100
 #define FPS 60
 #define GRAVITY 9.81

@@ -52,24 +52,42 @@ Model::render()
 {
 	glDisable(GL_CULL_FACE);
 	glPushMatrix();
-	glBegin(GL_QUADS);
-
 	for(int i=0;i<faces.size();i++)
 	{
-		glNormal3dv( (*(faces[i].verts))[0].norm.coords );
-		glVertex3dv( (*(faces[i].verts))[0].coords.coords );
+		if(faces[i].type == QUAD)
+		{
+			glBegin(GL_QUADS);
 
-		glNormal3dv( (*(faces[i].verts))[1].norm.coords );
-		glVertex3dv( (*(faces[i].verts))[1].coords.coords );
+			glNormal3dv( verts[faces[i].vindex[0]].norm.coords );
+			glVertex3dv( verts[faces[i].vindex[0]].coords.coords );
 
-		glNormal3dv( (*(faces[i].verts))[2].norm.coords );
-		glVertex3dv( (*(faces[i].verts))[2].coords.coords );
+			glNormal3dv( verts[faces[i].vindex[1]].norm.coords );
+			glVertex3dv( verts[faces[i].vindex[1]].coords.coords );
 
-		glNormal3dv( (*(faces[i].verts))[3].norm.coords );
-		glVertex3dv( (*(faces[i].verts))[3].coords.coords );
+			glNormal3dv( verts[faces[i].vindex[2]].norm.coords );
+			glVertex3dv( verts[faces[i].vindex[2]].coords.coords );
+
+			glNormal3dv( verts[faces[i].vindex[3]].norm.coords );
+			glVertex3dv( verts[faces[i].vindex[3]].coords.coords );
+	
+			glEnd();
+		}
+		else if(faces[i].type == TRIANGLE)
+		{
+			glBegin(GL_TRIANGLES);
+
+			glNormal3dv( verts[faces[i].vindex[0]].norm.coords );
+			glVertex3dv( verts[faces[i].vindex[0]].coords.coords );
+
+			glNormal3dv( verts[faces[i].vindex[1]].norm.coords );
+			glVertex3dv( verts[faces[i].vindex[1]].coords.coords );
+
+			glNormal3dv( verts[faces[i].vindex[2]].norm.coords );
+			glVertex3dv( verts[faces[i].vindex[2]].coords.coords );
+	
+			glEnd();
+		}
 	}
-
-	glEnd();
 	glPopMatrix();
 	glEnable(GL_CULL_FACE);
 }

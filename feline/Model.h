@@ -4,10 +4,15 @@
 #include "Mesh.h"
 #include "QuickArray.h"
 
-#define MAX_GEO 1000
+#define MAX_GEO 3000
 //assume all faces are triangles.
 //each vertex incident with 3 other vertices.
 //just vertices and faces for now
+
+enum FACE_TYPE
+{
+	TRIANGLE=0, QUAD=1
+};
 
 struct edge;
 struct vertex;
@@ -30,7 +35,8 @@ struct vertex
 
 struct face
 {
-	vertex* verts[4];
+	FACE_TYPE type;
+	int vindex[4];
 	//edge* edges[3];
 };
 

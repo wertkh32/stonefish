@@ -2,6 +2,8 @@
 #include "Integrator.h"
 #include "PolarDecompose.h"
 #include "Model.h"
+#include "MeshFunctions.h"
+#include "ModelFunctions.h"
 
 /* GLUT callback Handlers */
 static Integrator* inte;
@@ -44,7 +46,7 @@ static float rot = 0.0;
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(0,-1,-5);
+    glTranslatef(0,-1,-10);
 	glRotatef(20 + rot,1,1,0);
     //glutSolidSphere(3,30,30);
 	//inte->debug();
@@ -56,13 +58,17 @@ static float rot = 0.0;
 
 	if(iter>=10)
 	{
-		for(int i=2;i<8;i++)
+		for(int i=0;i<4;i++)
 		tet->nodes[i]->force = vector3<double>();
+		//for(int i=28;i<32;i++)
+		//tet->nodes[i]->force = vector3<double>();
 	}
 	else
 	{
-		for(int i=2;i<8;i++)
-		tet->nodes[i]->force = vector3<double>(0,100,0);
+		for(int i=0;i<4;i++)
+		tet->nodes[i]->force = vector3<double>(0,40,0);
+		//for(int i=28;i<32;i++)
+		//tet->nodes[i]->force = vector3<double>(0,40,0);
 	}
 	mod->interpolateVerts();
 	mod->render();
@@ -146,72 +152,15 @@ void timer(int fps) {
 
 /* Program entry point */
 
-void makelever(Mesh** m, int n)
-{
-	Node* list = (Node*)malloc(sizeof(Node) * 4 * (n+1));
-	for(int i=0;i<n+1;i++)
-	{
-		list[i*4 + 0] = Node(vector3<double>(i,0,0),vector3<double>(),vector3<double>(0,0,0),100);
-		list[i*4 + 1] = Node(vector3<double>(i,0,1),vector3<double>(),vector3<double>(0,0,0),100);
-		list[i*4 + 2] = Node(vector3<double>(i,1,0),vector3<double>(),vector3<double>(0,0,0),100);
-		list[i*4 + 3] = Node(vector3<double>(i,1,1),vector3<double>(),vector3<double>(0,0,0),100);
-	}
-
-	*m = new Mesh(list, 4 * (n+1));
-
-	for(int i=0;i<n;i++)
-	{
-		int next = i * 4;
-			(*m)->addElement(1 + next,0 + next,4 + next,2 + next,50,0.05,100);
-			(*m)->addElement(1 + next,5 + next,4 + next,7 + next,50,0.05,100);
-			(*m)->addElement(2 + next,3 + next,7 + next,1 + next,50,0.05,100);
-			(*m)->addElement(2 + next,6 + next,7 + next,4 + next,50,0.05,100);
-			(*m)->addElement(1 + next,2 + next,7 + next,4 + next,50,0.05,100);
-	}
-}
-
 void makebox(Mesh** m)
 {
-	makelever(m, 1);
+	MeshFunctions::makeLever(m, 1);
 }
 
-void sphereFunc(vertArray* v,	edgeArray* e,	faceArray* f)
+void makerod(Mesh** m)
 {
-	double r = 0.499;
-	int n = 8;
-	double tx = 0.5, ty = 0.5, tz = 0.5; 
-	for(int i=0;i<n;i++)
-		for(int j=0;j<2*n;j++)
-		{
-
-                vector3<double> v1 = vector3<double>(r*sin(i*M_PI/n)*cos(j*M_PI/n) + tx,              r*cos(i*M_PI/n)*cos(j*M_PI/n) + ty,       r*sin(j*M_PI/n) + tz);
-
-                vector3<double> v2 = vector3<double>(r*sin((i+1)*M_PI/n)*cos(j*M_PI/n) + tx,          r*cos((i+1)*M_PI/n)*cos(j*M_PI/n) + ty,    r*sin(j*M_PI/n) + tz);
-
-                vector3<double> v3 = vector3<double>(r*sin((i+1)*M_PI/n)*cos((j+1)*M_PI/n) + tx,      r*cos((i+1)*M_PI/n)*cos((j+1)*M_PI/n) + ty,    r*sin((j+1)*M_PI/n) + tz);
-
-                vector3<double> v4 = vector3<double>(r*sin(i*M_PI/n)*cos((j+1)*M_PI/n)+ tx,           r*cos(i*M_PI/n)*cos((j+1)*M_PI/n) + ty,       r*sin((j+1)*M_PI/n) + tz);
-
-				vertex vv1 = {v1,v1};
-				vertex vv2 = {v2,v2};
-				vertex vv3 = {v3,v3};
-				vertex vv4 = {v4,v4};
-
-				v->push(vv1);
-				v->push(vv2);
-				v->push(vv3);
-				v->push(vv4);
-		}
-
-	for(int i=0;i<v->size();i+=4)
-	{
-		face f1 = {&((*v)[i]),&((*v)[i+1]),&((*v)[i+2]),&((*v)[i+3])};
-		//face f2 = {&((*v)[i+1]),&((*v)[i+2]),&((*v)[i+3])};
-		f->push(f1);
-		//f->push(f2);
-	}
+	MeshFunctions::makeLever(m, 5);
 }
-
 
 int 
 main(int argc, char *argv[])
@@ -228,23 +177,30 @@ main(int argc, char *argv[])
     glutKeyboardFunc(key);
     glutTimerFunc(1000./FPS, timer, FPS);
 
-	mod = new Model(sphereFunc,makebox);
-
+	mod = new Model(ModelFunctions::rodFunc,makerod);
+	//mod = new Model(sphereFunc,makebox);
 	//makelever(&tet,10);
 
 	ConstrainedRows rows;
 
-	rows.add(0);
-	rows.add(1);
-	rows.add(4);
-	rows.add(5);
+	//rows.add(0);
+	//rows.add(1);
+	//rows.add(2);
+	//rows.add(3);
+	//rows.add(16);
+	//rows.add(17);
+	//rows.add(18);
+	//rows.add(19);
 
-	//rows.add(40);
-	//rows.add(41);
-	//rows.add(42);
-	//rows.add(43);
+	rows.add(20);
+	rows.add(21);
+	rows.add(22);
+	rows.add(23);
+	
 	tet = mod->mesh;
-	inte = new Integrator(tet, &rows);
+
+	//MeshFunctions::makeSheet(&tet,3,3);
+	inte = new Integrator(tet,&rows);
 	
 	//conjugate gradient test
 	// works
