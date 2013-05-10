@@ -6,7 +6,6 @@ ConjugateGradientSolver::ConjugateGradientSolver(int _n, double** _A)
 	n = _n;
 	A = _A;
 	r = (double*)malloc(sizeof(double) * n); 
-	x = (double*)malloc(sizeof(double) * n); 
 	d = (double*)malloc(sizeof(double) * n); 
 	q = (double*)malloc(sizeof(double) * n); 
 }
@@ -215,4 +214,7 @@ void ConjugateGradientSolver::solveWithConstraints(double* x, double* b, Constra
 
 ConjugateGradientSolver::~ConjugateGradientSolver(void)
 {
+	free(r); 
+	free(d); 
+	free(q); 
 }
