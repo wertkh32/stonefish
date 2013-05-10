@@ -70,7 +70,7 @@ void
 Integrator::assembleDampingMat()
 {
 	//damping mat. constant values for now
-	double alpha = 0.1, beta = 0.5;
+	double alpha = 0.1, beta = 0.3;
 
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)

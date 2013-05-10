@@ -46,7 +46,7 @@ static float rot = 0.0;
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(0,-1,-10);
+    glTranslatef(-3,-1,-10);
 	glRotatef(20 + rot,1,1,0);
     //glutSolidSphere(3,30,30);
 	//inte->debug();
@@ -58,20 +58,20 @@ static float rot = 0.0;
 
 	if(iter>=10)
 	{
-		for(int i=0;i<4;i++)
+		for(int i=67;i<72;i++)
 		tet->nodes[i]->force = vector3<double>();
-		//for(int i=28;i<32;i++)
+		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<double>();
 	}
 	else
 	{
-		for(int i=0;i<4;i++)
-		tet->nodes[i]->force = vector3<double>(0,40,0);
-		//for(int i=28;i<32;i++)
+		for(int i=67;i<72;i++)
+		tet->nodes[i]->force = vector3<double>(0,100,0);
+		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<double>(0,40,0);
 	}
-	mod->interpolateVerts();
-	mod->render();
+	//mod->interpolateVerts();
+	//mod->render();
 
 	glPopMatrix();
 
@@ -177,11 +177,16 @@ main(int argc, char *argv[])
     glutKeyboardFunc(key);
     glutTimerFunc(1000./FPS, timer, FPS);
 
-	mod = new Model(ModelFunctions::rodFunc,makerod);
-	//mod = new Model(sphereFunc,makebox);
+	//mod = new Model(ModelFunctions::rodFunc,makerod);
+	//mod = new Model(ModelFunctions::sphereFunc,makebox);
 	//makelever(&tet,10);
 
 	ConstrainedRows rows;
+
+	//rows.add(0);
+	//rows.add(1);
+	//rows.add(4);
+	//rows.add(5);
 
 	//rows.add(0);
 	//rows.add(1);
@@ -192,14 +197,33 @@ main(int argc, char *argv[])
 	//rows.add(18);
 	//rows.add(19);
 
-	rows.add(20);
-	rows.add(21);
-	rows.add(22);
-	rows.add(23);
+	//rows.add(20);
+	//rows.add(21);
+	//rows.add(22);
+	//rows.add(23);
 	
-	tet = mod->mesh;
+	//tet = mod->mesh;
 
-	//MeshFunctions::makeSheet(&tet,3,3);
+	//sheet//
+	rows.add(0);
+	rows.add(1);
+	rows.add(2);
+	rows.add(3);
+	rows.add(4);
+	rows.add(5);
+
+	rows.add(36);
+	rows.add(37);
+	rows.add(38);
+	rows.add(39);
+	rows.add(40);
+	rows.add(41);
+
+
+	MeshFunctions::makeSheet(&tet,5,5);
+	//sheet//
+
+
 	inte = new Integrator(tet,&rows);
 	
 	//conjugate gradient test
