@@ -2,20 +2,20 @@
 
 void ModelFunctions::sphereFunc(vertArray* v,	edgeArray* e,	faceArray* f)
 {
-	double r = 0.499;
+	float r = 0.499;
 	int n = 8;
-	double tx = 0.5, ty = 0.5, tz = 0.5; 
+	float tx = 0.5, ty = 0.5, tz = 0.5; 
 	for(int i=0;i<n;i++)
 		for(int j=0;j<2*n;j++)
 		{
 
-                vector3<double> v1 = vector3<double>(r*sin(i*M_PI/n)*cos(j*M_PI/n) + tx,              r*cos(i*M_PI/n)*cos(j*M_PI/n) + ty,       r*sin(j*M_PI/n) + tz);
+                vector3<float> v1 = vector3<float>(r*sin(i*M_PI/n)*cos(j*M_PI/n) + tx,              r*cos(i*M_PI/n)*cos(j*M_PI/n) + ty,       r*sin(j*M_PI/n) + tz);
 
-                vector3<double> v2 = vector3<double>(r*sin((i+1)*M_PI/n)*cos(j*M_PI/n) + tx,          r*cos((i+1)*M_PI/n)*cos(j*M_PI/n) + ty,    r*sin(j*M_PI/n) + tz);
+                vector3<float> v2 = vector3<float>(r*sin((i+1)*M_PI/n)*cos(j*M_PI/n) + tx,          r*cos((i+1)*M_PI/n)*cos(j*M_PI/n) + ty,    r*sin(j*M_PI/n) + tz);
 
-                vector3<double> v3 = vector3<double>(r*sin((i+1)*M_PI/n)*cos((j+1)*M_PI/n) + tx,      r*cos((i+1)*M_PI/n)*cos((j+1)*M_PI/n) + ty,    r*sin((j+1)*M_PI/n) + tz);
+                vector3<float> v3 = vector3<float>(r*sin((i+1)*M_PI/n)*cos((j+1)*M_PI/n) + tx,      r*cos((i+1)*M_PI/n)*cos((j+1)*M_PI/n) + ty,    r*sin((j+1)*M_PI/n) + tz);
 
-                vector3<double> v4 = vector3<double>(r*sin(i*M_PI/n)*cos((j+1)*M_PI/n)+ tx,           r*cos(i*M_PI/n)*cos((j+1)*M_PI/n) + ty,       r*sin((j+1)*M_PI/n) + tz);
+                vector3<float> v4 = vector3<float>(r*sin(i*M_PI/n)*cos((j+1)*M_PI/n)+ tx,           r*cos(i*M_PI/n)*cos((j+1)*M_PI/n) + ty,       r*sin((j+1)*M_PI/n) + tz);
 
 				vertex vv1 = {v1,v1};
 				vertex vv2 = {v2,v2};
@@ -40,19 +40,19 @@ void ModelFunctions::rodFunc(vertArray* v,	edgeArray* e,	faceArray* f)
 {
 	int len = 5;
 	int len_quad_no = len * 3;
-	double quad_len = (double)len/(double)len_quad_no;
-	double EPS = 0.01;
-	double r = 0.499;
+	float quad_len = (float)len/(float)len_quad_no;
+	float EPS = 0.01;
+	float r = 0.499;
 	int n = 10;
 
 	for(int i=0;i<n;i++)
 	{
-		double angle = ((M_PI * 2.0)/n) * i;
-		double next_angle = ((M_PI * 2.0)/n) * (i+1);
-		vector3<double> v1 = vector3<double>(EPS,0.5,0.5);
-		vector3<double> v2 = vector3<double>(EPS,0.5 + r * cos(angle),0.5 + r * sin(angle));
-		vector3<double> v3 = vector3<double>(EPS,0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
-		vector3<double> norm = vector3<double>(-1,0,0);
+		float angle = ((M_PI * 2.0)/n) * i;
+		float next_angle = ((M_PI * 2.0)/n) * (i+1);
+		vector3<float> v1 = vector3<float>(EPS,0.5,0.5);
+		vector3<float> v2 = vector3<float>(EPS,0.5 + r * cos(angle),0.5 + r * sin(angle));
+		vector3<float> v3 = vector3<float>(EPS,0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
+		vector3<float> norm = vector3<float>(-1,0,0);
 		vertex vv1 = {v1,norm};
 		vertex vv2 = {v2,norm};
 		vertex vv3 = {v3,norm};
@@ -65,12 +65,12 @@ void ModelFunctions::rodFunc(vertArray* v,	edgeArray* e,	faceArray* f)
 
 	for(int i=0;i<n;i++)
 	{
-		double angle = ((M_PI * 2.0)/n) * i;
-		double next_angle = ((M_PI * 2.0)/n) * (i+1);
-		vector3<double> v1 = vector3<double>(len-EPS,0.5,0.5);
-		vector3<double> v2 = vector3<double>(len-EPS,0.5 + r * cos(angle),0.5 + r * sin(angle));
-		vector3<double> v3 = vector3<double>(len-EPS,0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
-		vector3<double> norm = vector3<double>(1,0,0);
+		float angle = ((M_PI * 2.0)/n) * i;
+		float next_angle = ((M_PI * 2.0)/n) * (i+1);
+		vector3<float> v1 = vector3<float>(len-EPS,0.5,0.5);
+		vector3<float> v2 = vector3<float>(len-EPS,0.5 + r * cos(angle),0.5 + r * sin(angle));
+		vector3<float> v3 = vector3<float>(len-EPS,0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
+		vector3<float> norm = vector3<float>(1,0,0);
 		vertex vv1 = {v1,norm};
 		vertex vv2 = {v2,norm};
 		vertex vv3 = {v3,norm};
@@ -91,16 +91,16 @@ void ModelFunctions::rodFunc(vertArray* v,	edgeArray* e,	faceArray* f)
 	{
 		for(int j=0;j<n;j++)
 		{
-			double angle = ((M_PI * 2.0)/n) * j;
-			double next_angle = ((M_PI * 2.0)/n) * (j+1);
+			float angle = ((M_PI * 2.0)/n) * j;
+			float next_angle = ((M_PI * 2.0)/n) * (j+1);
 
-			vector3<double> norm = vector3<double>(0,0.5 + r * cos(angle),0.5 + r * sin(angle));
-			vector3<double> next_norm = vector3<double>(0,0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
+			vector3<float> norm = vector3<float>(0,0.5 + r * cos(angle),0.5 + r * sin(angle));
+			vector3<float> next_norm = vector3<float>(0,0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
 
-			vector3<double> v1 = vector3<double>(EPS + quad_len * i,0.5 + r * cos(angle),0.5 + r * sin(angle));
-			vector3<double> v2 = vector3<double>(EPS + quad_len * i,0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
-			vector3<double> v3 = vector3<double>(EPS + quad_len * (i+1),0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
-			vector3<double> v4 = vector3<double>(EPS + quad_len * (i+1),0.5 + r * cos(angle),0.5 + r * sin(angle));
+			vector3<float> v1 = vector3<float>(EPS + quad_len * i,0.5 + r * cos(angle),0.5 + r * sin(angle));
+			vector3<float> v2 = vector3<float>(EPS + quad_len * i,0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
+			vector3<float> v3 = vector3<float>(EPS + quad_len * (i+1),0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
+			vector3<float> v4 = vector3<float>(EPS + quad_len * (i+1),0.5 + r * cos(angle),0.5 + r * sin(angle));
 
 			vertex vv1 = {v1,norm};
 			vertex vv2 = {v2,next_norm};

@@ -38,18 +38,19 @@ struct ConstrainedRows
 //use pure arrays
 class ConjugateGradientSolver
 {
-	double *r, *x, *d, *q;
-	double** A;
+	float *r, *x, *d, *q;
+	//float *flatA;
+	float** A;
 	int n;
 public:
-	ConjugateGradientSolver(int _n, double** A);
+	ConjugateGradientSolver(int _n, float** A);
 	~ConjugateGradientSolver(void);
-	void solve(double* x, double* b);
-	void solveWithConstraints(double* x, double* b, ConstrainedRows* rowSet);
+	void solve(float* x, float* b);
+	void solveWithConstraints(float* x, float* b, ConstrainedRows* rowSet);
 
-	double dot(double* a, double* b, int k)
+	float dot(float* a, float* b, int k)
 	{
-		double r=0;
+		float r=0;
 		for(int i=0;i<k;i++)
 			r+=a[i]*b[i];
 		return r;

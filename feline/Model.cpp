@@ -15,7 +15,7 @@ Model::computeBarycentricCoords()
 	for(int i=0;i<verts.size();i++)
 	{
 		int j=0;
-		vector3<double> barytest;
+		vector3<float> barytest;
 		bool valid = false;
 
 		for(j=0;j<mesh->elements.size();j++)
@@ -58,17 +58,17 @@ Model::render()
 		{
 			glBegin(GL_QUADS);
 
-			glNormal3dv( verts[faces[i].vindex[0]].norm.coords );
-			glVertex3dv( verts[faces[i].vindex[0]].coords.coords );
+			glNormal3fv( verts[faces[i].vindex[0]].norm.coords );
+			glVertex3fv( verts[faces[i].vindex[0]].coords.coords );
 
-			glNormal3dv( verts[faces[i].vindex[1]].norm.coords );
-			glVertex3dv( verts[faces[i].vindex[1]].coords.coords );
+			glNormal3fv( verts[faces[i].vindex[1]].norm.coords );
+			glVertex3fv( verts[faces[i].vindex[1]].coords.coords );
 
-			glNormal3dv( verts[faces[i].vindex[2]].norm.coords );
-			glVertex3dv( verts[faces[i].vindex[2]].coords.coords );
+			glNormal3fv( verts[faces[i].vindex[2]].norm.coords );
+			glVertex3fv( verts[faces[i].vindex[2]].coords.coords );
 
-			glNormal3dv( verts[faces[i].vindex[3]].norm.coords );
-			glVertex3dv( verts[faces[i].vindex[3]].coords.coords );
+			glNormal3fv( verts[faces[i].vindex[3]].norm.coords );
+			glVertex3fv( verts[faces[i].vindex[3]].coords.coords );
 	
 			glEnd();
 		}
@@ -76,14 +76,14 @@ Model::render()
 		{
 			glBegin(GL_TRIANGLES);
 
-			glNormal3dv( verts[faces[i].vindex[0]].norm.coords );
-			glVertex3dv( verts[faces[i].vindex[0]].coords.coords );
+			glNormal3fv( verts[faces[i].vindex[0]].norm.coords );
+			glVertex3fv( verts[faces[i].vindex[0]].coords.coords );
 
-			glNormal3dv( verts[faces[i].vindex[1]].norm.coords );
-			glVertex3dv( verts[faces[i].vindex[1]].coords.coords );
+			glNormal3fv( verts[faces[i].vindex[1]].norm.coords );
+			glVertex3fv( verts[faces[i].vindex[1]].coords.coords );
 
-			glNormal3dv( verts[faces[i].vindex[2]].norm.coords );
-			glVertex3dv( verts[faces[i].vindex[2]].coords.coords );
+			glNormal3fv( verts[faces[i].vindex[2]].norm.coords );
+			glVertex3fv( verts[faces[i].vindex[2]].coords.coords );
 	
 			glEnd();
 		}

@@ -15,28 +15,28 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 	dt = 1./FPS;
 	//printf("%lf ",dt);
 
-	extforces = (double*)malloc(sizeof(double) * n * 3);
-	x0 = (double*)malloc(sizeof(double) * n * 3);
-	xt = (double*)malloc(sizeof(double) * n * 3);
-	v = (double*)malloc(sizeof(double) * n * 3);
-	fu = (double*)malloc(sizeof(double) * n * 3);
-	b = (double*)malloc(sizeof(double) * n * 3);
+	extforces = (float*)malloc(sizeof(float) * n * 3);
+	x0 = (float*)malloc(sizeof(float) * n * 3);
+	xt = (float*)malloc(sizeof(float) * n * 3);
+	v = (float*)malloc(sizeof(float) * n * 3);
+	fu = (float*)malloc(sizeof(float) * n * 3);
+	b = (float*)malloc(sizeof(float) * n * 3);
 
-	globalDamping = (double**)malloc(sizeof(double*) * n * 3);
+	globalDamping = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
-		globalDamping[i] = (double*)malloc(sizeof(double) * n * 3);
+		globalDamping[i] = (float*)malloc(sizeof(float) * n * 3);
 
-	A = (double**)malloc(sizeof(double*) * n * 3);
+	A = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
-		A[i] = (double*)malloc(sizeof(double) * n * 3);
+		A[i] = (float*)malloc(sizeof(float) * n * 3);
 
-	RK = (double**)malloc(sizeof(double*) * n * 3);
+	RK = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
-		RK[i] = (double*)malloc(sizeof(double) * n * 3);
+		RK[i] = (float*)malloc(sizeof(float) * n * 3);
 
-	RKRT = (double**)malloc(sizeof(double*) * n * 3);
+	RKRT = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
-	RKRT[i] = (double*)malloc(sizeof(double) * n * 3);
+	RKRT[i] = (float*)malloc(sizeof(float) * n * 3);
 
 	
 	//assembleDampingMat();
@@ -70,7 +70,7 @@ void
 Integrator::assembleDampingMat()
 {
 	//damping mat. constant values for now
-	double alpha = 0.1, beta = 0.3;
+	float alpha = 0.1, beta = 0.3;
 
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)
@@ -95,7 +95,7 @@ Integrator::assembleRotations()
 
 	for(int i=0;i<mesh->elements.size();i++)
 	{
-		GenMatrix<double,12,12> rk, rkrt;
+		GenMatrix<float,12,12> rk, rkrt;
 		mesh->elements[i]->getRKRTandRK(rk,rkrt);
 
 		for(int a=0;a<4;a++)
@@ -156,7 +156,7 @@ Integrator::updateNodes()
 {
 	for(int i=0;i<n;i++)
 	{
-		vector3<double> temp(v[i * 3],v[i * 3 + 1],v[i * 3 + 2]);
+		vector3<float> temp(v[i * 3],v[i * 3 + 1],v[i * 3 + 2]);
 		mesh->nodes[i]->pos_t += (temp * dt);
 		mesh->nodes[i]->vec_t = temp;
 

@@ -5,10 +5,10 @@ void MeshFunctions::makeLever(Mesh** m, int n)
 	Node* list = (Node*)malloc(sizeof(Node) * 4 * (n+1));
 	for(int i=0;i<n+1;i++)
 	{
-		list[i*4 + 0] = Node(vector3<double>(i,0,0),vector3<double>(),vector3<double>(0,0,0),100);
-		list[i*4 + 1] = Node(vector3<double>(i,0,1),vector3<double>(),vector3<double>(0,0,0),100);
-		list[i*4 + 2] = Node(vector3<double>(i,1,0),vector3<double>(),vector3<double>(0,0,0),100);
-		list[i*4 + 3] = Node(vector3<double>(i,1,1),vector3<double>(),vector3<double>(0,0,0),100);
+		list[i*4 + 0] = Node(vector3<float>(i,0,0),vector3<float>(),vector3<float>(0,0,0),100);
+		list[i*4 + 1] = Node(vector3<float>(i,0,1),vector3<float>(),vector3<float>(0,0,0),100);
+		list[i*4 + 2] = Node(vector3<float>(i,1,0),vector3<float>(),vector3<float>(0,0,0),100);
+		list[i*4 + 3] = Node(vector3<float>(i,1,1),vector3<float>(),vector3<float>(0,0,0),100);
 	}
 
 	*m = new Mesh(list, 4 * (n+1));
@@ -35,7 +35,7 @@ void MeshFunctions::makeSheet(Mesh** mesh, int n, int m)
 		for(int i=0;i<n;i++)
 			for(int j=0;j<m;j++)	
 			{
-				list[k * m * n + i * m + j] = Node(vector3<double>(i,k,j),vector3<double>(),vector3<double>(0,0,0),100);
+				list[k * m * n + i * m + j] = Node(vector3<float>(i,k,j),vector3<float>(),vector3<float>(0,0,0),100);
 			}
 
 	*mesh = new Mesh(list, n*m*2);

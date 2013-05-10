@@ -8,9 +8,9 @@ class Integrator
 {
 	Mesh* mesh;
 	int n;
-	double dt;
-	double **globalStiffness, ** globalMass, **globalDamping, **RK, **RKRT, **A;	
-	double *extforces, *intforces, *x0, *xt, *fu, *b, *v;
+	float dt;
+	float **globalStiffness, ** globalMass, **globalDamping, **RK, **RKRT, **A;	
+	float *extforces, *intforces, *x0, *xt, *fu, *b, *v;
 	//ConjugateGradientSolver* solver;
 	ConstrainedRows* rowSet;
 

@@ -28,8 +28,8 @@ struct edge
 
 struct vertex
 {
-	vector3<double> coords;
-	vector3<double> norm;
+	vector3<float> coords;
+	vector3<float> norm;
 	//edge* edges[3];
 };
 
@@ -43,7 +43,7 @@ struct face
 struct bary
 {
 	int element_no;
-	vector3<double> barycoords;
+	vector3<float> barycoords;
 };
 
 typedef QuickArray<vertex,MAX_GEO> vertArray;

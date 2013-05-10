@@ -5,6 +5,8 @@
 #include "MeshFunctions.h"
 #include "ModelFunctions.h"
 
+//extern void CGSolverGPU(float* A, float* x, float* b, int n);
+
 /* GLUT callback Handlers */
 static Integrator* inte;
 static Mesh* tet;
@@ -13,11 +15,11 @@ Model * mod;
 /*
 Node nodelist[] =
 {
-	Node(vector3<double>(1,1,0),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(1,0,0),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(1,0,1),vector3<double>(),vector3<double>(),10),
-	Node(vector3<double>(0,0,0),vector3<double>(),vector3<double>(),10),
-	//Node(vector3<double>(1,-1,0),vector3<double>(),vector3<double>(),10)
+	Node(vector3<float>(1,1,0),vector3<float>(),vector3<float>(),10),
+	Node(vector3<float>(1,0,0),vector3<float>(),vector3<float>(),10),
+	Node(vector3<float>(1,0,1),vector3<float>(),vector3<float>(),10),
+	Node(vector3<float>(0,0,0),vector3<float>(),vector3<float>(),10),
+	//Node(vector3<float>(1,-1,0),vector3<float>(),vector3<float>(),10)
 };
 */
 
@@ -59,16 +61,16 @@ static float rot = 0.0;
 	if(iter>=10)
 	{
 		for(int i=67;i<72;i++)
-		tet->nodes[i]->force = vector3<double>();
+		tet->nodes[i]->force = vector3<float>();
 		//for(int i=2;i<8;i++)
-		//tet->nodes[i]->force = vector3<double>();
+		//tet->nodes[i]->force = vector3<float>();
 	}
 	else
 	{
 		for(int i=67;i<72;i++)
-		tet->nodes[i]->force = vector3<double>(0,100,0);
+		tet->nodes[i]->force = vector3<float>(0,100,0);
 		//for(int i=2;i<8;i++)
-		//tet->nodes[i]->force = vector3<double>(0,40,0);
+		//tet->nodes[i]->force = vector3<float>(0,40,0);
 	}
 	//mod->interpolateVerts();
 	//mod->render();
@@ -229,17 +231,17 @@ main(int argc, char *argv[])
 	//conjugate gradient test
 	// works
 	/*
-	double **t = (double**)malloc(sizeof(double*) * 3);
-	t[0] = (double*)malloc(sizeof(double) * 3);
-	t[1] = (double*)malloc(sizeof(double) * 3);
-	t[2] = (double*)malloc(sizeof(double) * 3);
+	float **t = (float**)malloc(sizeof(float*) * 3);
+	t[0] = (float*)malloc(sizeof(float) * 3);
+	t[1] = (float*)malloc(sizeof(float) * 3);
+	t[2] = (float*)malloc(sizeof(float) * 3);
 
 	t[0][0] = 2.0;t[0][1] = 1.0;t[0][2] = -1.0;
 	t[1][0] = -3.0;t[1][1] = -1.0;t[1][2] = 2.0;
 	t[2][0] = -2.0;t[2][1] = 1.0;t[2][2] = 2.0;
 
-	double b[3] = {8,-11,-3};
-	double x[3] = {0,0,0};
+	float b[3] = {8,-11,-3};
+	float x[3] = {0,0,0};
 
 	ConjugateGradientSolver cg(3,t);
 	cg.solve(x,b);
@@ -291,6 +293,23 @@ main(int argc, char *argv[])
 		printf("\n");
 	}
 	*/
+
+	//gpu cg solve test
+	/*
+	float t[] = {2,0,0,
+				 0,-1,0,
+				 0,0,3};
+
+	float b[3] = {8,-11,-3};
+	float x[3] = {0,0,0};
+
+	CGSolverGPU(t,x,b,3);
+
+	printf("%f %f %f\n", x[0],x[1],x[2]);
+	*/
+	
+
+
     init_general();
     init_light();
     init_material();

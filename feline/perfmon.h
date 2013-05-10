@@ -12,9 +12,9 @@ class perfmon
 	stopWatch timer;
     LARGE_INTEGER frequency;
 	
-	double LIToMSecs( LARGE_INTEGER & L)
+	float LIToMSecs( LARGE_INTEGER & L)
 	{
-		return ((double)L.QuadPart /(double)frequency.QuadPart) * 1000 ;
+		return ((float)L.QuadPart /(float)frequency.QuadPart) * 1000 ;
 	}
 public:
 	perfmon(void)
@@ -34,7 +34,7 @@ public:
 		QueryPerformanceCounter(&timer.stop) ;
 	}
  
-	double getElapsedTime() 
+	float getElapsedTime() 
 	{
      LARGE_INTEGER time;
      time.QuadPart = timer.stop.QuadPart - timer.start.QuadPart;

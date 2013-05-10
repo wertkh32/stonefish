@@ -1,7 +1,7 @@
 #include "Element.h"
 
 
-Element::Element(Node* n1, Node* n2, Node* n3, Node* n4, double _E, double _v, double _density)
+Element::Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, float _density)
 {
 	nodes[0] = n1;
 	nodes[1] = n2;
@@ -39,7 +39,7 @@ void Element::preComputeUndeformedStiffnessMat()
 
 	//strain matrix B = LN = dN/dx
 	//checked correct.
-	double strainMatrix[6][12] = 
+	float strainMatrix[6][12] = 
 	{
 		{ inv(0,1), 0, 0, inv(1,1), 0, 0, inv(2,1), 0, 0, inv(3,1), 0, 0 },
 		{ 0, inv(0,2), 0, 0, inv(1,2), 0, 0, inv(2,2), 0, 0, inv(3,2), 0 },
@@ -49,16 +49,16 @@ void Element::preComputeUndeformedStiffnessMat()
 		{ inv(0,3), 0, inv(0,1), inv(1,3), 0, inv(1,1), inv(2,3), 0, inv(2,1), inv(3,3), 0, inv(3,1) }
 	};
 
-	strainMat = GenMatrix<double,6,12>(strainMatrix);
+	strainMat = GenMatrix<float,6,12>(strainMatrix);
 	strainMat.scalarMul(1/(2 * undeformVolume));
 
 	//material constants
-	double c1 = (E*(1-v))/((1.0-2.0*v)*(1.0+v)),
+	float c1 = (E*(1-v))/((1.0-2.0*v)*(1.0+v)),
 		  c2 = (E*v)/((1.0-2.0*v)*(1.0+v)),
 		  c3 = (c1 - c2)/2.0;
 	//printf("%f %f %f\n",c1,c2,c3);
 
-	double C[6][6] = 
+	float C[6][6] = 
 	{ 
 		{ c1, c2, c2, 0, 0, 0 },
 		{c2, c1, c2, 0, 0, 0 },
@@ -68,7 +68,7 @@ void Element::preComputeUndeformedStiffnessMat()
 		{0, 0, 0, 0, 0, c3 }
 	};
 
-	matConstantsMat = GenMatrix<double,6,6>(C);
+	matConstantsMat = GenMatrix<float,6,6>(C);
 
 	undeformStiffnessMat = strainMat.transpose() * matConstantsMat * strainMat;
 	undeformStiffnessMat.scalarMul(undeformVolume);
@@ -83,7 +83,7 @@ void Element::preComputeUndeformedStiffnessMat()
 
 void Element::preComputeMassMat()
 {
-	double mass[12][12] = 
+	float mass[12][12] = 
 	{
 		{ 2, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0 },
 		{ 0, 2, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0 },
@@ -99,7 +99,7 @@ void Element::preComputeMassMat()
 		{ 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 2 }
 	};
 
-	massMat = GenMatrix<double,12,12>(mass);
+	massMat = GenMatrix<float,12,12>(mass);
 	//massMat.scalarMul( (density * undeformVolume) / 20.);
 	
 	/*
@@ -130,10 +130,10 @@ Matrix3d Element::computeDeformShapeMat()
 	return deformShapeMat;
 }
 
-void Element::getRKRTandRK(GenMatrix<double,12,12>& RK, GenMatrix<double,12,12>& RKRT)
+void Element::getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& RKRT)
 {
 	Matrix3d F,R,S;
-	GenMatrix<double,12,12> Rot;
+	GenMatrix<float,12,12> Rot;
 	F = computeDeformationMat();
 	PolarDecompose::compute(F,R,S);
 	
@@ -153,24 +153,24 @@ Element::renderElement()
 {
 	glPushMatrix();
 	glBegin(GL_LINES);
-	glVertex3dv(nodes[3]->pos_t.coords);
-	glVertex3dv(nodes[0]->pos_t.coords);
+	glVertex3fv(nodes[3]->pos_t.coords);
+	glVertex3fv(nodes[0]->pos_t.coords);
 
-	glVertex3dv(nodes[3]->pos_t.coords);
-	glVertex3dv(nodes[1]->pos_t.coords);
+	glVertex3fv(nodes[3]->pos_t.coords);
+	glVertex3fv(nodes[1]->pos_t.coords);
 
-	glVertex3dv(nodes[3]->pos_t.coords);
-	glVertex3dv(nodes[2]->pos_t.coords);
+	glVertex3fv(nodes[3]->pos_t.coords);
+	glVertex3fv(nodes[2]->pos_t.coords);
 
 
-	glVertex3dv(nodes[0]->pos_t.coords);
-	glVertex3dv(nodes[1]->pos_t.coords);
+	glVertex3fv(nodes[0]->pos_t.coords);
+	glVertex3fv(nodes[1]->pos_t.coords);
 
-	glVertex3dv(nodes[1]->pos_t.coords);
-	glVertex3dv(nodes[2]->pos_t.coords);
+	glVertex3fv(nodes[1]->pos_t.coords);
+	glVertex3fv(nodes[2]->pos_t.coords);
 
-	glVertex3dv(nodes[2]->pos_t.coords);
-	glVertex3dv(nodes[0]->pos_t.coords);
+	glVertex3fv(nodes[2]->pos_t.coords);
+	glVertex3fv(nodes[0]->pos_t.coords);
 
 	glEnd();
 

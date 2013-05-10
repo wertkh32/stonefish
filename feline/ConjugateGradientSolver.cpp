@@ -1,13 +1,20 @@
 #include "ConjugateGradientSolver.h"
+//extern void CGSolverGPU(float* A, float* x, float* b, int n);
 
-
-ConjugateGradientSolver::ConjugateGradientSolver(int _n, double** _A)
+ConjugateGradientSolver::ConjugateGradientSolver(int _n, float** _A)
 {
 	n = _n;
 	A = _A;
-	r = (double*)malloc(sizeof(double) * n); 
-	d = (double*)malloc(sizeof(double) * n); 
-	q = (double*)malloc(sizeof(double) * n); 
+	//flatA = (float*)malloc(sizeof(float) * n * n);
+
+	//for(int i=0;i<n;i++)
+	//	for(int j=0;j<n;j++)
+	//		flatA[i * n + j] = A[i][j];
+
+
+	r = (float*)malloc(sizeof(float) * n); 
+	d = (float*)malloc(sizeof(float) * n); 
+	q = (float*)malloc(sizeof(float) * n); 
 }
 
 void
@@ -23,9 +30,11 @@ void ConjugateGradientSolver::removeRows(int r)
 }
 
 void
-ConjugateGradientSolver::solve(double* x, double* b)
+ConjugateGradientSolver::solve(float* x, float* b)
 {
-	double deltaOld, deltaNew, delta0,alpha,beta;
+	//CGSolverGPU(flatA,x,b,n);
+	
+	float deltaOld, deltaNew, delta0,alpha,beta;
 	int it;
 	
 	for(int i=0;i<n;i++)
@@ -57,9 +66,9 @@ ConjugateGradientSolver::solve(double* x, double* b)
 		for(int i=0;i<n;i++)
 			x[i] = x[i] + alpha*d[i];
 
-		if(it%20==0)
+		if(it%50==0)
 		{
-			//refresh r of its horrible doubleing point errors
+			//refresh r of its horrible floating point errors
 			for(int i=0;i<n;i++)
 				r[i] = b[i] - dot(A[i],x,n);
 		}
@@ -77,13 +86,13 @@ ConjugateGradientSolver::solve(double* x, double* b)
 			d[i] = r[i] + beta * d[i];
 
 	}
-
+	
 
 }
 
-void ConjugateGradientSolver::solveWithConstraints(double* x, double* b, ConstrainedRows* rowSet)
+void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, ConstrainedRows* rowSet)
 {
-	double deltaOld, deltaNew, delta0,alpha,beta;
+	float deltaOld, deltaNew, delta0,alpha,beta;
 	int it;
 	
 	int* allowed = (int*)malloc(sizeof(int) * n);
@@ -110,7 +119,7 @@ void ConjugateGradientSolver::solveWithConstraints(double* x, double* b, Constra
 	{
 		if(allowed[i])
 		{
-			double temp=0;
+			float temp=0;
 			for(int j=0;j<n;j++)
 			{
 				if(allowed[j])
@@ -146,7 +155,7 @@ void ConjugateGradientSolver::solveWithConstraints(double* x, double* b, Constra
 			}
 		}
 
-		double temp2=0;
+		float temp2=0;
 		for(int i=0;i<n;i++)
 		{
 			if(allowed[i])
@@ -163,12 +172,12 @@ void ConjugateGradientSolver::solveWithConstraints(double* x, double* b, Constra
 
 		if(it%20==0)
 		{
-			//refresh r of its horrible doubleing point errors
+			//refresh r of its horrible floating point errors
 			for(int i=0;i<n;i++)
 			{
 				if(allowed[i])
 				{
-					double temp =0;
+					float temp =0;
 					for(int j=0;j<n;j++)
 					{
 						if(allowed[j])
@@ -217,4 +226,5 @@ ConjugateGradientSolver::~ConjugateGradientSolver(void)
 	free(r); 
 	free(d); 
 	free(q); 
+	//free(flatA);
 }
