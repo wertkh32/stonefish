@@ -16,11 +16,11 @@ void MeshFunctions::makeLever(Mesh** m, int n)
 	for(int i=0;i<n;i++)
 	{
 		int next = i * 4;
-			(*m)->addElement(1 + next,0 + next,4 + next,2 + next,50,0.1,500);
-			(*m)->addElement(1 + next,5 + next,4 + next,7 + next,50,0.1,500);
-			(*m)->addElement(2 + next,3 + next,7 + next,1 + next,50,0.1,500);
-			(*m)->addElement(2 + next,6 + next,7 + next,4 + next,50,0.1,500);
-			(*m)->addElement(1 + next,2 + next,7 + next,4 + next,50,0.1,500);
+			(*m)->addElement(1 + next,0 + next,4 + next,2 + next,50,0.1,100);
+			(*m)->addElement(1 + next,5 + next,4 + next,7 + next,50,0.1,100);
+			(*m)->addElement(2 + next,3 + next,7 + next,1 + next,50,0.1,100);
+			(*m)->addElement(2 + next,6 + next,7 + next,4 + next,50,0.1,100);
+			(*m)->addElement(1 + next,2 + next,7 + next,4 + next,50,0.1,100);
 	}
 }
 
@@ -45,10 +45,10 @@ void MeshFunctions::makeSheet(Mesh** mesh, int n, int m)
 		{
 			//int nextbase = i * m + j;
 			//int nexttop = m * n + i * m + j;
-			(*mesh)->addElement(i * m + j, (i+1) * m + j, i * m + (j + 1), m * n + i * m + j, 50,0.1,500);
-			(*mesh)->addElement((i+1) * m + (j+1), (i+1) * m + j, i * m + (j + 1), m * n + (i + 1) * m + (j + 1), 50,0.1,500);
-			(*mesh)->addElement(m * n + i * m + j, m * n + (i+1) * m + j, m * n + (i+1) * m + (j+1), (i+1) * m + j, 50,0.1,500);
-			(*mesh)->addElement(m * n + i * m + j, m * n + i * m + (j+1), m * n + (i+1) * m + (j+1), i * m + (j+1), 50,0.1,500);
-			(*mesh)->addElement(m * n + i * m + j, m * n + (i+1) * m + (j+1), i * m + (j + 1),(i+1) * m + j, 50,0.1,500);
+			(*mesh)->addElement(i * m + j, (i+1) * m + j, i * m + (j + 1), m * n + i * m + j, 50,0.1,100);
+			(*mesh)->addElement((i+1) * m + (j+1), (i+1) * m + j, i * m + (j + 1), m * n + (i + 1) * m + (j + 1), 50,0.1,100);
+			(*mesh)->addElement(m * n + i * m + j, m * n + (i+1) * m + j, m * n + (i+1) * m + (j+1), (i+1) * m + j, 50,0.1,100);
+			(*mesh)->addElement(m * n + i * m + j, m * n + i * m + (j+1), m * n + (i+1) * m + (j+1), i * m + (j+1), 50,0.1,100);
+			(*mesh)->addElement(m * n + i * m + j, m * n + (i+1) * m + (j+1), i * m + (j + 1),(i+1) * m + j, 50,0.1,100);
 		}
 }

@@ -4,9 +4,10 @@
 
 // conjugate gradient solver. by SKH.
 
-#define GPU_SOLVER_MAX_ITER 1000
-#define GPU_SOLVER_EPS 0.001
-#define BLOCK_SIZE 256
+#define GPU_SOLVER_MAX_ITER 3000
+#define GPU_SOLVER_EPS 0.01
+#define BLOCK_SIZE 512
+
 
 __device__ float dot(float* a, float *b, int n)
 {
@@ -23,14 +24,15 @@ __global__ void gpuCGSolve(float* A, float* x, float* b,
 							int n)
 {
 
-	int id = blockIdx.x *blockDim.x + threadIdx.x;
+	int id = blockIdx.x *BLOCK_SIZE + threadIdx.x;
 	
 	if(id < n)
 	{
 		int i = 0;
 		float alpha, beta, deltaOld, delta0, deltaNew;
+		float _b = b[id];
 
-		r[id] = b[id] - dot(&A[id * n], x, n);
+		r[id] = _b - dot(&A[id * n], x, n);
 		d[id] = r[id];
 	
 		__syncthreads();
@@ -38,7 +40,7 @@ __global__ void gpuCGSolve(float* A, float* x, float* b,
 		deltaNew = dot(r,r,n);
 		delta0 = deltaNew;
 
-		while(i<GPU_SOLVER_MAX_ITER && deltaNew > GPU_SOLVER_EPS * GPU_SOLVER_EPS * delta0)
+		while(i<GPU_SOLVER_MAX_ITER && deltaNew > (GPU_SOLVER_EPS * GPU_SOLVER_EPS) * delta0)
 		{
 			q[id] = dot(&A[id * n],d,n);
 
@@ -51,7 +53,7 @@ __global__ void gpuCGSolve(float* A, float* x, float* b,
 
 			if(i%50)
 			{
-				r[id] = b[id] - dot(&A[id * n], x,n);
+				r[id] = _b - dot(&A[id * n], x,n);
 			}
 			else
 			{
@@ -64,7 +66,7 @@ __global__ void gpuCGSolve(float* A, float* x, float* b,
 
 			d[id] = r[id] + beta * d[id];
 
-			i = i+1;
+			i++;
 
 			__syncthreads();
 

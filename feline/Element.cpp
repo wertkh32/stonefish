@@ -100,7 +100,7 @@ void Element::preComputeMassMat()
 	};
 
 	massMat = GenMatrix<float,12,12>(mass);
-	//massMat.scalarMul( (density * undeformVolume) / 20.);
+	massMat.scalarMul( (density * undeformVolume) / 20.);
 	
 	/*
 	for(int i=0;i<12;i++)
@@ -121,6 +121,11 @@ Matrix3d Element::computeDeformationMat()
 	return deformShapeMat * undeformShapeMatInv;
 }
 
+Matrix3d Element::computeDeformationMatDeriv()
+{
+	return computeDeformShapeMatDeriv() * undeformShapeMatInv;
+}
+
 Matrix3d Element::computeDeformShapeMat()
 {
 	Matrix3d deformShapeMat 
@@ -128,6 +133,15 @@ Matrix3d Element::computeDeformShapeMat()
 					nodes[0]->pos_t.y - nodes[3]->pos_t.y,nodes[1]->pos_t.y - nodes[3]->pos_t.y,nodes[2]->pos_t.y - nodes[3]->pos_t.y,
 					nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
 	return deformShapeMat;
+}
+
+Matrix3d Element::computeDeformShapeMatDeriv()
+{
+	Matrix3d deformShapeMatDeriv 
+				   (nodes[0]->vec_t.x - nodes[3]->vec_t.x,nodes[1]->vec_t.x - nodes[3]->vec_t.x,nodes[2]->vec_t.x - nodes[3]->vec_t.x,
+					nodes[0]->vec_t.y - nodes[3]->vec_t.y,nodes[1]->vec_t.y - nodes[3]->vec_t.y,nodes[2]->vec_t.y - nodes[3]->vec_t.y,
+					nodes[0]->vec_t.z - nodes[3]->vec_t.z,nodes[1]->vec_t.z - nodes[3]->vec_t.z,nodes[2]->vec_t.z - nodes[3]->vec_t.z);
+	return deformShapeMatDeriv * (1./FPS);
 }
 
 void Element::getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& RKRT)

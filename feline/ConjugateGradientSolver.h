@@ -39,7 +39,7 @@ struct ConstrainedRows
 class ConjugateGradientSolver
 {
 	float *r, *x, *d, *q;
-	//float *flatA;
+	float *flatA;
 	float** A;
 	int n;
 public:

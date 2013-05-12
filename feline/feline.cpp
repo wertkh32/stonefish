@@ -5,7 +5,7 @@
 #include "MeshFunctions.h"
 #include "ModelFunctions.h"
 
-//extern void CGSolverGPU(float* A, float* x, float* b, int n);
+extern void CGSolverGPU(float* A, float* x, float* b, int n);
 
 /* GLUT callback Handlers */
 static Integrator* inte;
@@ -181,7 +181,6 @@ main(int argc, char *argv[])
 
 	//mod = new Model(ModelFunctions::rodFunc,makerod);
 	//mod = new Model(ModelFunctions::sphereFunc,makebox);
-	//makelever(&tet,10);
 
 	ConstrainedRows rows;
 
@@ -295,7 +294,7 @@ main(int argc, char *argv[])
 	*/
 
 	//gpu cg solve test
-	/*
+	
 	float t[] = {2,0,0,
 				 0,-1,0,
 				 0,0,3};
@@ -306,7 +305,7 @@ main(int argc, char *argv[])
 	CGSolverGPU(t,x,b,3);
 
 	printf("%f %f %f\n", x[0],x[1],x[2]);
-	*/
+	
 	
 
 

@@ -1,15 +1,15 @@
 #include "ConjugateGradientSolver.h"
-//extern void CGSolverGPU(float* A, float* x, float* b, int n);
+extern void CGSolverGPU(float* A, float* x, float* b, int n);
 
 ConjugateGradientSolver::ConjugateGradientSolver(int _n, float** _A)
 {
 	n = _n;
 	A = _A;
-	//flatA = (float*)malloc(sizeof(float) * n * n);
+	flatA = (float*)malloc(sizeof(float) * n * n);
 
-	//for(int i=0;i<n;i++)
-	//	for(int j=0;j<n;j++)
-	//		flatA[i * n + j] = A[i][j];
+	for(int i=0;i<n;i++)
+		for(int j=0;j<n;j++)
+			flatA[i * n + j] = A[i][j];
 
 
 	r = (float*)malloc(sizeof(float) * n); 
@@ -32,8 +32,8 @@ void ConjugateGradientSolver::removeRows(int r)
 void
 ConjugateGradientSolver::solve(float* x, float* b)
 {
-	//CGSolverGPU(flatA,x,b,n);
-	
+	CGSolverGPU(flatA,x,b,n);
+	/*
 	float deltaOld, deltaNew, delta0,alpha,beta;
 	int it;
 	
@@ -86,7 +86,7 @@ ConjugateGradientSolver::solve(float* x, float* b)
 			d[i] = r[i] + beta * d[i];
 
 	}
-	
+	*/
 
 }
 

@@ -78,7 +78,9 @@ void PolarDecompose::compute(Matrix3d& F, Matrix3d& R, Matrix3d& S)
   // Q = Mk^T 
 
   R = Mk.transpose();
-
+  
+  //S not needed for simulation.
+  /*
   for(int i=0; i<3; i++)
     for(int j=0; j<3; j++)
     {
@@ -91,6 +93,6 @@ void PolarDecompose::compute(Matrix3d& F, Matrix3d& R, Matrix3d& S)
   for (int i=0; i<3; i++) 
     for (int j=i; j<3; j++)
       S(i,j) = S(j,i) = 0.5 * (S(i,j) + S(j,i));
-
+	*/
   //return (det);
 }

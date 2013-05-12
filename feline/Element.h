@@ -28,7 +28,10 @@ class Element
 public:
 	Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, float _density);
 	Matrix3d computeDeformationMat();
+	Matrix3d computeDeformationMatDeriv();
 	Matrix3d computeDeformShapeMat();
+	Matrix3d computeDeformShapeMatDeriv();
+
 
 	Matrix3d& getUndeformShapeMat(){return undeformShapeMat;}
 	Matrix3d& getUndeformShapeMatInv(){return undeformShapeMatInv;}
