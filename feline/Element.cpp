@@ -121,10 +121,6 @@ Matrix3d Element::computeDeformationMat()
 	return deformShapeMat * undeformShapeMatInv;
 }
 
-Matrix3d Element::computeDeformationMatDeriv()
-{
-	return computeDeformShapeMatDeriv() * undeformShapeMatInv;
-}
 
 Matrix3d Element::computeDeformShapeMat()
 {
@@ -135,13 +131,13 @@ Matrix3d Element::computeDeformShapeMat()
 	return deformShapeMat;
 }
 
-Matrix3d Element::computeDeformShapeMatDeriv()
+Matrix3d Element::getRotation()
 {
-	Matrix3d deformShapeMatDeriv 
-				   (nodes[0]->vec_t.x - nodes[3]->vec_t.x,nodes[1]->vec_t.x - nodes[3]->vec_t.x,nodes[2]->vec_t.x - nodes[3]->vec_t.x,
-					nodes[0]->vec_t.y - nodes[3]->vec_t.y,nodes[1]->vec_t.y - nodes[3]->vec_t.y,nodes[2]->vec_t.y - nodes[3]->vec_t.y,
-					nodes[0]->vec_t.z - nodes[3]->vec_t.z,nodes[1]->vec_t.z - nodes[3]->vec_t.z,nodes[2]->vec_t.z - nodes[3]->vec_t.z);
-	return deformShapeMatDeriv * (1./FPS);
+	Matrix3d F,R,S;
+	F = computeDeformationMat();
+	PolarDecompose::compute(F,R,S);
+
+	return R;
 }
 
 void Element::getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& RKRT)
@@ -151,15 +147,40 @@ void Element::getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& R
 	F = computeDeformationMat();
 	PolarDecompose::compute(F,R,S);
 	
-	for(int i=0;i<4;i++)
-		for(int j=0;j<3;j++)
-			for(int k=0;k<3;k++)
-			{
-				Rot(i * 3 + j, i * 3 + k) = R(j,k);
-			}
+	//for(int i=0;i<4;i++)
+	//	for(int j=0;j<3;j++)
+	//		for(int k=0;k<3;k++)
+	//		{
+	//			Rot(i * 3 + j, i * 3 + k) = R(j,k);
+	//		}
 
-	RK = Rot * undeformStiffnessMat;
-	RKRT = RK * Rot.transpose();
+
+	for(int i=0;i<4;i++)
+	{
+		for(int j=0;j<4;j++)
+		{
+			for(int a=0;a<3;a++)
+				for(int b=0;b<3;b++)
+					for(int c=0;c<3;c++)
+						RK(a + i * 3, b + j * 3) += R(a,c) * undeformStiffnessMat(c + i * 3, b + j * 3);
+		}
+	}
+
+	Matrix3d RT = R.transpose();
+
+	for(int i=0;i<4;i++)
+	{
+		for(int j=0;j<4;j++)
+		{
+			for(int a=0;a<3;a++)
+				for(int b=0;b<3;b++)
+					for(int c=0;c<3;c++)
+						RKRT(a + i * 3, b + j * 3) += RK(a + i * 3, c + j * 3) * RT(c , b);
+		}
+	}
+
+	//RK = Rot * undeformStiffnessMat;
+	//RKRT = RK * Rot.transpose();
 }
 
 void

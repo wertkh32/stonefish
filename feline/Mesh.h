@@ -2,10 +2,18 @@
 #include "includes.h"
 #include "Element.h"
 #include "QuickArray.h"
+#include "PolarDecompose.h"
 
 class Mesh
 {
 	int numnodes;
+
+	//for matrix-free computation/////////////////
+	QuickArray<Matrix3d,MAX_ELEMENTS> F_t,
+									  dR_t;
+
+
+	//////////////////////////////////////////////
 public:
 	QuickArray<Element*,MAX_ELEMENTS> elements;
 	int nodeIndices[MAX_ELEMENTS][4];
@@ -20,6 +28,11 @@ public:
 	void resetGlobalMass();
 	float** assembleGlobalMass();
 	float** assembleGlobalStiffness();
+
+	void MatFree_TimestepPrecomp();
+	void MatFree_stressTensor(Matrix3d& dF);
+	void MatFree_stiffnessProduct(float* x, float* out);
+
 	Mesh(Node nodes[], int n);
 	~Mesh(void);
 };

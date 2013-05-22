@@ -37,10 +37,13 @@ resize(int width, int height)
     glLoadIdentity() ;
 }
 
+bool first = true;
+
 static void 
 display(void)
 {
 static float rot = 0.0;
+
 //rot += 0.3;
   iter++;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -53,6 +56,7 @@ static float rot = 0.0;
     //glutSolidSphere(3,30,30);
 	//inte->debug();
 	//inte->debug();
+
 	inte->timeStep();
 
 	for(int i=0;i<tet->getNoOfElements();i++)
@@ -60,14 +64,14 @@ static float rot = 0.0;
 
 	if(iter>=10)
 	{
-		for(int i=67;i<72;i++)
+		for(int i=90;i<98;i++)
 		tet->nodes[i]->force = vector3<float>();
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>();
 	}
 	else
 	{
-		for(int i=67;i<72;i++)
+		for(int i=90;i<98;i++)
 		tet->nodes[i]->force = vector3<float>(0,100,0);
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>(0,40,0);
@@ -212,21 +216,22 @@ main(int argc, char *argv[])
 	rows.add(3);
 	rows.add(4);
 	rows.add(5);
+	rows.add(6);
 
-	rows.add(36);
-	rows.add(37);
-	rows.add(38);
-	rows.add(39);
-	rows.add(40);
-	rows.add(41);
+	rows.add(49);
+	rows.add(50);
+	rows.add(51);
+	rows.add(52);
+	rows.add(53);
+	rows.add(54);
+	rows.add(55);
 
 
-	MeshFunctions::makeSheet(&tet,5,5);
+	MeshFunctions::makeSheet(&tet,6,6);
 	//sheet//
 
 
 	inte = new Integrator(tet,&rows);
-	
 	//conjugate gradient test
 	// works
 	/*
@@ -294,7 +299,7 @@ main(int argc, char *argv[])
 	*/
 
 	//gpu cg solve test
-	
+	/*
 	float t[] = {2,0,0,
 				 0,-1,0,
 				 0,0,3};
@@ -305,7 +310,7 @@ main(int argc, char *argv[])
 	CGSolverGPU(t,x,b,3);
 
 	printf("%f %f %f\n", x[0],x[1],x[2]);
-	
+	*/
 	
 
 

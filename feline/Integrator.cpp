@@ -38,7 +38,12 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 	for(int i=0;i<n * 3;i++)
 	RKRT[i] = (float*)malloc(sizeof(float) * n * 3);
 
-	
+	for(int i=0;i<n;i++)
+	{
+		x0[i * 3] = mesh->nodes[i]->pos.x;
+		x0[i * 3 + 1] = mesh->nodes[i]->pos.y;
+		x0[i * 3 + 2] = mesh->nodes[i]->pos.z;
+	}
 	//assembleDampingMat();
 	//assembleUndeformForces();
 	//assembleA();
@@ -48,13 +53,6 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 void
 Integrator::assembleUndeformForces()
 {
-	for(int i=0;i<n;i++)
-	{
-		x0[i * 3] = mesh->nodes[i]->pos.x;
-		x0[i * 3 + 1] = mesh->nodes[i]->pos.y;
-		x0[i * 3 + 2] = mesh->nodes[i]->pos.z;
-	}
-	
 	for(int i=0;i<n *3;i++)
 	{
 		fu[i] = 0;
@@ -143,10 +141,13 @@ Integrator::assembleExtForces()
 void
 Integrator::assembleA()
 {
+	static const float alpha = 0.1, beta = 0.3;
+	static const float coeffK = dt * beta + dt * dt, coeffM = 1 + dt * alpha;
+
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)
 		{
-			A[i][j] = globalMass[i][j] + globalDamping[i][j] * dt + RKRT[i][j] /*globalStiffness[i][j]*/ * dt * dt;
+			A[i][j] = globalMass[i][j] * coeffM + /*globalDamping[i][j] * dt +*/ RKRT[i][j] * coeffK /*globalStiffness[i][j]*/ /* * dt * dt*/;
 			//printf("%lf ",A[i][j]);
 		}
 }
@@ -169,7 +170,7 @@ Integrator::timeStep()
 {
 	assembleDisplacement();
 	assembleRotations();
-	assembleDampingMat();
+	//assembleDampingMat();
 	assembleUndeformForces();
 	assembleA();
 	//Av(t + 1) = b; (3.13)
@@ -234,6 +235,7 @@ Integrator::debug()
 	}
 	printf("\n");
 
+	/*
 	printf("Stiffness\n");
 	for(int i=0;i<n*3;i++)
 	{
@@ -243,6 +245,7 @@ Integrator::debug()
 		}
 		printf("\n");
 	}
+	*/
 
 	printf("A\n");
 	for(int i=0;i<n*3;i++)

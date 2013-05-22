@@ -28,20 +28,22 @@ class Element
 public:
 	Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, float _density);
 	Matrix3d computeDeformationMat();
-	Matrix3d computeDeformationMatDeriv();
 	Matrix3d computeDeformShapeMat();
-	Matrix3d computeDeformShapeMatDeriv();
 
 
 	Matrix3d& getUndeformShapeMat(){return undeformShapeMat;}
 	Matrix3d& getUndeformShapeMatInv(){return undeformShapeMatInv;}
 	Node** getNodes(){return nodes;}
+	float getVolume(){return undeformVolume;}
+	float getYoungMod(){return E;}
+	float getPoissonRatio(){return v;}
 	//computeundeformstiffnessmat B^T * c * B where B = LN
 	//computestiffnessmat dfe/dx |x = x*
 
 	GenMatrix<float,12,12>* getStiffnessMat(){return &undeformStiffnessMat;}
 	GenMatrix<float,12,12>* getMassMat(){return &massMat;}
 	void getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& RKRT);
+	Matrix3d getRotation();
 
 	void renderElement();
 
