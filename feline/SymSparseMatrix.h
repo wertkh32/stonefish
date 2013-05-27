@@ -13,24 +13,25 @@ public:
 	SparseMatrix(int _no_blocks);
 	~SparseMatrix(void);
 	void matProduct(float* in, float* out);
+	void matProduct(float* in, float* out, bool* allowed);
 
 	Matrix3d& getBlock(int x, int y)
 	{
 		return matCollection[x * no_blocks + y];
 	}
 
-	void setBlock(int x, int y, Matrix3d& mat)
+	void setBlock(int x, int y, const Matrix3d& mat)
 	{
 		matCollection[x * no_blocks + y] = mat;
 	}
 
-	void setBlock(int x, int y, Matrix3d& mat, bool filled)
+	void setBlock(int x, int y, const Matrix3d& mat, bool filled)
 	{
 		matCollection[x * no_blocks + y] = mat;
 		setBlockFilled(x,y,filled);
 	}
 
-	void addBlock(int x, int y, Matrix3d& mat)
+	void addBlock(int x, int y, const Matrix3d& mat)
 	{
 		matCollection[x * no_blocks + y] = matCollection[x * no_blocks + y] + mat;
 	}
@@ -48,16 +49,12 @@ public:
 
 	float getValue(int globalx, int globaly)
 	{
-		int blockx = globalx / no_blocks;
-		int blocky = globaly / no_blocks;
-		return getBlock(blockx, blocky)(globalx % no_blocks, globaly % no_blocks);
+		return getBlock(globalx / 3, globaly / 3)(globalx % 3, globaly % 3);
 	}
 
 	void setValue(int globalx, int globaly, float val)
 	{
-		int blockx = globalx / no_blocks;
-		int blocky = globaly / no_blocks;
-		getBlock(blockx, blocky)(globalx % no_blocks, globaly % no_blocks) = val;
+		getBlock(globalx / 3, globaly / 3)(globalx % 3, globaly % 3) = val;
 	}
 
 	float operator()(int x, int y)
@@ -72,6 +69,16 @@ public:
 			{
 				if(isBlockFilled(i,j))
 					getBlock(i,j) = getBlock(i,j) * val;
+			}
+	}
+
+	void clear()
+	{
+		Matrix3d empty = Matrix3d();
+		for(int i=0;i<no_blocks;i++)
+			for(int j=0;j<no_blocks;j++)
+			{
+				setBlock(i,j ,empty, false);
 			}
 	}
 };

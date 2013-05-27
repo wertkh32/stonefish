@@ -10,7 +10,8 @@ Element::Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, flo
 	E =_E;
 	v = _v;
 	density = _density;
-	
+	sparseStiff = new SparseMatrix(4);
+
 	preCompute();
 }
 
@@ -79,6 +80,13 @@ void Element::preComputeUndeformedStiffnessMat()
 			printf("%lf ",undeformStiffnessMat(i,j));
 		}
 	*/
+	
+	for(int i=0;i<12;i++)
+		for(int j=0;j<12;j++)
+		{
+			sparseStiff->setValue(i,j,undeformStiffnessMat(i,j));
+		}
+
 }
 
 void Element::preComputeMassMat()
@@ -143,7 +151,6 @@ Matrix3d Element::getRotation()
 void Element::getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& RKRT)
 {
 	Matrix3d F,R,S;
-	GenMatrix<float,12,12> Rot;
 	F = computeDeformationMat();
 	PolarDecompose::compute(F,R,S);
 	
@@ -181,6 +188,42 @@ void Element::getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& R
 
 	//RK = Rot * undeformStiffnessMat;
 	//RKRT = RK * Rot.transpose();
+}
+
+void Element::getRKRTandRK(SparseMatrix& RK, SparseMatrix& RKRT)
+{
+	Matrix3d F,R,S;
+	F = computeDeformationMat();
+	PolarDecompose::compute(F,R,S);
+
+	for(int i=0;i<4;i++)
+	{
+		for(int j=0;j<4;j++)
+		{
+			RK.setBlock(i,j,R * sparseStiff->getBlock(i,j),true);
+		}
+	}
+
+
+	Matrix3d RT = R.transpose();
+
+	//upper triangle
+	for(int i=0;i<4;i++)
+	{
+		for(int j=i;j<4;j++)
+		{
+			RKRT.setBlock(i,j,RK.getBlock(i,j) * RT,true);
+		}
+	}
+	//lower triangle
+	for(int i=1;i<4;i++)
+	{
+		for(int j=0;j<i;j++)
+		{
+			RKRT.setBlock(i,j,RKRT.getBlock(j,i).transpose(),true);
+		}
+	}
+
 }
 
 void

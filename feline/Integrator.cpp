@@ -38,6 +38,19 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 	for(int i=0;i<n * 3;i++)
 	RKRT[i] = (float*)malloc(sizeof(float) * n * 3);
 
+	//for sparse & matfree
+	//systemMat = new SparseMatrix(n);
+	//sparseRK = new SparseMatrix(n);
+	//sparseRKRT = new SparseMatrix(n);
+	//sparseMass = new SparseMatrix(n);
+	/*
+	for(int i=0;i<n*3;i++)
+		for(int j=0;j<n*3;j++)
+		{
+			sparseMass->setValue(i,j,globalMass[i][j]);
+		}
+	*/
+	
 	for(int i=0;i<n;i++)
 	{
 		x0[i * 3] = mesh->nodes[i]->pos.x;
@@ -53,6 +66,7 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 void
 Integrator::assembleUndeformForces()
 {
+	
 	for(int i=0;i<n *3;i++)
 	{
 		fu[i] = 0;
@@ -62,11 +76,21 @@ Integrator::assembleUndeformForces()
 		}
 	}
 	
+	//for sparse & matfree
+	/*
+	for(int i=0;i<n *3;i++)
+	{
+		fu[i] = 0;
+	}
+
+	sparseRK->matProduct(x0,fu);
+	*/
 }
 
 void
 Integrator::assembleDampingMat()
 {
+	//ignore
 	//damping mat. constant values for now
 	float alpha = 0.1, beta = 0.3;
 
@@ -83,7 +107,7 @@ Integrator::assembleDampingMat()
 void
 Integrator::assembleRotations()
 {
-
+	
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)
 		{
@@ -106,8 +130,28 @@ Integrator::assembleRotations()
 					}
 			
 	}
+	
+	//for sparse & matfree
+	/*
+	sparseRK->clear();
+	sparseRKRT->clear();
 
+	SparseMatrix eleRK(4), eleRKRT(4);
 
+	for(int i=0;i<mesh->elements.size();i++)
+	{
+		mesh->elements[i]->getRKRTandRK(eleRK,eleRKRT);
+		for(int a=0;a<4;a++)
+			for(int b=0;b<4;b++)
+			{
+				sparseRK->setBlockFilled(mesh->nodeIndices[i][a],mesh->nodeIndices[i][b],true);
+				sparseRKRT->setBlockFilled(mesh->nodeIndices[i][a],mesh->nodeIndices[i][b],true);
+
+				sparseRK->addBlock(mesh->nodeIndices[i][a],mesh->nodeIndices[i][b],eleRK.getBlock(a,b));
+				sparseRKRT->addBlock(mesh->nodeIndices[i][a],mesh->nodeIndices[i][b],eleRKRT.getBlock(a,b));
+			}
+	}
+	*/
 }
 
 void
@@ -143,13 +187,23 @@ Integrator::assembleA()
 {
 	static const float alpha = 0.1, beta = 0.3;
 	static const float coeffK = dt * beta + dt * dt, coeffM = 1 + dt * alpha;
-
+	
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)
 		{
-			A[i][j] = globalMass[i][j] * coeffM + /*globalDamping[i][j] * dt +*/ RKRT[i][j] * coeffK /*globalStiffness[i][j]*/ /* * dt * dt*/;
+			A[i][j] = globalMass[i][j] * coeffM + RKRT[i][j] * coeffK;
 			//printf("%lf ",A[i][j]);
 		}
+	
+	/*
+	for(int i=0;i<n;i++)
+		for(int j=0;j<n;j++)
+		{
+			if(sparseRKRT->isBlockFilled(i,j))
+				systemMat->setBlock(i,j, sparseMass->getBlock(i,j) * coeffM + sparseRKRT->getBlock(i,j) * coeffK,true);
+		}
+	*/
+
 }
 
 void

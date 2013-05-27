@@ -4,6 +4,7 @@
 #include "Matrix3d.h"
 #include "Matrix4d.h"
 #include "GenMatrix.h"
+#include "SymSparseMatrix.h"
 #include "PolarDecompose.h"
 
 class Element
@@ -18,6 +19,8 @@ class Element
 	GenMatrix<float,6,6> matConstantsMat;
 	GenMatrix<float,12,12> undeformStiffnessMat,
 						   massMat, RK, RKRT;
+	SparseMatrix *sparseStiff;
+
 	float undeformVolume;
 	float E, v; // E is Young's Modulus, v is Poisson's Ratio
 	float density;
@@ -43,6 +46,8 @@ public:
 	GenMatrix<float,12,12>* getStiffnessMat(){return &undeformStiffnessMat;}
 	GenMatrix<float,12,12>* getMassMat(){return &massMat;}
 	void getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& RKRT);
+	void getRKRTandRK(SparseMatrix& RK, SparseMatrix& RKRT);
+
 	Matrix3d getRotation();
 
 	void renderElement();

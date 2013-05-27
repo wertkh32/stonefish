@@ -1,6 +1,7 @@
 #pragma once
 #include "Mesh.h"
 #include "ConjugateGradientSolver.h"
+#include "SymSparseMatrix.h"
 #include "PolarDecompose.h"
 
 
@@ -12,6 +13,7 @@ class Integrator
 	float **globalStiffness, ** globalMass, **globalDamping, **RK, **RKRT, **A;	
 	float *extforces, *intforces, *x0, *xt, *fu, *b, *v;
 	//ConjugateGradientSolver* solver;
+	SparseMatrix *systemMat, *sparseRK, *sparseRKRT, *sparseMass;
 	ConstrainedRows* rowSet;
 
 public:

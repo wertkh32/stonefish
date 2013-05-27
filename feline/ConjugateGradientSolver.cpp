@@ -95,16 +95,16 @@ void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, Constrain
 	float deltaOld, deltaNew, delta0,alpha,beta;
 	int it;
 	
-	int* allowed = (int*)malloc(sizeof(int) * n);
+	bool* allowed = (bool*)malloc(sizeof(bool) * n);
 
 	for(int i=0;i<n;i++)
 	{
-		allowed[i] = 1;
+		allowed[i] = true;
 	}
 
 	for(int i=0;i<rowSet->list.size();i++)
 	{
-		allowed[rowSet->list[i]] = 0;
+		allowed[rowSet->list[i]] = false;
 	}
 
 	for(int i=0;i<n;i++)

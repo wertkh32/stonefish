@@ -12,11 +12,11 @@ public:
 			 float a20,float a21,float a22);
 	inline Matrix3d transpose();
 	inline float determinant();
-	inline Matrix3d operator*(Matrix3d&);
+	inline Matrix3d operator*(const Matrix3d&);
 	inline Matrix3d operator*(float);
-	inline vector3<float> operator*(vector3<float>&);
-	inline Matrix3d operator+(Matrix3d&);
-	inline Matrix3d operator-(Matrix3d&);
+	inline vector3<float> operator*(const vector3<float>&);
+	inline Matrix3d operator+(const Matrix3d&);
+	inline Matrix3d operator-(const Matrix3d&);
 	float& operator()(int i,int j){return mat[i][j];}
 
 	Matrix3d inverse();
@@ -41,7 +41,7 @@ return Matrix3d(mat[0][0],mat[1][0],mat[2][0],
 }
 
 inline
-Matrix3d Matrix3d::operator*(Matrix3d& mm){
+Matrix3d Matrix3d::operator*(const Matrix3d& mm){
 	float m[3][3]={0};
 	for(int i=0;i<3;i++)
 		for(int j=0;j<3;j++)
@@ -51,7 +51,7 @@ Matrix3d Matrix3d::operator*(Matrix3d& mm){
 }
 
 inline
-vector3<float> Matrix3d::operator*(vector3<float>& vv){
+vector3<float> Matrix3d::operator*(const vector3<float>& vv){
 	float v[3]={0};
 	for(int i=0;i<3;i++)
 		for(int j=0;j<3;j++)
@@ -68,7 +68,7 @@ Matrix3d Matrix3d::operator*(float k){
 }
 
 inline
-Matrix3d Matrix3d::operator+(Matrix3d& mm){
+Matrix3d Matrix3d::operator+(const Matrix3d& mm){
 	float m[3][3];
 	for(int i=0;i<3;i++)
 		for(int j=0;j<3;j++)
@@ -77,7 +77,7 @@ Matrix3d Matrix3d::operator+(Matrix3d& mm){
 }
 
 inline
-Matrix3d Matrix3d::operator-(Matrix3d& mm){
+Matrix3d Matrix3d::operator-(const Matrix3d& mm){
 	float m[3][3];
 	for(int i=0;i<3;i++)
 		for(int j=0;j<3;j++)
