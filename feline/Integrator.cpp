@@ -29,7 +29,11 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 
 	A = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
+	{
 		A[i] = (float*)malloc(sizeof(float) * n * 3);
+		for(int j=0;j<n*3;j++)
+			A[i][j] = 0.0;
+	}
 
 	RK = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
@@ -39,19 +43,55 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 	for(int i=0;i<n * 3;i++)
 	RKRT[i] = (float*)malloc(sizeof(float) * n * 3);
 
-	//for sparse & matfree
-	//systemMat = new SparseMatrix(n);
-	//sparseRK = new SparseMatrix(n);
-	//sparseRKRT = new SparseMatrix(n);
-	//sparseMass = new SparseMatrix(n);
-	/*
-	for(int i=0;i<n*3;i++)
-		for(int j=0;j<n*3;j++)
+	matmap = (bool**)malloc(sizeof(float*) * n);
+	for(int i=0;i<n;i++)
+	{
+		matmap[i] = (bool*)malloc(sizeof(float) * n);
+		for(int j=0;j<n;j++)
 		{
-			sparseMass->setValue(i,j,globalMass[i][j]);
+			matmap[i][j] = false;
 		}
-	*/
+	}
+
+	for(int i=0;i<mesh->elements.size();i++)
+	{
+		for(int a=0;a<4;a++)
+			for(int b=0;b<4;b++)
+				matmap[mesh->nodeIndices[i][a]][mesh->nodeIndices[i][b]] = true;
+	}
+
+
+	for(int i=0;i<n;i++,printf("\n"))
+		for(int j=0;j<n;j++)
+		{
+			if(matmap[i][j])
+				printf("1 ");
+			else
+				printf("0 ");
+		}
+
+	assembleX0();
 	//mass lumping
+	assembleLumpedMassVec();
+
+
+
+}
+
+void
+Integrator::assembleX0()
+{
+	for(int i=0;i<n;i++)
+	{
+		x0[i * 3] = mesh->nodes[i]->pos.x;
+		x0[i * 3 + 1] = mesh->nodes[i]->pos.y;
+		x0[i * 3 + 2] = mesh->nodes[i]->pos.z;
+	}
+}
+
+void
+Integrator::assembleLumpedMassVec()
+{
 	for(int i=0;i<n*3;i++)
 		mass[i] = 0;
 
@@ -65,18 +105,6 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 			mass[mesh->nodeIndices[i][j] * 3 + 2] += elenodemass;
 		}
 	}
-
-
-	for(int i=0;i<n;i++)
-	{
-		x0[i * 3] = mesh->nodes[i]->pos.x;
-		x0[i * 3 + 1] = mesh->nodes[i]->pos.y;
-		x0[i * 3 + 2] = mesh->nodes[i]->pos.z;
-	}
-	//assembleDampingMat();
-	//assembleUndeformForces();
-	//assembleA();
-	//solver = new ConjugateGradientSolver(n * 3, A);
 }
 
 void
@@ -91,16 +119,6 @@ Integrator::assembleUndeformForces()
 			fu[i] += RK[i][j] * x0[j];
 		}
 	}
-	
-	//for sparse & matfree
-	/*
-	for(int i=0;i<n *3;i++)
-	{
-		fu[i] = 0;
-	}
-
-	sparseRK->matProduct(x0,fu);
-	*/
 }
 
 void
@@ -146,28 +164,6 @@ Integrator::assembleRotations()
 					}
 			
 	}
-	
-	//for sparse & matfree
-	/*
-	sparseRK->clear();
-	sparseRKRT->clear();
-
-	SparseMatrix eleRK(4), eleRKRT(4);
-
-	for(int i=0;i<mesh->elements.size();i++)
-	{
-		mesh->elements[i]->getRKRTandRK(eleRK,eleRKRT);
-		for(int a=0;a<4;a++)
-			for(int b=0;b<4;b++)
-			{
-				sparseRK->setBlockFilled(mesh->nodeIndices[i][a],mesh->nodeIndices[i][b],true);
-				sparseRKRT->setBlockFilled(mesh->nodeIndices[i][a],mesh->nodeIndices[i][b],true);
-
-				sparseRK->addBlock(mesh->nodeIndices[i][a],mesh->nodeIndices[i][b],eleRK.getBlock(a,b));
-				sparseRKRT->addBlock(mesh->nodeIndices[i][a],mesh->nodeIndices[i][b],eleRKRT.getBlock(a,b));
-			}
-	}
-	*/
 }
 
 void
@@ -204,23 +200,34 @@ Integrator::assembleA()
 	static const float alpha = 0.1, beta = 0.3;
 	static const float coeffK = dt * beta + dt * dt, coeffM = 1 + dt * alpha;
 	
+	/*
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)
 		{
-			A[i][j] = /*globalMass[i][j] * coeffM +*/ RKRT[i][j] * coeffK;
-			if(i==j)
-				A[i][j] += mass[i] * coeffM;
-			//printf("%lf ",A[i][j]);
+			{
+				A[i][j] =  RKRT[i][j] * coeffK; //globalMass[i][j] * coeffM
+				if(i==j)
+					A[i][j] += mass[i] * coeffM;
+			}
 		}
-	
-	/*
+	*/
+
 	for(int i=0;i<n;i++)
 		for(int j=0;j<n;j++)
 		{
-			if(sparseRKRT->isBlockFilled(i,j))
-				systemMat->setBlock(i,j, sparseMass->getBlock(i,j) * coeffM + sparseRKRT->getBlock(i,j) * coeffK,true);
+			if(matmap[i][j])
+			{
+				for(int a=0;a<3;a++)
+					for(int b=0;b<3;b++)
+					{	
+						int x = i*3+a, y = j*3+b;
+						A[x][y] = RKRT[x][y] * coeffK;
+						if(x==y)
+							A[x][y] += mass[x] * coeffM;
+					}
+			}
+
 		}
-	*/
 
 }
 
@@ -256,12 +263,12 @@ Integrator::timeStep()
 
 	for(int i=0;i<n*3;i++)
 	{
-		b[i] = 0;
+		//b[i] = 0;
 		//for(int j=0;j<n*3;j++)
 		//{
 		//	b[i] += globalMass[i][j] * v[j];
 		//}
-		b[i] += mass[i] * v[i];
+		b[i] = mass[i] * v[i];
 
 
 		for(int j=0;j<n*3;j++)

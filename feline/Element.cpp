@@ -180,10 +180,10 @@ void Element::getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& R
 	}
 
 	Matrix3d RT = R.transpose();
-
+	//upper triangle
 	for(int i=0;i<4;i++)
 	{
-		for(int j=0;j<4;j++)
+		for(int j=i;j<4;j++)
 		{
 			for(int a=0;a<3;a++)
 				for(int b=0;b<3;b++)
@@ -191,6 +191,14 @@ void Element::getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& R
 						RKRT(a + i * 3, b + j * 3) += RK(a + i * 3, c + j * 3) * RT(c , b);
 		}
 	}
+	//lower triangle
+	for(int i=1;i<4;i++)
+		for(int j=0;j<i;j++)
+		{
+			for(int a=0;a<3;a++)
+				for(int b=0;b<3;b++)
+						RKRT(a + i * 3, b + j * 3) = RKRT(b + j * 3, a + i * 3);
+		}
 
 	//RK = Rot * undeformStiffnessMat;
 	//RKRT = RK * Rot.transpose();

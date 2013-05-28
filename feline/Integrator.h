@@ -10,14 +10,16 @@ class Integrator
 	Mesh* mesh;
 	int n;
 	float dt;
+	bool **matmap;
 	float **globalStiffness, ** globalMass, **globalDamping, **RK, **RKRT, **A;	
 	float *extforces, *intforces, *x0, *xt, *fu, *b, *v, *mass;
-	//ConjugateGradientSolver* solver;
-	SparseMatrix *systemMat, *sparseRK, *sparseRKRT, *sparseMass;
+	
 	ConstrainedRows* rowSet;
 
 public:
 	Integrator(Mesh* _mesh, ConstrainedRows* r=0);
+	void assembleLumpedMassVec();
+	void assembleX0();
 	void assembleExtForces();
 	void assembleDampingMat();
 	void assembleDisplacement();
