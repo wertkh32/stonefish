@@ -37,6 +37,7 @@ public:
 	Matrix3d& getUndeformShapeMat(){return undeformShapeMat;}
 	Matrix3d& getUndeformShapeMatInv(){return undeformShapeMatInv;}
 	Node** getNodes(){return nodes;}
+	float getDensity(){return density;}
 	float getVolume(){return undeformVolume;}
 	float getYoungMod(){return E;}
 	float getPoissonRatio(){return v;}

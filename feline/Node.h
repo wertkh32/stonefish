@@ -8,7 +8,7 @@ class Node
 public:
 	float mass;
 	vector3<float> pos, pos_t, vec_t,force;
-	Node(vector3<float> _pos, vector3<float> _vel, vector3<float> _force, float _mass);
+	Node(vector3<float> _pos, vector3<float> _vel, vector3<float> _force);
 	Node(void);
 	~Node(void);
 };

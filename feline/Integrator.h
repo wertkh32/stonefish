@@ -11,7 +11,7 @@ class Integrator
 	int n;
 	float dt;
 	float **globalStiffness, ** globalMass, **globalDamping, **RK, **RKRT, **A;	
-	float *extforces, *intforces, *x0, *xt, *fu, *b, *v;
+	float *extforces, *intforces, *x0, *xt, *fu, *b, *v, *mass;
 	//ConjugateGradientSolver* solver;
 	SparseMatrix *systemMat, *sparseRK, *sparseRKRT, *sparseMass;
 	ConstrainedRows* rowSet;

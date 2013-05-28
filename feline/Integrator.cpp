@@ -21,6 +21,7 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 	v = (float*)malloc(sizeof(float) * n * 3);
 	fu = (float*)malloc(sizeof(float) * n * 3);
 	b = (float*)malloc(sizeof(float) * n * 3);
+	mass = (float*)malloc(sizeof(float) * n * 3);
 
 	globalDamping = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
@@ -50,7 +51,22 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 			sparseMass->setValue(i,j,globalMass[i][j]);
 		}
 	*/
-	
+	//mass lumping
+	for(int i=0;i<n*3;i++)
+		mass[i] = 0;
+
+	for(int i=0;i<mesh->elements.size();i++)
+	{
+		float elenodemass = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume()) /4;
+		for(int j=0;j<4;j++)
+		{
+			mass[mesh->nodeIndices[i][j] * 3] += elenodemass;
+			mass[mesh->nodeIndices[i][j] * 3 + 1] += elenodemass;
+			mass[mesh->nodeIndices[i][j] * 3 + 2] += elenodemass;
+		}
+	}
+
+
 	for(int i=0;i<n;i++)
 	{
 		x0[i * 3] = mesh->nodes[i]->pos.x;
@@ -191,7 +207,9 @@ Integrator::assembleA()
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)
 		{
-			A[i][j] = globalMass[i][j] * coeffM + RKRT[i][j] * coeffK;
+			A[i][j] = /*globalMass[i][j] * coeffM +*/ RKRT[i][j] * coeffK;
+			if(i==j)
+				A[i][j] += mass[i] * coeffM;
 			//printf("%lf ",A[i][j]);
 		}
 	
@@ -239,10 +257,12 @@ Integrator::timeStep()
 	for(int i=0;i<n*3;i++)
 	{
 		b[i] = 0;
-		for(int j=0;j<n*3;j++)
-		{
-			b[i] += globalMass[i][j] * v[j];
-		}
+		//for(int j=0;j<n*3;j++)
+		//{
+		//	b[i] += globalMass[i][j] * v[j];
+		//}
+		b[i] += mass[i] * v[i];
+
 
 		for(int j=0;j<n*3;j++)
 		{

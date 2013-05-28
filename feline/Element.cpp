@@ -74,18 +74,24 @@ void Element::preComputeUndeformedStiffnessMat()
 	undeformStiffnessMat = strainMat.transpose() * matConstantsMat * strainMat;
 	undeformStiffnessMat.scalarMul(undeformVolume);
 	/*
-	for(int i=0;i<12;i++)
+	printf("start");
+	for(int i=0;i<12;i++,printf("\n"))
 		for(int j=0;j<12;j++)
 		{
-			printf("%lf ",undeformStiffnessMat(i,j));
+			printf("%f ",undeformStiffnessMat(i,j));
 		}
 	*/
 	
+	for(int i=0;i<4;i++)
+		for(int j=0;j<4;j++)
+			sparseStiff->setBlockFilled(i,j,true);
+
 	for(int i=0;i<12;i++)
 		for(int j=0;j<12;j++)
 		{
 			sparseStiff->setValue(i,j,undeformStiffnessMat(i,j));
 		}
+	
 
 }
 
