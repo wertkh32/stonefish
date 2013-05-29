@@ -13,8 +13,10 @@ class Integrator
 	bool **matmap;
 	float **globalStiffness, ** globalMass, **globalDamping, **RK, **RKRT, **A;	
 	float *extforces, *intforces, *x0, *xt, *fu, *b, *v, *mass;
+	bool *allowed;
 	
 	ConstrainedRows* rowSet;
+	ConjugateGradientSolver solver;
 
 public:
 	Integrator(Mesh* _mesh, ConstrainedRows* r=0);
@@ -29,6 +31,7 @@ public:
 	void timeStep();
 	void updateNodes();
 	void debug();
+	void sysMul(float* in, float* out);
 
 	~Integrator(void);
 };

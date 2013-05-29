@@ -51,7 +51,7 @@ static float rot = 0.0;
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(-3,-1,-10);
+    glTranslatef(-10,-1,-30);
 	glRotatef(20 + rot,1,1,0);
     //glutSolidSphere(3,30,30);
 	//inte->debug();
@@ -217,17 +217,45 @@ main(int argc, char *argv[])
 	rows.add(4);
 	rows.add(5);
 	rows.add(6);
+	rows.add(7);
+	rows.add(8);
+	rows.add(9);
+	rows.add(10);
+	rows.add(11);
+	rows.add(12);
+	rows.add(13);
+	rows.add(14);
+	rows.add(15);
+	rows.add(16);
+	rows.add(17);
+	rows.add(18);
+	rows.add(19);
+	rows.add(20);
+	
 
-	rows.add(49);
-	rows.add(50);
-	rows.add(51);
-	rows.add(52);
-	rows.add(53);
-	rows.add(54);
-	rows.add(55);
+	rows.add(441);
+	rows.add(442);
+	rows.add(443);
+	rows.add(444);
+	rows.add(445);
+	rows.add(446);
+	rows.add(447);
+	rows.add(448);
+	rows.add(449);
+	rows.add(450);
+	rows.add(451);
+	rows.add(452);
+	rows.add(453);
+	rows.add(454);
+	rows.add(455);
+	rows.add(456);
+	rows.add(457);
+	rows.add(458);
+	rows.add(459);
+	rows.add(460);
+	rows.add(461);
 
-
-	MeshFunctions::makeSheet(&tet,6,6);
+	MeshFunctions::makeSheet(&tet,20,20);
 	//sheet//
 
 

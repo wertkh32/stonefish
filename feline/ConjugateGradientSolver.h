@@ -38,15 +38,43 @@ struct ConstrainedRows
 //use pure arrays
 class ConjugateGradientSolver
 {
-	float *r, *x, *d, *q;
+	float *r, *x, *d, *q, *tempo;
 	float *flatA;
 	float** A;
-	int n;
+	int n, nb;
+
+	void sysMul(float* in, float* out, float** A, bool** matmap, bool* allowed)
+	{
+		for(int i=0;i<n;i++)
+			out[i] = 0;
+
+		for(int i=0;i<nb;i++)
+			for(int j=0;j<nb;j++)
+			{
+				if(matmap[i][j])
+				{
+					for(int a=0;a<3;a++)
+					{
+						int xx = i * 3 + a;
+						if(allowed[xx])
+							for(int b=0;b<3;b++)
+							{
+								int yy = j * 3 + b;
+								if(allowed[yy])
+									out[xx] += A[xx][yy] * in[yy];
+							}
+					}
+				}
+			}
+	}
 public:
-	ConjugateGradientSolver(int _n, float** A);
+	ConjugateGradientSolver();
 	~ConjugateGradientSolver(void);
+	void initSolver(int _n, float** A);
+
 	void solve(float* x, float* b);
-	void solveWithConstraints(float* x, float* b, ConstrainedRows* rowSet);
+	void solveWithConstraints(float* x, float* b, bool* allowed);
+	void solveWithConstraints(float* x, float* b, bool* allowed, bool** matmap);
 
 	float dot(float* a, float* b, int k)
 	{
@@ -55,7 +83,7 @@ public:
 			r+=a[i]*b[i];
 		return r;
 	}
-	void initSolver();
+	
 	void removeRows(int r);
 };
 

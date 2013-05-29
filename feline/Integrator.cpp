@@ -23,9 +23,26 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 	b = (float*)malloc(sizeof(float) * n * 3);
 	mass = (float*)malloc(sizeof(float) * n * 3);
 
+	allowed = (bool*)malloc(sizeof(bool) * n * 3);
+	
+	for(int i=0;i<n * 3;i++)
+	{
+		allowed[i] = true;
+	}
+
+	for(int i=0;i<rowSet->list.size();i++)
+	{
+		allowed[rowSet->list[i]] = false;
+	}
+
+
+	/*
 	globalDamping = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
 		globalDamping[i] = (float*)malloc(sizeof(float) * n * 3);
+	*/
+
+
 
 	A = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
@@ -60,7 +77,7 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 				matmap[mesh->nodeIndices[i][a]][mesh->nodeIndices[i][b]] = true;
 	}
 
-
+	/*
 	for(int i=0;i<n;i++,printf("\n"))
 		for(int j=0;j<n;j++)
 		{
@@ -69,7 +86,8 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 			else
 				printf("0 ");
 		}
-
+	*/
+	solver.initSolver(n*3,A);
 	assembleX0();
 	//mass lumping
 	assembleLumpedMassVec();
@@ -245,6 +263,30 @@ Integrator::updateNodes()
 }
 
 void
+Integrator::sysMul(float* in, float* out)
+{
+	for(int i=0;i<n*3;i++)
+		out[i] = 0;
+
+	for(int i=0;i<n;i++)
+		for(int j=0;j<n;j++)
+		{
+			if(matmap[i][j])
+			{
+				for(int a=0;a<3;a++)
+					for(int b=0;b<3;b++)
+					{
+						int x = i * 3 + a;
+						int y = j * 3 + b;
+						if(allowed[x] && allowed[y])
+							out[x] += A[x][y] * in[y];
+					}
+			}
+		}
+
+}
+
+void
 Integrator::timeStep()
 {
 	assembleDisplacement();
@@ -259,7 +301,7 @@ Integrator::timeStep()
 	assembleExtForces();
 
 
-	ConjugateGradientSolver solver(n*3,A);
+	//ConjugateGradientSolver solver(n*3,A);
 
 	for(int i=0;i<n*3;i++)
 	{
@@ -282,7 +324,7 @@ Integrator::timeStep()
 	
 	if(rowSet)
 	{
-		solver.solveWithConstraints(v,b,rowSet);
+		solver.solveWithConstraints(v,b,allowed,matmap);
 	}
 	else
 	{

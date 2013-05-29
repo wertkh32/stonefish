@@ -1,26 +1,31 @@
 #include "ConjugateGradientSolver.h"
 extern void CGSolverGPU(float* A, float* x, float* b, int n);
 
-ConjugateGradientSolver::ConjugateGradientSolver(int _n, float** _A)
+ConjugateGradientSolver::ConjugateGradientSolver()
 {
-	n = _n;
-	A = _A;
+	
+	/*
 	flatA = (float*)malloc(sizeof(float) * n * n);
 
 	for(int i=0;i<n;i++)
 		for(int j=0;j<n;j++)
 			flatA[i * n + j] = A[i][j];
+	*/
 
-
-	r = (float*)malloc(sizeof(float) * n); 
-	d = (float*)malloc(sizeof(float) * n); 
-	q = (float*)malloc(sizeof(float) * n); 
+	//initSolver(_n, _A);
 }
 
 void
-ConjugateGradientSolver::initSolver()
+ConjugateGradientSolver::initSolver(int _n, float** _A)
 {
-	
+	n = _n;
+	A = _A;
+	nb = n/3;
+
+	r = (float*)malloc(sizeof(float) * n); 
+	d = (float*)malloc(sizeof(float) * n); 
+	q = (float*)malloc(sizeof(float) * n);
+	tempo = (float*)malloc(sizeof(float) * n);
 }
 
 void ConjugateGradientSolver::removeRows(int r)
@@ -90,22 +95,10 @@ ConjugateGradientSolver::solve(float* x, float* b)
 
 }
 
-void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, ConstrainedRows* rowSet)
+void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, bool* allowed)
 {
 	float deltaOld, deltaNew, delta0,alpha,beta;
 	int it;
-	
-	bool* allowed = (bool*)malloc(sizeof(bool) * n);
-
-	for(int i=0;i<n;i++)
-	{
-		allowed[i] = true;
-	}
-
-	for(int i=0;i<rowSet->list.size();i++)
-	{
-		allowed[rowSet->list[i]] = false;
-	}
 
 	for(int i=0;i<n;i++)
 	{
@@ -217,7 +210,99 @@ void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, Constrain
 
 	}
 
-	free(allowed);
+}
+
+void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, bool* allowed, bool** matmap)
+{
+	float deltaOld, deltaNew, delta0,alpha,beta;
+	int it;
+
+	for(int i=0;i<n;i++)
+	{
+		r[i]=0;
+		d[i]=0;
+		q[i]=0;
+		tempo[i] = 0;
+	}
+
+	sysMul(x,tempo,A,matmap,allowed);
+
+	for(int i=0; i<n;i++)
+	{
+			d[i] = r[i] = b[i] - tempo[i];
+	}
+
+	it=0;
+	deltaNew = 0;//dot(r,r,n);
+
+	for(int i=0;i<n;i++)
+	{
+		if(allowed[i])
+				deltaNew += r[i] * r[i];
+	}
+
+	delta0 = deltaNew;
+	alpha = beta = 0;
+
+	while(it < MAX_ITER && deltaNew > EPSILON*EPSILON*delta0)
+	{
+		it++;
+		sysMul(d,q,A,matmap,allowed);
+
+		float temp2=0;
+		for(int i=0;i<n;i++)
+		{
+			if(allowed[i])
+				temp2 += d[i] * q[i];
+		}
+
+		alpha = deltaNew/temp2;//dot(d,q,n);
+		
+		for(int i=0;i<n;i++)
+		{
+			if(allowed[i])
+				x[i] = x[i] + alpha*d[i];
+		}
+
+		if(it%20==0)
+		{
+			//refresh r of its horrible floating point errors
+			sysMul(x,tempo,A,matmap,allowed);
+			for(int i=0;i<n;i++)
+			{
+				if(allowed[i])
+				{
+					r[i] = b[i] - tempo[i];
+				}
+			}
+		}
+		else
+		{
+			for(int i=0;i<n;i++)
+			{
+				if(allowed[i])
+					r[i] = r[i] - alpha * q[i];
+			}
+		}
+
+		deltaOld = deltaNew;
+		deltaNew = 0;//dot(r,r,n);
+
+		for(int i=0;i<n;i++)
+		{
+			if(allowed[i])
+				deltaNew += r[i] * r[i];
+		}
+
+		beta = deltaNew/deltaOld;
+
+		for(int i=0;i<n;i++)
+		{
+			if(allowed[i])
+				d[i] = r[i] + beta * d[i];
+		}
+
+	}
 
 }
 
