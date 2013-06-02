@@ -306,6 +306,100 @@ void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, bool* all
 
 }
 
+void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, bool* allowed, Mesh* mesh)
+{
+	float deltaOld, deltaNew, delta0,alpha,beta;
+	int it;
+
+	for(int i=0;i<n;i++)
+	{
+		r[i]=0;
+		d[i]=0;
+		q[i]=0;
+		tempo[i] = 0;
+	}
+
+	sysMulMatFree(x,tempo,allowed,mesh);
+
+	for(int i=0; i<n;i++)
+	{
+			d[i] = r[i] = b[i] - tempo[i];
+	}
+
+	it=0;
+	deltaNew = 0;//dot(r,r,n);
+
+	for(int i=0;i<n;i++)
+	{
+		if(allowed[i])
+				deltaNew += r[i] * r[i];
+	}
+
+	delta0 = deltaNew;
+	alpha = beta = 0;
+
+	while(it < MAX_ITER && deltaNew > EPSILON*EPSILON*delta0)
+	{
+		it++;
+		sysMulMatFree(d,q,allowed,mesh);
+
+		float temp2=0;
+		for(int i=0;i<n;i++)
+		{
+			if(allowed[i])
+				temp2 += d[i] * q[i];
+		}
+
+		alpha = deltaNew/temp2;//dot(d,q,n);
+		
+		for(int i=0;i<n;i++)
+		{
+			if(allowed[i])
+				x[i] = x[i] + alpha*d[i];
+		}
+
+		if(it%20==0)
+		{
+			//refresh r of its horrible floating point errors
+			sysMulMatFree(x,tempo,allowed,mesh);
+			for(int i=0;i<n;i++)
+			{
+				if(allowed[i])
+				{
+					r[i] = b[i] - tempo[i];
+				}
+			}
+		}
+		else
+		{
+			for(int i=0;i<n;i++)
+			{
+				if(allowed[i])
+					r[i] = r[i] - alpha * q[i];
+			}
+		}
+
+		deltaOld = deltaNew;
+		deltaNew = 0;//dot(r,r,n);
+
+		for(int i=0;i<n;i++)
+		{
+			if(allowed[i])
+				deltaNew += r[i] * r[i];
+		}
+
+		beta = deltaNew/deltaOld;
+
+		for(int i=0;i<n;i++)
+		{
+			if(allowed[i])
+				d[i] = r[i] + beta * d[i];
+		}
+
+	}
+
+}
+
 ConjugateGradientSolver::~ConjugateGradientSolver(void)
 {
 	free(r); 

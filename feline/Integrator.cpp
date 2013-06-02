@@ -10,7 +10,7 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 	//K is constant -> linear FEM. nonlinear FEM later.
 	//globalStiffness = mesh->assembleGlobalStiffness();
 	//NON-LINEAR TIME!!!
-	globalMass = mesh->assembleGlobalMass();
+	//globalMass = mesh->assembleGlobalMass();
 
 	dt = 1./FPS;
 	//printf("%lf ",dt);
@@ -22,6 +22,7 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 	fu = (float*)malloc(sizeof(float) * n * 3);
 	b = (float*)malloc(sizeof(float) * n * 3);
 	mass = (float*)malloc(sizeof(float) * n * 3);
+	kxt = (float*)malloc(sizeof(float) * n * 3);
 
 	allowed = (bool*)malloc(sizeof(bool) * n * 3);
 	
@@ -125,20 +126,7 @@ Integrator::assembleLumpedMassVec()
 	}
 }
 
-void
-Integrator::assembleUndeformForces()
-{
-	
-	for(int i=0;i<n *3;i++)
-	{
-		fu[i] = 0;
-		for(int j=0;j<n*3;j++)
-		{
-			fu[i] += RK[i][j] * x0[j];
-		}
-	}
-}
-
+/*
 void
 Integrator::assembleDampingMat()
 {
@@ -155,6 +143,96 @@ Integrator::assembleDampingMat()
 		}
 
 }
+*/
+
+void
+Integrator::computeElementMatrices()
+{
+	for(int i=0;i<mesh->elements.size();i++)
+	{
+		mesh->elements[i]->computeRKRTandRK();
+	}
+}
+
+void
+Integrator::mulRK(float* in, float* out)
+{
+	for(int i=0;i<mesh->elements.size();i++)
+		{
+			Element& ele = *(mesh->elements[i]);
+			GenMatrix<float,12,12>& A = *(ele.getRK());
+			for(int a=0;a<4;a++)
+			{
+				int x = mesh->nodeIndices[i][a];
+				for(int b=0;b<4;b++)
+				{
+					int y = mesh->nodeIndices[i][b];
+					for(int c=0;c<3;c++)
+						for(int d=0;d<3;d++)
+						{
+							out[x*3 + c] += A(a*3+c,b*3+d) * in[y*3 + d];
+						}
+				}
+			}
+
+		}
+}
+
+void
+Integrator::mulRKRT(float* in, float* out)
+{
+		for(int i=0;i<mesh->elements.size();i++)
+		{
+			Element& ele = *(mesh->elements[i]);
+			GenMatrix<float,12,12>& A = *(ele.getRKRT());
+			for(int a=0;a<4;a++)
+			{
+				int x = mesh->nodeIndices[i][a];
+				for(int b=0;b<4;b++)
+				{
+					int y = mesh->nodeIndices[i][b];
+					for(int c=0;c<3;c++)
+						for(int d=0;d<3;d++)
+						{
+							out[x*3 + c] += A(a*3+c,b*3+d) * in[y*3 + d];
+						}
+				}
+			}
+
+		}
+}
+
+
+void
+Integrator::assembleUndeformForces()
+{
+	
+	for(int i=0;i<n *3;i++)
+	{
+		fu[i] = 0;
+		//for(int j=0;j<n*3;j++)
+		//{
+		//	fu[i] += RK[i][j] * x0[j];
+		//}
+	}
+
+	mulRK(x0,fu);
+}
+
+void
+Integrator::assembleKxt()
+{
+	for(int i=0;i<n *3;i++)
+	{
+		kxt[i] = 0;
+		//for(int j=0;j<n*3;j++)
+		//{
+		//	fu[i] += RK[i][j] * x0[j];
+		//}
+	}
+
+	mulRKRT(xt,kxt);
+}
 
 void
 Integrator::assembleRotations()
@@ -169,16 +247,18 @@ Integrator::assembleRotations()
 
 	for(int i=0;i<mesh->elements.size();i++)
 	{
-		GenMatrix<float,12,12> rk, rkrt;
+		GenMatrix<float,12,12> *rk=0, *rkrt=0;
 		mesh->elements[i]->getRKRTandRK(rk,rkrt);
+
+		GenMatrix<float,12,12> &_rk = *rk, &_rkrt = *rkrt;
 
 		for(int a=0;a<4;a++)
 			for(int b=0;b<4;b++)
 				for(int j=0;j<3;j++)
 					for(int k=0;k<3;k++)
 					{
-						RK[mesh->nodeIndices[i][a] * 3 + j][mesh->nodeIndices[i][b] * 3 + k] += rk(a * 3 + j, b * 3 + k);
-						RKRT[mesh->nodeIndices[i][a] * 3 + j][mesh->nodeIndices[i][b] * 3 + k] += rkrt(a * 3 + j, b * 3 + k);
+						RK[mesh->nodeIndices[i][a] * 3 + j][mesh->nodeIndices[i][b] * 3 + k] += _rk(a * 3 + j, b * 3 + k);
+						RKRT[mesh->nodeIndices[i][a] * 3 + j][mesh->nodeIndices[i][b] * 3 + k] += _rkrt(a * 3 + j, b * 3 + k);
 					}
 			
 	}
@@ -290,10 +370,13 @@ void
 Integrator::timeStep()
 {
 	assembleDisplacement();
-	assembleRotations();
+	//assembleRotations();
 	//assembleDampingMat();
-	assembleUndeformForces();
-	assembleA();
+	//assembleRK();
+	computeElementMatrices();
+	assembleUndeformForces();//fu
+	assembleKxt();
+	//assembleA();
 	//Av(t + 1) = b; (3.13)
 	//where
 	//A = (M + tC + t2K); 
@@ -312,19 +395,20 @@ Integrator::timeStep()
 		//}
 		b[i] = mass[i] * v[i];
 
-
+		/*
 		for(int j=0;j<n*3;j++)
 		{
 			b[i] += dt * (-RKRT[i][j]* xt[j]);
 		}
-
+		*/
+		b[i] += -dt * kxt[i];
 	
 		b[i] += dt * (fu[i] + extforces[i]);
 	}
 	
 	if(rowSet)
 	{
-		solver.solveWithConstraints(v,b,allowed,matmap);
+		solver.solveWithConstraints(v,b,allowed,mesh);
 	}
 	else
 	{

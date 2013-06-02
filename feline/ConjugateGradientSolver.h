@@ -1,10 +1,11 @@
 #pragma once
 
 #include "includes.h"
+#include "Mesh.h"
 #include "QuickArray.h"
 
 #define MAX_ITER 1000
-#define EPSILON 0.001
+#define EPSILON 0.01
 
 #define MAX_ROWS_CONSTRAINED 50
 
@@ -67,6 +68,38 @@ class ConjugateGradientSolver
 				}
 			}
 	}
+
+
+void sysMulMatFree(float* in, float* out, bool* allowed, Mesh* mesh)
+{	
+		for(int i=0;i<n;i++)
+			out[i] = 0;
+
+		for(int i=0;i<mesh->elements.size();i++)
+		{
+			Element& ele = *(mesh->elements[i]);
+			GenMatrix<float,12,12>& A = *(ele.getA());
+			for(int a=0;a<4;a++)
+			{
+				int x = mesh->nodeIndices[i][a];
+				for(int b=0;b<4;b++)
+				{
+					int y = mesh->nodeIndices[i][b];
+					for(int c=0;c<3;c++)
+					{
+						if(allowed[x*3+c])
+							for(int d=0;d<3;d++)
+							{
+								if(allowed[y*3+d])
+									out[x*3 + c] += A(a*3+c,b*3+d) * in[y*3 + d];
+							}
+					}
+				}
+			}
+
+		}
+}
+
 public:
 	ConjugateGradientSolver();
 	~ConjugateGradientSolver(void);
@@ -75,6 +108,7 @@ public:
 	void solve(float* x, float* b);
 	void solveWithConstraints(float* x, float* b, bool* allowed);
 	void solveWithConstraints(float* x, float* b, bool* allowed, bool** matmap);
+	void solveWithConstraints(float* x, float* b, bool* allowed, Mesh* mesh);
 
 	float dot(float* a, float* b, int k)
 	{

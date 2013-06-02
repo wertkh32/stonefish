@@ -11,8 +11,12 @@ Element::Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, flo
 	v = _v;
 	density = _density;
 	sparseStiff = new SparseMatrix(4);
+	dt = 1.0/FPS;
 
 	preCompute();
+	
+	mass = density * undeformVolume;
+	nodalMass = mass / 4;
 }
 
 void Element::preCompute()
@@ -154,8 +158,13 @@ Matrix3d Element::getRotation()
 	return R;
 }
 
-void Element::getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& RKRT)
+
+void
+Element::computeRKRTandRK()
 {
+	static const float alpha = 0.1, beta = 0.1;
+	static const float coeffK = dt * beta + dt * dt, coeffM = 1 + dt * alpha;
+	
 	Matrix3d F,R,S;
 	F = computeDeformationMat();
 	PolarDecompose::compute(F,R,S);
@@ -174,8 +183,11 @@ void Element::getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& R
 		{
 			for(int a=0;a<3;a++)
 				for(int b=0;b<3;b++)
+				{
+					RK(a + i * 3, b + j * 3) = 0;
 					for(int c=0;c<3;c++)
 						RK(a + i * 3, b + j * 3) += R(a,c) * undeformStiffnessMat(c + i * 3, b + j * 3);
+				}
 		}
 	}
 
@@ -187,8 +199,11 @@ void Element::getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& R
 		{
 			for(int a=0;a<3;a++)
 				for(int b=0;b<3;b++)
+				{
+					RKRT(a + i * 3, b + j * 3) = 0;
 					for(int c=0;c<3;c++)
 						RKRT(a + i * 3, b + j * 3) += RK(a + i * 3, c + j * 3) * RT(c , b);
+				}
 		}
 	}
 	//lower triangle
@@ -200,8 +215,23 @@ void Element::getRKRTandRK(GenMatrix<float,12,12>& RK, GenMatrix<float,12,12>& R
 						RKRT(a + i * 3, b + j * 3) = RKRT(b + j * 3, a + i * 3);
 		}
 
+	for(int i=0;i<12;i++)
+		for(int j=0;j<12;j++)
+		{
+			A(i,j) = coeffK * RKRT(i,j);
+			if(i==j)
+				A(i,j) += coeffM * nodalMass;
+		}
+
+}
+
+void Element::getRKRTandRK(GenMatrix<float,12,12>*& ptrRK, GenMatrix<float,12,12>*& ptrRKRT)
+{
+	computeRKRTandRK();
 	//RK = Rot * undeformStiffnessMat;
 	//RKRT = RK * Rot.transpose();
+	ptrRK = &RK;
+	ptrRKRT = &RKRT;
 }
 
 void Element::getRKRTandRK(SparseMatrix& RK, SparseMatrix& RKRT)

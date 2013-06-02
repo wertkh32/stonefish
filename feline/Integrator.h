@@ -12,7 +12,7 @@ class Integrator
 	float dt;
 	bool **matmap;
 	float **globalStiffness, ** globalMass, **globalDamping, **RK, **RKRT, **A;	
-	float *extforces, *intforces, *x0, *xt, *fu, *b, *v, *mass;
+	float *extforces, *intforces, *x0, *xt, *fu, *b, *v, *mass, *kxt;
 	bool *allowed;
 	
 	ConstrainedRows* rowSet;
@@ -20,14 +20,24 @@ class Integrator
 
 public:
 	Integrator(Mesh* _mesh, ConstrainedRows* r=0);
+	
+	//precomputation
 	void assembleLumpedMassVec();
 	void assembleX0();
+
+	//timestep funcs
 	void assembleExtForces();
-	void assembleDampingMat();
 	void assembleDisplacement();
 	void assembleUndeformForces();
 	void assembleRotations();
 	void assembleA();
+
+	//matfree timestep funcs
+	void computeElementMatrices();
+	void mulRK(float* in, float* out);
+	void mulRKRT(float* in, float* out);
+	void assembleKxt();
+
 	void timeStep();
 	void updateNodes();
 	void debug();

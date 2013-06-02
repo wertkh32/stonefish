@@ -40,5 +40,10 @@ public:
      time.QuadPart = timer.stop.QuadPart - timer.start.QuadPart;
      return LIToMSecs( time) ;
 	}
+
+	void print()
+	{
+		printf("%f\n",getElapsedTime());
+	}
 };
 

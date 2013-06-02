@@ -4,6 +4,7 @@
 #include "Model.h"
 #include "MeshFunctions.h"
 #include "ModelFunctions.h"
+#include "perfmon.h"
 
 extern void CGSolverGPU(float* A, float* x, float* b, int n);
 
@@ -12,6 +13,7 @@ static Integrator* inte;
 static Mesh* tet;
 static int iter = 10;
 Model * mod;
+
 /*
 Node nodelist[] =
 {
@@ -56,9 +58,11 @@ static float rot = 0.0;
     //glutSolidSphere(3,30,30);
 	//inte->debug();
 	//inte->debug();
-
+	perfmon p;
+	p.startTimer();
 	inte->timeStep();
-
+	p.stopTimer();
+	p.print();
 	for(int i=0;i<tet->getNoOfElements();i++)
 		tet->elements[i]->renderElement();
 
@@ -72,7 +76,7 @@ static float rot = 0.0;
 	else
 	{
 		for(int i=90;i<98;i++)
-		tet->nodes[i]->force = vector3<float>(0,100,0);
+		tet->nodes[i]->force = vector3<float>(0,500,0);
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>(0,40,0);
 	}
