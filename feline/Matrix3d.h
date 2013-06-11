@@ -18,6 +18,7 @@ public:
 	inline Matrix3d operator+(const Matrix3d&);
 	inline Matrix3d operator-(const Matrix3d&);
 	float& operator()(int i,int j){return mat[i][j];}
+	float trace(){return mat[0][0] + mat[1][1] + mat[2][2];}
 
 	Matrix3d inverse();
 	static Matrix3d skew(vector3<float>& v);

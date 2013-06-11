@@ -24,6 +24,9 @@ public:
 	float** assembleGlobalMass();
 	float** assembleGlobalStiffness();
 
+	void mulK(float* in, float* out);
+	void mulA(float* in, float* out);
+
 	Mesh(Node nodes[], int n);
 	~Mesh(void);
 };

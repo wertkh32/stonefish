@@ -90,6 +90,40 @@ Mesh::addElement(int ind0, int ind1, int ind2, int ind3, float _E, float _v, flo
 	elements.push(new Element(nodes[ind0], nodes[ind1], nodes[ind2], nodes[ind3], _E, _v, density));
 }
 
+void
+Mesh::mulK(float* in, float* out)
+{
+	//element computeMatFreeVars must be called first.
+	//out[i]=0;
+	for(int i=0;i<elements.size();i++)
+	{
+		int i0 = nodeIndices[i][0] * 3,i1 = nodeIndices[i][1] * 3,i2 = nodeIndices[i][2] * 3,i3 = nodeIndices[i][3] * 3;
+		
+		Matrix3d dF = Matrix3d( in[i0    ] - in[i3    ],in[i1    ] - in[i3    ],in[i2    ] - in[i3    ],
+								in[i0 + 1] - in[i3 + 1],in[i1 + 1] - in[i3 + 1],in[i2 + 1] - in[i3 + 1],
+								in[i0 + 2] - in[i3 + 2],in[i1 + 2] - in[i3 + 2],in[i2 + 2] - in[i3 + 2]);
+
+		Matrix3d dP = elements[i]->computeDiffPiolaStressTensor(dF);
+		Matrix3d dH = dP * elements[i]->getUndeformShapeMatInvT() * (-elements[i]->getVolume());
+		
+		out[i0] += dH(0,0); 
+		out[i0 + 1] += dH(1,0); 
+		out[i0 + 2] += dH(2,0);
+		
+		out[i1] += dH(0,1); 
+		out[i1 + 1] += dH(1,1); 
+		out[i1 + 2] += dH(2,1);
+		
+		out[i2] += dH(0,2); 
+		out[i2 + 1] += dH(1,2); 
+		out[i2 + 2] += dH(2,2);
+
+		out[i3] =     -dH(0,0)-dH(0,1)-dH(0,2);
+		out[i3 + 1] = -dH(1,0)-dH(1,1)-dH(1,2);
+		out[i3 + 2] = -dH(2,0)-dH(2,1)-dH(2,2);
+	}
+}
+
 Mesh::~Mesh(void)
 {
 }

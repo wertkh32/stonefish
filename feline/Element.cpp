@@ -26,6 +26,7 @@ void Element::preCompute()
 					nodes[0]->pos.y - nodes[3]->pos.y,nodes[1]->pos.y - nodes[3]->pos.y,nodes[2]->pos.y - nodes[3]->pos.y,
 					nodes[0]->pos.z - nodes[3]->pos.z,nodes[1]->pos.z - nodes[3]->pos.z,nodes[2]->pos.z - nodes[3]->pos.z);
 	undeformShapeMatInv = undeformShapeMat.inverse();
+	undeformShapeMatInvT = undeformShapeMatInv.transpose();
 	undeformVolume = (1.0/6.0) * fabs(undeformShapeMat.determinant());
 
 	preComputeUndeformedStiffnessMat();
@@ -138,6 +139,7 @@ Matrix3d Element::computeDeformationMat()
 					nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
 	return deformShapeMat * undeformShapeMatInv;
 }
+
 
 
 Matrix3d Element::computeDeformShapeMat()
@@ -268,6 +270,37 @@ void Element::getRKRTandRK(SparseMatrix& RK, SparseMatrix& RKRT)
 		}
 	}
 
+}
+
+void Element::computeMatFreeVars()
+{
+	Matrix3d deformShapeMat 
+				   (nodes[0]->pos_t.x - nodes[3]->pos_t.x,nodes[1]->pos_t.x - nodes[3]->pos_t.x,nodes[2]->pos_t.x - nodes[3]->pos_t.x,
+					nodes[0]->pos_t.y - nodes[3]->pos_t.y,nodes[1]->pos_t.y - nodes[3]->pos_t.y,nodes[2]->pos_t.y - nodes[3]->pos_t.y,
+					nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
+	Ft = deformShapeMat * undeformShapeMatInv;
+	PolarDecompose::computeFull(Ft,Rt,St);
+	float traceS = St.trace();
+	Matrix3d trSI = Matrix3d(traceS,0,0,
+							 0,traceS,0,
+							 0,0,traceS);
+	trSI_Sinv = (trSI - St).inverse();
+	S_Itrace = (St - Matrix3d(1,0,0,
+							0,1,0,
+							0,0,1)).trace();
+}
+
+Matrix3d
+Element::computeDiffPiolaStressTensor(Matrix3d& dF)
+{
+	//Assume compute Ft Rt St has been computed
+	Matrix3d RtT = Rt.transpose();
+	Matrix3d W = RtT * dF;
+	vector3<float> w = vector3<float>(W(2,3) - W(3,2), W(3,1) - W(1,3),W(1,2)-W(2,1));
+	Matrix3d dR = Rt * Matrix3d::skew(trSI_Sinv * w);
+
+	// 2EdF + v * tr(W) * R + {v * tr(S - I) - 2 * E} * dR
+	return dF * (2 * E) + Rt * (W.trace() * v) + dR * (v * S_Itrace - 2 * E);
 }
 
 void
