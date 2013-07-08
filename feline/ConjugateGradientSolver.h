@@ -3,38 +3,12 @@
 #include "includes.h"
 #include "Mesh.h"
 #include "QuickArray.h"
+#include "ConstrainedRows.h"
 
-#define MAX_ITER 1000
+#define MAX_ITER 10
 #define EPSILON 0.01
 
-#define MAX_ROWS_CONSTRAINED 50
 
-enum DOF
-{
-	X = 0, Y = 1, Z = 2
-};
-
-struct ConstrainedRows
-{
-	QuickArray<int,MAX_ROWS_CONSTRAINED> list;
-	ConstrainedRows()
-	{
-	}
-	
-	void add(int node, DOF dof)
-	{
-		list.push(node * 3 + dof);
-	}
-	
-	void add(int node)
-	{
-		list.push(node * 3);
-		list.push(node * 3 + 1);
-		list.push(node * 3 + 2);
-	}
-
-
-};
 
 //use pure arrays
 class ConjugateGradientSolver
@@ -75,29 +49,38 @@ void sysMulMatFree(float* in, float* out, bool* allowed, Mesh* mesh)
 		for(int i=0;i<n;i++)
 			out[i] = 0;
 
+		//mesh->mulA(in,out);
+		//mesh->mulRKRT(in,out);
+		
 		for(int i=0;i<mesh->elements.size();i++)
 		{
 			Element& ele = *(mesh->elements[i]);
+
+
 			GenMatrix<float,12,12>& A = *(ele.getA());
+
 			for(int a=0;a<4;a++)
 			{
 				int x = mesh->nodeIndices[i][a];
-				for(int b=0;b<4;b++)
+				for(int b=0;b<3;b++)
 				{
-					int y = mesh->nodeIndices[i][b];
-					for(int c=0;c<3;c++)
+					if(allowed[x*3+b])
+					for(int c=0;c<4;c++)
 					{
-						if(allowed[x*3+c])
+						    int y = mesh->nodeIndices[i][c];
 							for(int d=0;d<3;d++)
 							{
 								if(allowed[y*3+d])
-									out[x*3 + c] += A(a*3+c,b*3+d) * in[y*3 + d];
+									out[x*3 + b] += A(a*3+b,c*3+d) * in[y*3 + d];
+		
 							}
 					}
 				}
 			}
-
+			
 		}
+		
+		
 }
 
 public:

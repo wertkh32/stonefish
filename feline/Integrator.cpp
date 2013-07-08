@@ -44,7 +44,7 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 	*/
 
 
-
+	/*
 	A = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
 	{
@@ -52,7 +52,7 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 		for(int j=0;j<n*3;j++)
 			A[i][j] = 0.0;
 	}
-
+	*/
 	RK = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
 		RK[i] = (float*)malloc(sizeof(float) * n * 3);
@@ -60,7 +60,7 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 	RKRT = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
 	RKRT[i] = (float*)malloc(sizeof(float) * n * 3);
-
+	/*
 	matmap = (bool**)malloc(sizeof(float*) * n);
 	for(int i=0;i<n;i++)
 	{
@@ -70,14 +70,14 @@ Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
 			matmap[i][j] = false;
 		}
 	}
-
+	
 	for(int i=0;i<mesh->elements.size();i++)
 	{
 		for(int a=0;a<4;a++)
 			for(int b=0;b<4;b++)
 				matmap[mesh->nodeIndices[i][a]][mesh->nodeIndices[i][b]] = true;
 	}
-
+	*/
 	/*
 	for(int i=0;i<n;i++,printf("\n"))
 		for(int j=0;j<n;j++)
@@ -151,6 +151,7 @@ Integrator::computeElementMatrices()
 	for(int i=0;i<mesh->elements.size();i++)
 	{
 		mesh->elements[i]->computeRKRTandRK();
+		//mesh->elements[i]->computeMatFreeVars();
 	}
 }
 
@@ -172,9 +173,12 @@ Integrator::mulRK(float* in, float* out)
 						{
 							out[x*3 + c] += A(a*3+c,b*3+d) * in[y*3 + d];
 						}
+					//for(int g=0;g<3;g++)
+					//	printf("%f ",out[x*3+g]);
+					//printf("\n");
 				}
 			}
-
+			//system("pause");
 		}
 }
 
@@ -216,6 +220,7 @@ Integrator::assembleUndeformForces()
 		//}
 	}
 
+	//mesh->mulRK(x0,fu);
 	mulRK(x0,fu);
 }
 
@@ -231,6 +236,7 @@ Integrator::assembleKxt()
 		//}
 	}
 
+	//mesh->mulRKRT(xt,kxt);
 	mulRKRT(xt,kxt);
 }
 
@@ -385,7 +391,7 @@ Integrator::timeStep()
 
 
 	//ConjugateGradientSolver solver(n*3,A);
-
+	//printf("\nB\n");
 	for(int i=0;i<n*3;i++)
 	{
 		//b[i] = 0;
@@ -393,19 +399,13 @@ Integrator::timeStep()
 		//{
 		//	b[i] += globalMass[i][j] * v[j];
 		//}
-		b[i] = mass[i] * v[i];
+		//dont sum separately. causes 0.0/-0.0 error in solver.
+		b[i] = mass[i] * v[i] + dt * (fu[i] + extforces[i] - kxt[i]);
 
-		/*
-		for(int j=0;j<n*3;j++)
-		{
-			b[i] += dt * (-RKRT[i][j]* xt[j]);
-		}
-		*/
-		b[i] += -dt * kxt[i];
-	
-		b[i] += dt * (fu[i] + extforces[i]);
+		//printf("%f\n", b[i]);
 	}
-	
+	//system("pause");
+
 	if(rowSet)
 	{
 		solver.solveWithConstraints(v,b,allowed,mesh);

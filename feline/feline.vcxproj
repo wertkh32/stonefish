@@ -76,6 +76,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="gpuMat3d.cuh" />
     <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
@@ -83,6 +84,7 @@
     <ClCompile Include="Element.cpp" />
     <ClCompile Include="feline.cpp" />
     <ClCompile Include="ForceEqn.cpp" />
+    <ClCompile Include="GPUIntegrator.cpp" />
     <ClCompile Include="Integrator.cpp" />
     <ClCompile Include="Matrix3d.cpp" />
     <ClCompile Include="Matrix4d.cpp" />
@@ -99,10 +101,15 @@
       <FileType>CppCode</FileType>
     </CudaCompile>
     <ClInclude Include="ConjugateGradientSolver.h" />
+    <ClInclude Include="ConstrainedRows.h" />
     <ClInclude Include="defines.h" />
     <ClInclude Include="Element.h" />
     <ClInclude Include="ForceEqn.h" />
     <ClInclude Include="GenVector.h" />
+    <ClInclude Include="GPUDataStructs.cuh">
+      <FileType>CppHeader</FileType>
+    </ClInclude>
+    <ClInclude Include="GPUIntegrator.h" />
     <ClInclude Include="includes.h" />
     <ClInclude Include="GenMatrix.h" />
     <ClInclude Include="Integrator.h" />
@@ -119,6 +126,10 @@
     <ClInclude Include="QuickArray.h" />
     <ClInclude Include="SymSparseMatrix.h" />
     <ClInclude Include="vector3.h" />
+    <CudaCompile Include="GPUIntegratorFuncs.cu" />
+    <CudaCompile Include="GPUPolarDecompose.cu">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </CudaCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

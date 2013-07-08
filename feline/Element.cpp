@@ -13,6 +13,9 @@ Element::Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, flo
 	sparseStiff = new SparseMatrix(4);
 	dt = 1.0/FPS;
 
+	//miu = E / (2.0*(1+v));
+	//lambda = (E*v)/((1.0+v)*(1.0-2.0*v));
+
 	preCompute();
 	
 	mass = density * undeformVolume;
@@ -26,7 +29,7 @@ void Element::preCompute()
 					nodes[0]->pos.y - nodes[3]->pos.y,nodes[1]->pos.y - nodes[3]->pos.y,nodes[2]->pos.y - nodes[3]->pos.y,
 					nodes[0]->pos.z - nodes[3]->pos.z,nodes[1]->pos.z - nodes[3]->pos.z,nodes[2]->pos.z - nodes[3]->pos.z);
 	undeformShapeMatInv = undeformShapeMat.inverse();
-	undeformShapeMatInvT = undeformShapeMatInv.transpose();
+	//undeformShapeMatInvT = undeformShapeMatInv.transpose();
 	undeformVolume = (1.0/6.0) * fabs(undeformShapeMat.determinant());
 
 	preComputeUndeformedStiffnessMat();
@@ -151,15 +154,6 @@ Matrix3d Element::computeDeformShapeMat()
 	return deformShapeMat;
 }
 
-Matrix3d Element::getRotation()
-{
-	Matrix3d F,R,S;
-	F = computeDeformationMat();
-	PolarDecompose::compute(F,R,S);
-
-	return R;
-}
-
 
 void
 Element::computeRKRTandRK()
@@ -193,7 +187,7 @@ Element::computeRKRTandRK()
 		}
 	}
 
-	Matrix3d RT = R.transpose();
+	//Matrix3d RT = R.transpose();
 	//upper triangle
 	for(int i=0;i<4;i++)
 	{
@@ -204,7 +198,7 @@ Element::computeRKRTandRK()
 				{
 					RKRT(a + i * 3, b + j * 3) = 0;
 					for(int c=0;c<3;c++)
-						RKRT(a + i * 3, b + j * 3) += RK(a + i * 3, c + j * 3) * RT(c , b);
+						RKRT(a + i * 3, b + j * 3) += RK(a + i * 3, c + j * 3) * R(b , c); //R(c, b) but its RT so, R(b , c)
 				}
 		}
 	}
@@ -271,7 +265,7 @@ void Element::getRKRTandRK(SparseMatrix& RK, SparseMatrix& RKRT)
 	}
 
 }
-
+/*
 void Element::computeMatFreeVars()
 {
 	Matrix3d deformShapeMat 
@@ -285,23 +279,68 @@ void Element::computeMatFreeVars()
 							 0,traceS,0,
 							 0,0,traceS);
 	trSI_Sinv = (trSI - St).inverse();
+	//trSI_Sinv.print();
 	S_Itrace = (St - Matrix3d(1,0,0,
 							0,1,0,
 							0,0,1)).trace();
 }
 
 Matrix3d
+Element::computePiolaStressTensor()
+{
+	
+	//Matrix3d I = Matrix3d(1,0,0,
+	//							 0,1,0,
+	//							 0,0,1);
+	//float dF_Itrace = (Ft-I).trace();
+	
+	return //(Ft + Ft.transpose() - I * 2) * miu + I * dF_Itrace;
+		(Ft - Rt) * (2 * miu) + Rt * (S_Itrace * lambda);
+}
+
+Matrix3d
+Element::computeRKtensor(Matrix3d& dF)
+{
+	Matrix3d I = Matrix3d(1,0,0,
+								 0,1,0,
+								 0,0,1);
+	//Assume compute Ft Rt St has been computed
+	
+	Matrix3d RtT = Rt.transpose();
+	Matrix3d W = RtT * dF;
+	vector3<float> w = vector3<float>(W(1,2) - W(2,1), W(2,0) - W(0,2),W(0,1)-W(1,0));
+	Matrix3d dR = Rt * Matrix3d::skew(trSI_Sinv * w);
+
+	float F_Itrace = (Ft-I).trace();
+	float dFtrace = dF.trace();
+
+	return //dR * ((Ft + Ft.transpose() - I * 2) * miu + (I *(F_Itrace * lambda))) + Rt *
+		((dF + dF.transpose()) * miu + (I * (dFtrace * lambda)));
+
+}
+
+Matrix3d
 Element::computeDiffPiolaStressTensor(Matrix3d& dF)
 {
+	Matrix3d I = Matrix3d(1,0,0,
+								 0,1,0,
+								 0,0,1);
 	//Assume compute Ft Rt St has been computed
 	Matrix3d RtT = Rt.transpose();
 	Matrix3d W = RtT * dF;
-	vector3<float> w = vector3<float>(W(2,3) - W(3,2), W(3,1) - W(1,3),W(1,2)-W(2,1));
-	Matrix3d dR = Rt * Matrix3d::skew(trSI_Sinv * w);
+	vector3<float> w = vector3<float>(W(1,2) - W(2,1), W(2,0) - W(0,2),W(0,1)-W(1,0));
 
+	Matrix3d dR = Rt * Matrix3d::skew(trSI_Sinv * w);
+	
 	// 2EdF + v * tr(W) * R + {v * tr(S - I) - 2 * E} * dR
-	return dF * (2 * E) + Rt * (W.trace() * v) + dR * (v * S_Itrace - 2 * E);
+	float dFtrace = dF.trace();
+	//printf("[miu: %f, lambda: %f, dftrace:%f]\n",miu,lambda,dFtrace);
+	//(I * (dFtrace * lambda)).print();
+
+	return ((dF + dF.transpose()) * miu + (I * (dFtrace * lambda)));
+			//dF * (2 * miu) + Rt * (W.trace() * lambda) + dR * (v * S_Itrace - 2 * miu);
 }
+*/
 
 void
 Element::renderElement()

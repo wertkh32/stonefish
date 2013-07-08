@@ -22,6 +22,7 @@ public:
 
 	Matrix3d inverse();
 	static Matrix3d skew(vector3<float>& v);
+	void print(){for(int i=0;i<3;i++,printf("\n"))for(int j=0;j<3;j++)printf("%f ",mat[i][j]);}
 
 	~Matrix3d(void);
 };

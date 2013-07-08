@@ -54,6 +54,8 @@ public:
 	static vector3<T> lerp(vector3<T>& start, vector3<T>& end, T t);
 	static vector3<T> nlerp(vector3<T>& start, vector3<T>& end, T t);
 	static vector3<T> slerp(vector3<T>& start, vector3<T>& end, T t);
+
+	void print(){printf("%f %f %f",x,y,z);};
 };
 
 template <class T>

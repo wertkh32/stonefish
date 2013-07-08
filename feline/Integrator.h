@@ -1,5 +1,5 @@
 #pragma once
-#include "Mesh.h"
+
 #include "ConjugateGradientSolver.h"
 #include "SymSparseMatrix.h"
 #include "PolarDecompose.h"

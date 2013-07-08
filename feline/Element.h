@@ -13,13 +13,8 @@ class Element
 	Node* nodes[4];
 	Matrix3d stiffnessMat;
 	Matrix3d undeformShapeMat,
-		     undeformShapeMatInv,
-			 undeformShapeMatInvT;
-	
-	//mat free vars for timestep
-	Matrix3d Ft, Rt, St, trSI_Sinv;
-	float S_Itrace;
-	///////////////////////////
+		     undeformShapeMatInv;
+
 
 	GenMatrix<float,6,12> strainMat;
 	GenMatrix<float,6,6> matConstantsMat;
@@ -40,13 +35,11 @@ public:
 	Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, float _density);
 	Matrix3d computeDeformationMat();
 	Matrix3d computeDeformShapeMat();
-	
-	//compute and store for mat products
-	void computeMatFreeVars();
 
 	Matrix3d& getUndeformShapeMat(){return undeformShapeMat;}
 	Matrix3d& getUndeformShapeMatInv(){return undeformShapeMatInv;}
-	Matrix3d& getUndeformShapeMatInvT(){return undeformShapeMatInvT;}
+	
+	
 	Node** getNodes(){return nodes;}
 	float getDensity(){return density;}
 	float getVolume(){return undeformVolume;}
@@ -65,8 +58,18 @@ public:
 	GenMatrix<float,12,12>* getRKRT(){return &RKRT;}
 	GenMatrix<float,12,12>* getA(){return &A;}
 	
-	Matrix3d getRotation();
-	Matrix3d computeDiffPiolaStressTensor(Matrix3d& dF);
+	//mat free vars for timestep
+	//Matrix3d undeformShapeMatInvT;
+	//Matrix3d Ft, Rt, St, trSI_Sinv;
+	//float S_Itrace;
+	//float miu, lambda;
+	///////////////////////////
+	//compute and store for mat products
+	//void computeMatFreeVars();
+	//Matrix3d& getUndeformShapeMatInvT(){return undeformShapeMatInvT;}
+	//Matrix3d computePiolaStressTensor();
+	//Matrix3d computeRKtensor(Matrix3d& dF);
+	//Matrix3d computeDiffPiolaStressTensor(Matrix3d& dF);
 
 	void renderElement();
 

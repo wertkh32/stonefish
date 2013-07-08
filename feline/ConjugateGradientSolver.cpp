@@ -365,9 +365,8 @@ void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, bool* all
 			for(int i=0;i<n;i++)
 			{
 				if(allowed[i])
-				{
 					r[i] = b[i] - tempo[i];
-				}
+				
 			}
 		}
 		else

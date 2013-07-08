@@ -14,6 +14,7 @@ public:
 	int nodeIndices[MAX_ELEMENTS][4];
 	QuickArray<Node*,MAX_NODES> nodes;
 	float **globalStiffness, **globalMass;
+	float dt;
 
 	int getNoOfElements(){return elements.size();}
 	int getNoOfNodes(){return numnodes;}
@@ -23,9 +24,6 @@ public:
 	void resetGlobalMass();
 	float** assembleGlobalMass();
 	float** assembleGlobalStiffness();
-
-	void mulK(float* in, float* out);
-	void mulA(float* in, float* out);
 
 	Mesh(Node nodes[], int n);
 	~Mesh(void);

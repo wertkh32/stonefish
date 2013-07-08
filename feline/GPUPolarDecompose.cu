@@ -26,7 +26,7 @@ __device__ float infNorm(const float A[3][3])
 }
 
 // cross product: c = a x b
-inline __device__ void crossProduct(const float* a, const float* b, float* c)
+__device__ void crossProduct(const float* a, const float* b, float* c)
 {
   c[0] = a[1] * b[2] - a[2] * b[1];
   c[1] = a[2] * b[0] - a[0] * b[2];

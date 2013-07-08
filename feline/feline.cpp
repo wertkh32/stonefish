@@ -68,15 +68,19 @@ static float rot = 0.0;
 
 	if(iter>=10)
 	{
-		for(int i=90;i<98;i++)
+		for(int i=419;i<441;i++)
+		tet->nodes[i]->force = vector3<float>();
+		for(int i=860;i<882;i++)
 		tet->nodes[i]->force = vector3<float>();
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>();
 	}
 	else
 	{
-		for(int i=90;i<98;i++)
-		tet->nodes[i]->force = vector3<float>(0,500,0);
+		for(int i=419;i<441;i++)
+		tet->nodes[i]->force = vector3<float>(0,100,0);
+		for(int i=860;i<882;i++)
+		tet->nodes[i]->force = vector3<float>(0,100,0);
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>(0,40,0);
 	}
