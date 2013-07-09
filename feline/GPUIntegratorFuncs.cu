@@ -9,9 +9,10 @@
 #define ALPHA 0.1
 #define BETA 0.1
 
+__constant__ float COEFFK, COEFFM, dt;
 
 GPUElement* gpuptrElements;
-GPUNodes*   gpuptrNodes;
+GPUNode*   gpuptrNodes;
 mulData*	gpuptrMulData;
 float*   gpuptr_x0;//const
 float*   gpuptr_xt;//dynamic
@@ -23,11 +24,18 @@ void
 gpuInitVars(int numele, int numnodes)
 {
 	cudaMalloc(&gpuptrElements, numele * sizeof(GPUElement));
-	cudaMalloc(&gpuptrNodes, numnodes * sizeof(GPUNodes));
+	cudaMalloc(&gpuptrNodes, numnodes * sizeof(GPUNode));
 	cudaMalloc(&gpuptrMulData, numele * sizeof(mulData));
 	cudaMalloc(&gpuptr_xt, numnodes * 3 * sizeof(float));
 	cudaMalloc(&gpuptr_vt, numnodes * 3 * sizeof(float));
 	cudaMalloc(&gpuptr_extforces, numnodes * 3 * sizeof(float));
+
+	float coeffK = dt * BETA + dt * dt, coeffM = 1 + dt * ALPHA;
+	float dt = DT;
+
+	cudaMemcpyToSymbol("COEFFK", &coeffK, sizeof(float));
+	cudaMemcpyToSymbol("COEFFM", &coeffM, sizeof(float));
+	cudaMemcpyToSymbol("dt", &dt, sizeof(float));
 }
 
 void
@@ -95,25 +103,15 @@ void makeRKRT(float mat[12][12], float R[3][3])
 			mat[i][j] = RKRT[i][j];
 }
 
-__device__
-void makeA(float mat[12][12], float coeffK, float coeffM, float nodalMass)
-{
-	for(int i=0;i<12;i++)
-		for(int j=0;j<12;j++)
-		{
-			mat[i][j] *= coeffK;
-			if(i==j)
-				mat[i][j] += coeffM * nodalMass;
-		}
-}
-
 
 __global__
-void precompute(GPUElement* elements, mulData* solverData, float* x0, float* xt, float* vt, float* extforces)
+void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt, float* extforces)
 {
 	int tid = threadIdx.x + blockIdx.x * BLOCK_SIZE;
 	GPUElement* t_ele = &(elements[tid]);
 	mulData* t_solvedata = &(solverData[tid]);
+
+	float nodalmass = t_ele->nodalmass;
 
 	float nodes[12], vel[12], F[3][3], R[3][3];
 
@@ -164,9 +162,16 @@ void precompute(GPUElement* elements, mulData* solverData, float* x0, float* xt,
 			t_ele->b[i] -= t_solvedata->system[i][j] * nodes[j];
 
 	for(int i=0;i<12;i++)
-		t_ele->b[i] = t_ele->b[i] * DT + t_ele->nodalmass * vel[i];
+		t_ele->b[i] = t_ele->b[i] * dt + nodalmass * vel[i];
 
-	//todo: work in coeffK and coeffM
+	//final system matrix
+	for(int i=0;i<12;i++)
+		for(int j=0;j<12;j++)
+		{
+			t_solvedata->system[i][j] *= COEFFK;
+			if(i==j)
+				t_solvedata->system[i][i] += COEFFM * nodalmass;
+		}
 }
 
 __global__
@@ -177,14 +182,65 @@ void collateB(GPUNode* nodes, GPUElement* elements, float* b)
 
 	int n = node->n;
 
+	b[tid * 3] = 0;
+	b[tid * 3 + 1] = 0;
+	b[tid * 3 + 2] = 0;
+
 	for(int i=0;i<n;i++)
 	{
 		int tetindex = node->elementindex[i][0];
 		int nodeindex = node->elementindex[i][1];
 
-		b[tid * 3] = elements[tetindex].b[nodeindex * 3];
-		b[tid * 3 + 1] = elements[tetindex].b[nodeindex * 3 + 1];
-		b[tid * 3 + 2] = elements[tetindex].b[nodeindex * 3 + 2];
+		b[tid * 3] += elements[tetindex].b[nodeindex * 3];
+		b[tid * 3 + 1] += elements[tetindex].b[nodeindex * 3 + 1];
+		b[tid * 3 + 2] += elements[tetindex].b[nodeindex * 3 + 2];
+	}
+}
+
+__global__
+void mulSystem(GPUElement* elements, mulData* solverData, float* x)
+{
+	int tid = threadIdx.x + blockIdx.x * BLOCK_SIZE;
+	GPUElement* t_ele = &(elements[tid]);
+	mulData* t_solvedata = &(solverData[tid]);
+
+	float nodes[12];
+
+	for(int i=0;i<4;i++)
+	{
+		nodes[i * 3] = x[t_ele->nodeindex[i] * 3];
+		nodes[i * 3 + 1] = x[t_ele->nodeindex[i] * 3 + 1];
+		nodes[i * 3 + 2] = x[t_ele->nodeindex[i] * 3 + 2];
+	}
+
+	for(int i=0;i<12;i++)
+	{
+		t_solvedata->product[i] = 0;
+		for(int j=0;j<12;j++)
+			t_solvedata->product[i] += t_solvedata->system[i][j] * nodes[j];
+	}
+}
+
+__global__ 
+void mulSystemGather(GPUNode* nodes, mulData* solverData, float* x)
+{
+	int tid = threadIdx.x + blockIdx.x * BLOCK_SIZE;
+	GPUNode* node = &(nodes[tid]);
+
+	int n = node->n;
+	
+	x[tid * 3] = 0;
+	x[tid * 3 + 1] = 0;
+	x[tid * 3 + 2] = 0;
+
+	for(int i=0;i<n;i++)
+	{
+		int tetindex = node->elementindex[i][0];
+		int nodeindex = node->elementindex[i][1];
+
+		x[tid * 3] += solverData[tetindex].product[nodeindex * 3];
+		x[tid * 3 + 1] += solverData[tetindex].product[nodeindex * 3 + 1];
+		x[tid * 3 + 2] += solverData[tetindex].product[nodeindex * 3 + 2];
 	}
 }
 

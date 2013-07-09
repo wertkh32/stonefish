@@ -1,11 +1,11 @@
 #pragma once
 
-#define MAX_ELEMENTS_PER_NODE 128
+#define MAX_ELEMENTS_PER_NODE 32
 
 struct mulData
 {
 	float system[12][12];
-	float products[12];
+	float product[12];
 };
 
 struct GPUElement

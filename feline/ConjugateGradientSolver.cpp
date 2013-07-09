@@ -396,7 +396,7 @@ void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, bool* all
 		}
 
 	}
-
+	printf("[%d]",it); 
 }
 
 ConjugateGradientSolver::~ConjugateGradientSolver(void)
