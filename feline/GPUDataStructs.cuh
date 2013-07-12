@@ -8,6 +8,11 @@ struct mulData
 	float product[12];
 };
 
+struct CGVars
+{
+	float delta0, deltaNew, deltaOld, alpha, beta;
+};
+
 struct GPUElement
 {
 	int nodeindex[4];
