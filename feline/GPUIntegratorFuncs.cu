@@ -239,25 +239,25 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 	
 		for(int i=0;i<4;i++)
 		{
-			t_ele->b[i * 3] = extforces[t_ele->nodeindex[i] * 3];
-			t_ele->b[i * 3 + 1] = extforces[t_ele->nodeindex[i] * 3 + 1];
-			t_ele->b[i * 3 + 2] = extforces[t_ele->nodeindex[i] * 3 + 2];
+			t_solvedata->b[i * 3] = extforces[t_ele->nodeindex[i] * 3];
+			t_solvedata->b[i * 3 + 1] = extforces[t_ele->nodeindex[i] * 3 + 1];
+			t_solvedata->b[i * 3 + 2] = extforces[t_ele->nodeindex[i] * 3 + 2];
 		}
 
 		makeRK(t_solvedata->system, R);
 
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)
-				t_ele->b[i] += t_solvedata->system[i][j] * t_ele->x0[j];
+				t_solvedata->b[i] += t_solvedata->system[i][j] * t_ele->x0[j];
 	
 		makeRKRT(t_solvedata->system, R);
 
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)
-				t_ele->b[i] -= t_solvedata->system[i][j] * nodes[j];
+				t_solvedata->b[i] -= t_solvedata->system[i][j] * nodes[j];
 
 		for(int i=0;i<12;i++)
-			t_ele->b[i] = t_ele->b[i] * dt + nodalmass * vel[i];
+			t_solvedata->b[i] = t_solvedata->b[i] * dt + nodalmass * vel[i];
 
 		//final system matrix
 		for(int i=0;i<12;i++)
@@ -273,7 +273,7 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 //step 2
 //precompute
 __global__
-void gatherB(GPUNode* nodes, GPUElement* elements, float* b, int numnodes)
+void gatherB(GPUNode* nodes, mulData* solverData, float* b, int numnodes)
 {
 	int tid = threadIdx.x + blockIdx.x * BLOCK_SIZE;
 
@@ -292,9 +292,9 @@ void gatherB(GPUNode* nodes, GPUElement* elements, float* b, int numnodes)
 			int tetindex = node->elementindex[i][0];
 			int nodeindex = node->elementindex[i][1];
 
-			b[tid * 3] += elements[tetindex].b[nodeindex * 3];
-			b[tid * 3 + 1] += elements[tetindex].b[nodeindex * 3 + 1];
-			b[tid * 3 + 2] += elements[tetindex].b[nodeindex * 3 + 2];
+			b[tid * 3] += solverData[tetindex].b[nodeindex * 3];
+			b[tid * 3 + 1] += solverData[tetindex].b[nodeindex * 3 + 1];
+			b[tid * 3 + 2] += solverData[tetindex].b[nodeindex * 3 + 2];
 		}
 	}
 }
@@ -370,7 +370,7 @@ makeQprod(GPUElement* elements, mulData* solverData, float* d, int numelements)
 //q = Ad
 __global__
 void
-gatherQprod(GPUNode* nodes, GPUElement* elements, float* q, int numnodes)
+gatherQprod(GPUNode* nodes, mulData* solverData, float* q, int numnodes)
 {
 	int tid = threadIdx.x + blockIdx.x * BLOCK_SIZE;
 
@@ -432,9 +432,38 @@ makeXRandD(GPUNode* nodes, CGVars* vars, float *x, float* r, float* d, float* q,
 	}
 } 
 
+//step 8
+//make x(t+1)
+__global__
+void
+integrate(float *x, float* v, int numnodes)
+{
+	int tid = threadIdx.x + blockIdx.x * BLOCK_SIZE;
+	if(tid < numnodes)
+	{
+		x[tid * 3] = x[tid * 3] + dt * v[tid * 3];
+		x[tid * 3 + 1] = x[tid * 3 + 1] + dt * v[tid * 3 + 1];
+		x[tid * 3 + 2] = x[tid * 3 + 2] + dt * v[tid * 3 + 2];
+	}
+}
+
 void
 timestep()
 {
-	
+	/*
+	GPUElement* gpuptrElements;
+	GPUNode*   gpuptrNodes;
+	mulData*	gpuptrMulData;
+	float*   gpuptr_x0;//const
+	float*   gpuptr_xt;//dynamic
+	float*   gpuptr_vt;//dynamic
+	float*	 gpuptr_extforces;//dynamic
+
+	//for CG
+	float* gpuptrR;
+	float* gpuptrD;
+	CGVars* gpuptrVars;
+	float* gpuptrTemp;
+	*/
 }
 
