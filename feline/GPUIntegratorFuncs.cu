@@ -14,7 +14,6 @@ __constant__ float COEFFK, COEFFM, dt;
 GPUElement* gpuptrElements;
 GPUNode*   gpuptrNodes;
 mulData*	gpuptrMulData;
-float*   gpuptr_x0;//const
 float*   gpuptr_xt;//dynamic
 float*   gpuptr_vt;//dynamic
 float*	 gpuptr_extforces;//dynamic
@@ -301,6 +300,7 @@ void gatherB(GPUNode* nodes, mulData* solverData, float* b, int numnodes)
 
 //step 1
 //init CG
+// x = velocity
 __global__
 void
 initAx(GPUElement* elements, mulData* solverData, float* x, int numelements)
@@ -411,6 +411,7 @@ makeVars(CGVars* vars, float* d, float* q, int numnodes)
 //step 7
 //CG Loop
 //make x, r, d
+//x = velocity
 __global__
 void
 makeXRandD(GPUNode* nodes, CGVars* vars, float *x, float* r, float* d, float* q, int numnodes)
