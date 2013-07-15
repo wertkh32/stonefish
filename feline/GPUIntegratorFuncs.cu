@@ -208,7 +208,7 @@ void mulSystemGather(GPUNode* nodes, mulData* solverData, float* x)
 __device__
 void dot(float*a, float*b, float* out, int n) 
 {
-	__shared__ int temp[BLOCK_SIZE];
+	__shared__ float temp[BLOCK_SIZE];
 	int index = threadIdx.x;
 	int element = index;
 
@@ -388,10 +388,14 @@ __global__
 void
 initDeltaVars(CGVars* vars, float* r, int numnodes)
 {
-	dot(r, r, &(vars->deltaNew), numnodes * 3);
+	float rr;
+	dot(r, r, &rr, numnodes * 3);
 	
 	if(threadIdx.x == 0)
-		vars->delta0 = vars->deltaNew; 
+	{
+		vars->deltaNew = rr;
+		vars->delta0 = vars->deltaNew;
+	}
 }
 
 //step 4
@@ -430,22 +434,20 @@ gatherQprod(GPUNode* nodes, mulData* solverData, float* q, int numnodes)
 //1 block, BLOCK_SIZE threads
 __global__
 void
-makeVars(CGVars* vars, float* d, float* q, int numnodes)
+makeVars(CGVars* vars, float* d, float* q, float* r, int numnodes)
 {
-	__shared__ float dq, rq, qq;
-	dot(d,q,&dq,numnodes);
+	float dq, rq, qq;
+	dot(d,q,&dq,numnodes * 3);
+	dot(r,q,&rq,numnodes * 3);
+	dot(q,q,&qq,numnodes * 3);
+
+	__syncthreads();
 
 	if(threadIdx.x == 0)
 	{
 		vars->alpha = vars->deltaNew / dq;
 		vars->deltaOld = vars->deltaNew;
-	}
 
-	dot(d,q,&rq,numnodes);
-	dot(d,q,&qq,numnodes);
-
-	if(threadIdx.x == 0)
-	{
 		//r.r = r'.r' - 2*alpha*(r'.q) + alpha * alpha * (q.q)
 		vars->deltaNew = vars->deltaNew - (2 * vars->alpha) * rq + (vars->alpha * vars->alpha) * qq;
 		vars->beta = vars->deltaNew / vars->deltaOld;
@@ -514,7 +516,7 @@ gpuTimeStep(int numelements, int numnodes)
 	int i=0;
 
 	CGVars vars;
-	cudaMemcpy(&vars, gpuptrVars, sizeof(float), cudaMemcpyDeviceToHost);
+	cudaMemcpy(&vars, gpuptrVars, sizeof(CGVars), cudaMemcpyDeviceToHost);
 
 	printf("Loop Started");
 
@@ -524,11 +526,13 @@ gpuTimeStep(int numelements, int numnodes)
 
 		gatherQprod<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, numnodes);
 
-		makeVars<<<1, BLOCK_SIZE>>>(gpuptrVars, gpuptrD, gpuptrQ, numnodes);
+		makeVars<<<1, BLOCK_SIZE>>>(gpuptrVars, gpuptrD, gpuptrQ, gpuptrR, numnodes);
 
 		makeXRandD<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrVars, gpuptr_vt, gpuptrR, gpuptrD, gpuptrQ, numnodes);
 
-		cudaMemcpy(&vars, gpuptrVars, sizeof(float), cudaMemcpyDeviceToHost);
+		cudaMemcpy(&vars, gpuptrVars, sizeof(CGVars), cudaMemcpyDeviceToHost);
+
+		printf("%f %f %f %f %f\n", vars.delta0, vars.deltaNew, vars.deltaOld, vars.alpha, vars.beta);
 
 		i++;
 	}
