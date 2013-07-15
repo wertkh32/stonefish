@@ -15,6 +15,7 @@ GPUIntegrator::GPUIntegrator(Mesh* _mesh, ConstrainedRows* r)
 	extforces = (float*)malloc(sizeof(float) * numnodes * 3);
 
 	initVars();
+	copyVarstoGPU();
 }
 
 void 
@@ -88,7 +89,7 @@ void GPUIntegrator::assembleExtForce()
 	for(int i=0;i<numnodes;i++)
 	{
 		extforces[i * 3] = mesh->nodes[i]->force.x;
-		extforces[i * 3 + 1] = mesh->nodes[i]->force.y;
+		extforces[i * 3 + 1] = mesh->nodes[i]->force.y + 100;
 		extforces[i * 3 + 2] = mesh->nodes[i]->force.z;
 	}
 }
@@ -106,9 +107,33 @@ GPUIntegrator::initVars()
 void
 GPUIntegrator::copyVarstoGPU()
 {
-
+	gpuUploadVars(gpuElements, gpuNodes, xt, vt, extforces, numnodes, numelements);
 }
+
+void
+GPUIntegrator::timeStep()
+{
+	assembleExtForce();
+	gpuUploadExtForces(extforces, numnodes);
+	gpuTimeStep(numelements, numnodes);
+	updatePositions();
+}
+
+void
+GPUIntegrator::updatePositions()
+{
+	gpuDownloadVars(xt, numnodes);
+
+	for(int i=0;i<numnodes;i++)
+	{
+		mesh->nodes[i]->pos_t.x = xt[i * 3];
+		mesh->nodes[i]->pos_t.y = xt[i * 3 + 1];
+		mesh->nodes[i]->pos_t.z = xt[i * 3 + 2];
+	}
+}
+
 
 GPUIntegrator::~GPUIntegrator(void)
 {
+	gpuDestroyVars();
 }

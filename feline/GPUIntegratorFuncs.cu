@@ -9,6 +9,9 @@
 #define ALPHA 0.1
 #define BETA 0.1
 
+#define MAX_ITER 20
+#define EPSIL 0.01
+
 __constant__ float COEFFK, COEFFM, dt;
 
 GPUElement* gpuptrElements;
@@ -17,13 +20,15 @@ mulData*	gpuptrMulData;
 float*   gpuptr_xt;//dynamic
 float*   gpuptr_vt;//dynamic
 float*	 gpuptr_extforces;//dynamic
+float*	 gpuptr_b;//dynamic
 
 //for CG
 float* gpuptrR;
 float* gpuptrD;
+float* gpuptrQ;
 CGVars* gpuptrVars;
-float* gpuptrTemp;
 
+__host__
 void
 gpuInitVars(int numele, int numnodes)
 {
@@ -33,26 +38,65 @@ gpuInitVars(int numele, int numnodes)
 	cudaMalloc(&gpuptr_xt, numnodes * 3 * sizeof(float));
 	cudaMalloc(&gpuptr_vt, numnodes * 3 * sizeof(float));
 	cudaMalloc(&gpuptr_extforces, numnodes * 3 * sizeof(float));
+	cudaMalloc(&gpuptr_b, numnodes * 3 * sizeof(float));
 
 	cudaMalloc(&gpuptrR, numnodes * 3 * sizeof(float));
 	cudaMalloc(&gpuptrD, numnodes * 3 * sizeof(float));
+	cudaMalloc(&gpuptrQ, numnodes * 3 * sizeof(float));
 	cudaMalloc(&gpuptrVars, sizeof(CGVars));
 
-	cudaMalloc(&gpuptrTemp, numnodes * 3 * sizeof(float));
-
 	float coeffK = dt * BETA + dt * dt, coeffM = 1 + dt * ALPHA;
-	float dt = DT;
+	float dt = 1.0/FPS;
 
 	cudaMemcpyToSymbol("COEFFK", &coeffK, sizeof(float));
 	cudaMemcpyToSymbol("COEFFM", &coeffM, sizeof(float));
 	cudaMemcpyToSymbol("dt", &dt, sizeof(float));
 }
 
+__host__
+void
+gpuUploadVars(GPUElement* gpuElements, GPUNode* gpuNodes,float* xt, 
+			  float* vt, float* extforces, int numnodes, int numelements)
+{
+	cudaMemcpy(gpuptrElements, gpuElements, numelements * sizeof(GPUElement), cudaMemcpyHostToDevice);
+	cudaMemcpy(gpuptrNodes, gpuNodes, numnodes * sizeof(GPUNode), cudaMemcpyHostToDevice);
+	cudaMemcpy(gpuptr_xt, xt, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(gpuptr_vt, vt, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMemcpy(gpuptr_extforces, extforces, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice);
+}
+
+__host__
+void
+gpuDownloadVars(float* xt, int numnodes)
+{
+	cudaMemcpy(xt, gpuptr_xt, numnodes * 3 * sizeof(float), cudaMemcpyDeviceToHost);
+}
+
+__host__
 void
 gpuUploadExtForces(float* extforces, int numnodes)
 {
-	cudaMemcpy(gpuptr_extforces, extforces, numnodes*3*sizeof(float),cudaMemcpyHostToDevice);
+	cudaMemcpy(gpuptr_extforces, extforces, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice);
 }
+
+
+__host__
+void
+gpuDestroyVars()
+{
+	cudaFree(gpuptrElements);
+	cudaFree(gpuptrNodes);
+	cudaFree(gpuptrMulData);
+	cudaFree(gpuptr_xt);
+	cudaFree(gpuptr_vt);
+	cudaFree(gpuptr_extforces);
+	cudaFree(gpuptr_b);
+	cudaFree(gpuptrR);
+	cudaFree(gpuptrD);
+	cudaFree(gpuptrQ);
+	cudaFree(gpuptrVars);
+}
+
 
 __device__
 void makeRK(float mat[12][12], float R[3][3])
@@ -347,7 +391,7 @@ initDeltaVars(CGVars* vars, float* r, int numnodes)
 	dot(r, r, &(vars->deltaNew), numnodes * 3);
 	
 	if(threadIdx.x == 0)
-		vars->deltaOld = vars->deltaNew; 
+		vars->delta0 = vars->deltaNew; 
 }
 
 //step 4
@@ -448,23 +492,49 @@ integrate(float *x, float* v, int numnodes)
 	}
 }
 
+__host__
 void
-timestep()
+gpuTimeStep(int numelements, int numnodes)
 {
-	/*
-	GPUElement* gpuptrElements;
-	GPUNode*   gpuptrNodes;
-	mulData*	gpuptrMulData;
-	float*   gpuptr_x0;//const
-	float*   gpuptr_xt;//dynamic
-	float*   gpuptr_vt;//dynamic
-	float*	 gpuptr_extforces;//dynamic
+	const int num_blocks_ele = (numelements/BLOCK_SIZE) + 1;
+	const int num_blocks_node = (numnodes/BLOCK_SIZE) + 1;
 
-	//for CG
-	float* gpuptrR;
-	float* gpuptrD;
-	CGVars* gpuptrVars;
-	float* gpuptrTemp;
-	*/
+	printf("Started");
+
+	precompute<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptr_xt, gpuptr_vt, gpuptr_extforces, numelements);
+	
+	gatherB<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptr_b, numnodes);
+
+	initAx<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptr_vt, numelements);
+
+	initRandD<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptrR, gpuptrD, gpuptr_b, numnodes);
+
+	initDeltaVars<<<1, BLOCK_SIZE>>>(gpuptrVars, gpuptrR, numnodes);
+
+	int i=0;
+
+	CGVars vars;
+	cudaMemcpy(&vars, gpuptrVars, sizeof(float), cudaMemcpyDeviceToHost);
+
+	printf("Loop Started");
+
+	while(i < MAX_ITER && vars.deltaNew > (EPSIL * EPSIL) * vars.delta0)
+	{
+		makeQprod<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptrD, numelements);
+
+		gatherQprod<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, numnodes);
+
+		makeVars<<<1, BLOCK_SIZE>>>(gpuptrVars, gpuptrD, gpuptrQ, numnodes);
+
+		makeXRandD<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrVars, gpuptr_vt, gpuptrR, gpuptrD, gpuptrQ, numnodes);
+
+		cudaMemcpy(&vars, gpuptrVars, sizeof(float), cudaMemcpyDeviceToHost);
+
+		i++;
+	}
+
+	printf("Loop Ended: %d ", i);
+
+	integrate<<<num_blocks_node, BLOCK_SIZE>>>(gpuptr_xt, gpuptr_vt, numnodes);
 }
 

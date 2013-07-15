@@ -1,5 +1,6 @@
 #include "includes.h"
 #include "Integrator.h"
+#include "GPUIntegrator.h"
 #include "PolarDecompose.h"
 #include "Model.h"
 #include "MeshFunctions.h"
@@ -10,6 +11,7 @@ extern void CGSolverGPU(float* A, float* x, float* b, int n);
 
 /* GLUT callback Handlers */
 static Integrator* inte;
+static GPUIntegrator *ginte;
 static Mesh* tet;
 static int iter = 10;
 Model * mod;
@@ -60,7 +62,7 @@ static float rot = 0.0;
 	//inte->debug();
 	perfmon p;
 	p.startTimer();
-	inte->timeStep();
+	ginte->timeStep();
 	p.stopTimer();
 	p.print();
 	for(int i=0;i<tet->getNoOfElements();i++)
@@ -100,6 +102,7 @@ key(unsigned char key, int x, int y)
     {
         case 27 : 
         case 'q':
+			ginte->~GPUIntegrator();
             exit(0);
             break;
 		case ' ':
@@ -267,7 +270,7 @@ main(int argc, char *argv[])
 	//sheet//
 
 
-	inte = new Integrator(tet,&rows);
+	ginte = new GPUIntegrator(tet,&rows);
 	//conjugate gradient test
 	// works
 	/*

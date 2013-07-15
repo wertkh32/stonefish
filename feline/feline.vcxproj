@@ -79,6 +79,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="GPUIntegratorFuncs.cuh" />
     <None Include="gpuMat3d.cuh" />
     <None Include="ReadMe.txt" />
   </ItemGroup>

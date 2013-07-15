@@ -2,6 +2,8 @@
 #include "Mesh.h"
 #include "ConstrainedRows.h"
 #include "GPUDataStructs.cuh"
+#include "GPUIntegratorFuncs.cuh"
+
 
 class GPUIntegrator
 {
@@ -29,5 +31,7 @@ public:
 	void copyVarstoGPU();
 	
 	void timeStep();
+	void updatePositions();
+
 	~GPUIntegrator(void);
 };
