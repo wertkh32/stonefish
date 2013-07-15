@@ -27,6 +27,8 @@ public:
 	void assembleVt();
 	void assembleExtForce();
 
+	//void assembleLumpedMass();
+
 	void initVars();
 	void copyVarstoGPU();
 	

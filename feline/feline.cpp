@@ -321,10 +321,10 @@ main(int argc, char *argv[])
 		printf("\n");
 	}*/
 	//polar decompose test
-	/*test ok
-	Matrix3d h(4,0,0,
-			0,4,0,
-			0,0,4);
+	///*test ok
+	Matrix3d h(1,2,3,
+			3,2,1,
+			1,3,2);
 	Matrix3d R, S;
 
 	PolarDecompose::compute(h,R,S);
@@ -335,7 +335,8 @@ main(int argc, char *argv[])
 			printf("%lf ",R(i,j));
 		printf("\n");
 	}
-	*/
+	system("pause");
+	//*/
 
 	//gpu cg solve test
 	/*

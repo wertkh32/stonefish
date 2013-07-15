@@ -335,6 +335,9 @@ void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, bool* all
 				deltaNew += r[i] * r[i];
 	}
 
+	//printf("DeltaNew: %f\n",deltaNew);
+	//system("pause");
+
 	delta0 = deltaNew;
 	alpha = beta = 0;
 

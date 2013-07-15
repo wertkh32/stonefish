@@ -51,6 +51,16 @@ gpuInitVars(int numele, int numnodes)
 	cudaMemcpyToSymbol("COEFFK", &coeffK, sizeof(float));
 	cudaMemcpyToSymbol("COEFFM", &coeffM, sizeof(float));
 	cudaMemcpyToSymbol("dt", &dt, sizeof(float));
+
+	//testing
+	float F[3][3] = { {1,2,3}, {3,2,1}, {1,3,2} };
+	float R[3][3];
+	gpuComputePolarDecomposition(F,R);
+
+	for(int i=0;i<3;i++, printf("\n"))
+		for(int j=0; j<3; j++)
+			printf("%f ", R[i][j]);
+	system("pause");
 }
 
 __host__
@@ -224,6 +234,7 @@ void dot(float*a, float*b, float* out, int n)
 
 	__syncthreads();
 
+
 	int i = BLOCK_SIZE >> 1;
 	while(i>0)
 	{
@@ -251,7 +262,7 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 
 		float nodalmass = t_ele->nodalmass;
 
-		float nodes[12], vel[12], F[3][3], R[3][3];
+		float nodes[12], vel[12], F[3][3], R[3][3] = {{1,0,0},{0,1,0},{0,0,1}};
 
 		for(int i=0;i<4;i++)
 		{
@@ -273,7 +284,7 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 				F[i][j] = nodes[j*3 + i] - nodes[9 + i];
 			}
 
-		gpuComputePolarDecomposition(F,R);
+		//gpuComputePolarDecomposition(F,R);
 
 
 		for(int i=0;i<12;i++)
@@ -388,7 +399,7 @@ __global__
 void
 initDeltaVars(CGVars* vars, float* r, int numnodes)
 {
-	float rr;
+	__shared__ float rr;
 	dot(r, r, &rr, numnodes * 3);
 	
 	if(threadIdx.x == 0)
@@ -501,16 +512,21 @@ gpuTimeStep(int numelements, int numnodes)
 	const int num_blocks_ele = (numelements/BLOCK_SIZE) + 1;
 	const int num_blocks_node = (numnodes/BLOCK_SIZE) + 1;
 
-	printf("Started");
-
+	printf("Started\n");
+	
+	//printf("Precompute\n");
 	precompute<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptr_xt, gpuptr_vt, gpuptr_extforces, numelements);
 	
+	//printf("GatherB\n");
 	gatherB<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptr_b, numnodes);
 
+	//printf("InitAx\n");
 	initAx<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptr_vt, numelements);
 
+	//printf("InitRandD\n");
 	initRandD<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptrR, gpuptrD, gpuptr_b, numnodes);
 
+	//printf("InitDeltaVars\n");
 	initDeltaVars<<<1, BLOCK_SIZE>>>(gpuptrVars, gpuptrR, numnodes);
 
 	int i=0;
@@ -518,27 +534,35 @@ gpuTimeStep(int numelements, int numnodes)
 	CGVars vars;
 	cudaMemcpy(&vars, gpuptrVars, sizeof(CGVars), cudaMemcpyDeviceToHost);
 
+	printf("%f %f %f %f %f\n", vars.delta0, vars.deltaNew, vars.deltaOld, vars.alpha, vars.beta);
+	//system("pause");
+
 	printf("Loop Started");
 
 	while(i < MAX_ITER && vars.deltaNew > (EPSIL * EPSIL) * vars.delta0)
 	{
+		//printf("MakeQProd\n");
 		makeQprod<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptrD, numelements);
 
+		//printf("gatherQprod\n");
 		gatherQprod<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, numnodes);
 
+		//printf("MakeVars\n");
 		makeVars<<<1, BLOCK_SIZE>>>(gpuptrVars, gpuptrD, gpuptrQ, gpuptrR, numnodes);
 
+		//printf("MakeXRandD\n");
 		makeXRandD<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrVars, gpuptr_vt, gpuptrR, gpuptrD, gpuptrQ, numnodes);
 
+		//printf("Memcpy\n");
 		cudaMemcpy(&vars, gpuptrVars, sizeof(CGVars), cudaMemcpyDeviceToHost);
-
-		printf("%f %f %f %f %f\n", vars.delta0, vars.deltaNew, vars.deltaOld, vars.alpha, vars.beta);
-
+		//printf("%f %f %f %f %f\n", vars.delta0, vars.deltaNew, vars.deltaOld, vars.alpha, vars.beta);
 		i++;
+		//printf("End iter\n");
 	}
 
 	printf("Loop Ended: %d ", i);
 
+	//printf("Integrate\n");
 	integrate<<<num_blocks_node, BLOCK_SIZE>>>(gpuptr_xt, gpuptr_vt, numnodes);
 }
 

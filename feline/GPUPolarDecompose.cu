@@ -1,24 +1,28 @@
 #pragma once
-#define _TOLERANCE_ 0.01
+#define TOLERANCE 0.01
 
-__device__ float oneNorm(const float A[3][3])
+__host__
+__device__ 
+float oneNorm(const float A[3][3])
 {
-  double norm = 0.0;
+  float norm = 0.0;
   for (int i=0; i<3; i++) 
   {
-    double columnAbsSum = fabs(A[0][i]) + fabs(A[1][i]) + fabs(A[2][i]);
+    float columnAbsSum = fabs(A[0][i]) + fabs(A[1][i]) + fabs(A[2][i]);
     if (columnAbsSum > norm) 
       norm = columnAbsSum;
   }
   return norm;
 }
 
-__device__ float infNorm(const float A[3][3])
+__host__
+__device__
+float infNorm(const float A[3][3])
 {
-  double norm = 0.0;
+  float norm = 0.0;
   for (int i=0; i<3; i++) 
   {
-    double rowSum = fabs(A[i][0]) + fabs(A[i][1]) + fabs(A[i][2]);
+    float rowSum = fabs(A[i][0]) + fabs(A[i][1]) + fabs(A[i][2]);
     if (rowSum > norm) 
       norm = rowSum;
   }
@@ -26,7 +30,9 @@ __device__ float infNorm(const float A[3][3])
 }
 
 // cross product: c = a x b
-__device__ void crossProduct(const float* a, const float* b, float* c)
+__host__
+__device__
+void crossProduct(const float* a, const float* b, float* c)
 {
   c[0] = a[1] * b[2] - a[2] * b[1];
   c[1] = a[2] * b[0] - a[0] * b[2];
@@ -35,7 +41,9 @@ __device__ void crossProduct(const float* a, const float* b, float* c)
 
 // Input: M (3x3 mtx)
 // Output: Q (3x3 rotation mtx), S (3x3 symmetric mtx)
-__device__ float gpuComputePolarDecomposition(const float M[3][3], float Q[3][3])
+__host__
+__device__
+float gpuComputePolarDecomposition(const float M[3][3], float Q[3][3])
 {
   float Mk[3][3];
   float Ek[3][3];
@@ -67,12 +75,12 @@ __device__ float gpuComputePolarDecomposition(const float M[3][3], float Q[3][3]
       break;
     }
 
-    double MadjT_one = oneNorm(MadjTk); 
-    double MadjT_inf = infNorm(MadjTk);
+    float MadjT_one = oneNorm(MadjTk); 
+    float MadjT_inf = infNorm(MadjTk);
 
-    double gamma = sqrt(sqrt((MadjT_one * MadjT_inf) / (M_oneNorm * M_infNorm)) / fabs(det));
-    double g1 = gamma * 0.5;
-    double g2 = 0.5 / (gamma * det);
+    float gamma = sqrt(sqrt((MadjT_one * MadjT_inf) / (M_oneNorm * M_infNorm)) / fabs(det));
+    float g1 = gamma * 0.5;
+    float g2 = 0.5 / (gamma * det);
 
     for(int i=0; i<3; i++)
 		for(int j=0; j<3; j++)
@@ -86,7 +94,7 @@ __device__ float gpuComputePolarDecomposition(const float M[3][3], float Q[3][3]
     M_oneNorm = oneNorm(Mk);  
     M_infNorm = infNorm(Mk);
   }
-  while ( E_oneNorm > M_oneNorm * _TOLERANCE_ );
+  while ( E_oneNorm > M_oneNorm * TOLERANCE );
 
   // Q = Mk^T 
   for(int i=0; i<3; i++)

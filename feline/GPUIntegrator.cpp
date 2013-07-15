@@ -63,7 +63,25 @@ GPUIntegrator::assembleGPUNodes()
 		}
 	}
 }
-	
+/*
+void
+GPUIntegrator::assembleLumpedMass()
+{
+	for(int i=0;i<n*3;i++)
+		mass[i] = 0;
+
+	for(int i=0;i<mesh->elements.size();i++)
+	{
+		float elenodemass = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume()) /4;
+		for(int j=0;j<4;j++)
+		{
+			mass[mesh->nodeIndices[i][j] * 3] += elenodemass;
+			mass[mesh->nodeIndices[i][j] * 3 + 1] += elenodemass;
+			mass[mesh->nodeIndices[i][j] * 3 + 2] += elenodemass;
+		}
+	}
+}
+*/
 void GPUIntegrator::assembleXt()
 {
 	for(int i=0;i<numnodes;i++)
@@ -97,6 +115,7 @@ void GPUIntegrator::assembleExtForce()
 void
 GPUIntegrator::initVars()
 {
+	gpuInitVars(numelements, numnodes);
 	assembleGPUElements();
 	assembleGPUNodes();
 	assembleXt();
@@ -113,8 +132,8 @@ GPUIntegrator::copyVarstoGPU()
 void
 GPUIntegrator::timeStep()
 {
-	//assembleExtForce();
-	//gpuUploadExtForces(extforces, numnodes);
+	assembleExtForce();
+	gpuUploadExtForces(extforces, numnodes);
 	gpuTimeStep(numelements, numnodes);
 	updatePositions();
 }
