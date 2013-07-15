@@ -120,7 +120,7 @@ void makeRK(float mat[12][12], float R[3][3])
 			{
 				for(int b=0;b<3;b++)
 				{
-					RK[a + i * 3][b + j * 3]=0;
+					RK[a + i * 3][b + j * 3]= 0.0f;
 						
 					for(int c=0;c<3;c++)
 						RK[a + i * 3][b + j * 3] += R[a][c] * mat[c + i * 3][b + j * 3];
@@ -147,7 +147,7 @@ void makeRKRT(float mat[12][12], float R[3][3])
 			for(int a=0;a<3;a++)
 				for(int b=0;b<3;b++)
 				{
-					RKRT[a + i * 3][b + j * 3] = 0;
+					RKRT[a + i * 3][b + j * 3] = 0.0f;
 					for(int c=0;c<3;c++)
 						RKRT[a + i * 3][b + j * 3] += mat[a + i * 3][c + j * 3] * R[b][c]; //R(c, b) but its RT so, R(b , c)
 				}
@@ -262,7 +262,7 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 
 		float nodalmass = t_ele->nodalmass;
 
-		float nodes[12], vel[12], F[3][3], R[3][3] = {{1,0,0},{0,1,0},{0,0,1}};
+		float nodes[12], vel[12], F[3][3], R[3][3];
 
 		for(int i=0;i<4;i++)
 		{
@@ -298,13 +298,13 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 			t_solvedata->b[i * 3 + 2] = extforces[t_ele->nodeindex[i] * 3 + 2];
 		}
 
-		makeRK(t_solvedata->system, R);
+		//makeRK(t_solvedata->system, R);
 
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)
 				t_solvedata->b[i] += t_solvedata->system[i][j] * t_ele->x0[j];
 	
-		makeRKRT(t_solvedata->system, R);
+		//makeRKRT(t_solvedata->system, R);
 
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)

@@ -68,7 +68,7 @@ float gpuComputePolarDecomposition(const float M[3][3], float Q[3][3])
     // row 1 x row 2
     crossProduct(Mk[0], Mk[1], MadjTk[2]);
 
-    det = Mk[0][0] * MadjTk[0][0] + Mk[0][1] * MadjTk[0][1] + Mk[0][2] * MadjTk[2][2];
+    det = Mk[0][0] * MadjTk[0][0] + Mk[0][1] * MadjTk[0][1] + Mk[0][2] * MadjTk[0][2];
     if (det == 0.0) 
     {
       //printf("Warning (polarDecomposition) : zero determinant encountered.\n");
