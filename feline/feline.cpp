@@ -55,7 +55,7 @@ static float rot = 0.0;
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(-10,-1,-30);
+    glTranslatef(-20,-1,-40);
 	glRotatef(20 + rot,1,1,0);
     //glutSolidSphere(3,30,30);
 	//inte->debug();
@@ -70,19 +70,19 @@ static float rot = 0.0;
 
 	if(iter>=10)
 	{
-		for(int i=419;i<441;i++)
+		for(int i=929;i<961;i++)
 		tet->nodes[i]->force = vector3<float>();
-		for(int i=860;i<882;i++)
+		for(int i=1890;i<1922;i++)
 		tet->nodes[i]->force = vector3<float>();
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>();
 	}
 	else
 	{
-		for(int i=419;i<441;i++)
-		tet->nodes[i]->force = vector3<float>(0,100,0);
-		for(int i=860;i<882;i++)
-		tet->nodes[i]->force = vector3<float>(0,100,0);
+		for(int i=929;i<961;i++)
+		tet->nodes[i]->force = vector3<float>(0,10,0);
+		for(int i=1890;i<1922;i++)
+		tet->nodes[i]->force = vector3<float>(0,10,0);
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>(0,40,0);
 	}
@@ -266,7 +266,7 @@ main(int argc, char *argv[])
 	rows.add(460);
 	rows.add(461);
 
-	MeshFunctions::makeSheet(&tet,20,20);
+	MeshFunctions::makeSheet(&tet,30,30);
 	//sheet//
 
 
@@ -322,20 +322,20 @@ main(int argc, char *argv[])
 	}*/
 	//polar decompose test
 	///*test ok
-	Matrix3d h(1,2,3,
-			3,2,1,
-			1,3,2);
-	Matrix3d R, S;
+	//Matrix3d h(1,2,3,
+	//		3,2,1,
+	//		1,3,2);
+	//Matrix3d R, S;
 
-	PolarDecompose::compute(h,R,S);
+	//PolarDecompose::compute(h,R,S);
 
-	for(int i=0;i<3;i++)
-	{
-		for(int j=0;j<3;j++)
-			printf("%lf ",R(i,j));
-		printf("\n");
-	}
-	system("pause");
+	//for(int i=0;i<3;i++)
+	//{
+	//	for(int j=0;j<3;j++)
+	//		printf("%lf ",R(i,j));
+	//	printf("\n");
+	//}
+	//system("pause");
 	//*/
 
 	//gpu cg solve test

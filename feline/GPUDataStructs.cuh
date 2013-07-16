@@ -19,6 +19,7 @@ struct GPUElement
 	int nodeindex[4];
 	float unwarpK[12][12];
 	float x0[12];
+	float undefShapeMatInv[3][3];
 	float nodalmass;
 };
 

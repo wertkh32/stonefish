@@ -5,7 +5,7 @@
 #include "GPUDataStructs.cuh"
 #include "GPUPolarDecompose.cu"
 
-#define BLOCK_SIZE 256
+#define BLOCK_SIZE 512
 #define ALPHA 0.1
 #define BETA 0.1
 
@@ -53,14 +53,14 @@ gpuInitVars(int numele, int numnodes)
 	cudaMemcpyToSymbol("dt", &dt, sizeof(float));
 
 	//testing
-	float F[3][3] = { {1,2,3}, {3,2,1}, {1,3,2} };
-	float R[3][3];
-	gpuComputePolarDecomposition(F,R);
+	//float F[3][3] = { {1,2,3}, {3,2,1}, {1,3,2} };
+	//float R[3][3];
+	//gpuComputePolarDecomposition(F,R);
 
-	for(int i=0;i<3;i++, printf("\n"))
-		for(int j=0; j<3; j++)
-			printf("%f ", R[i][j]);
-	system("pause");
+	//for(int i=0;i<3;i++, printf("\n"))
+	//	for(int j=0; j<3; j++)
+	//		printf("%f ", R[i][j]);
+	//system("pause");
 }
 
 __host__
@@ -262,7 +262,7 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 
 		float nodalmass = t_ele->nodalmass;
 
-		float nodes[12], vel[12], F[3][3], R[3][3];
+		float nodes[12], vel[12], F[3][3]={{0},{0},{0}}, R[3][3];
 
 		for(int i=0;i<4;i++)
 		{
@@ -280,11 +280,10 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 
 		for(int i=0;i<3;i++)
 			for(int j=0;j<3;j++)
-			{
-				F[i][j] = nodes[j*3 + i] - nodes[9 + i];
-			}
+				for(int k=0;k<3;k++)
+					F[i][j] += (nodes[k*3 + i] - nodes[9 + i]) * t_ele->undefShapeMatInv[k][j];
 
-		//gpuComputePolarDecomposition(F,R);
+		gpuComputePolarDecomposition(F,R);
 
 
 		for(int i=0;i<12;i++)
@@ -298,13 +297,13 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 			t_solvedata->b[i * 3 + 2] = extforces[t_ele->nodeindex[i] * 3 + 2];
 		}
 
-		//makeRK(t_solvedata->system, R);
+		makeRK(t_solvedata->system, R);
 
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)
 				t_solvedata->b[i] += t_solvedata->system[i][j] * t_ele->x0[j];
 	
-		//makeRKRT(t_solvedata->system, R);
+		makeRKRT(t_solvedata->system, R);
 
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)

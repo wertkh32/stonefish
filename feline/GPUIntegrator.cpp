@@ -36,6 +36,14 @@ GPUIntegrator::assembleGPUElements()
 
 			gpuElements[i].nodeindex[a] = mesh->nodeIndices[i][a];
 		}
+
+		Matrix3d& inv = mesh->elements[i]->getUndeformShapeMatInv();
+
+		for(int a=0;a<3;a++)
+			for(int b=0;b<3;b++)
+			{
+				gpuElements[i].undefShapeMatInv[a][b] = inv(a,b);
+			}
 		
 		gpuElements[i].nodalmass = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume())/4.0;
 

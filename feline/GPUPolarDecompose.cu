@@ -8,7 +8,7 @@ float oneNorm(const float A[3][3])
   float norm = 0.0;
   for (int i=0; i<3; i++) 
   {
-    float columnAbsSum = fabs(A[0][i]) + fabs(A[1][i]) + fabs(A[2][i]);
+    float columnAbsSum = fabsf(A[0][i]) + fabsf(A[1][i]) + fabsf(A[2][i]);
     if (columnAbsSum > norm) 
       norm = columnAbsSum;
   }
@@ -22,7 +22,7 @@ float infNorm(const float A[3][3])
   float norm = 0.0;
   for (int i=0; i<3; i++) 
   {
-    float rowSum = fabs(A[i][0]) + fabs(A[i][1]) + fabs(A[i][2]);
+    float rowSum = fabsf(A[i][0]) + fabsf(A[i][1]) + fabsf(A[i][2]);
     if (rowSum > norm) 
       norm = rowSum;
   }
@@ -78,7 +78,7 @@ float gpuComputePolarDecomposition(const float M[3][3], float Q[3][3])
     float MadjT_one = oneNorm(MadjTk); 
     float MadjT_inf = infNorm(MadjTk);
 
-    float gamma = sqrt(sqrt((MadjT_one * MadjT_inf) / (M_oneNorm * M_infNorm)) / fabs(det));
+    float gamma = sqrtf(sqrtf((MadjT_one * MadjT_inf) / (M_oneNorm * M_infNorm)) / fabsf(det));
     float g1 = gamma * 0.5;
     float g2 = 0.5 / (gamma * det);
 
