@@ -1,7 +1,9 @@
 #pragma once
 
 #define MAX_ELEMENTS_PER_NODE 32
-#define BLOCK_SIZE 64
+#define BLOCK_SIZE 128				//element block size
+#define DOT_BLOCK_SIZE 512			//dot product block size
+#define NODE_BLOCK_SIZE 256			//node block size
 
 
 struct mulData
