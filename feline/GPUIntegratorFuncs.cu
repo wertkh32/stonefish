@@ -5,8 +5,8 @@
 #include "GPUDataStructs.cuh"
 #include "GPUPolarDecompose.cu"
 
-#define BLOCK_SIZE 512
-#define ALPHA 0.1
+//#define BLOCK_SIZE 512
+#define ALPHA 0.3
 #define BETA 0.1
 
 #define MAX_ITER 20
@@ -32,9 +32,11 @@ __host__
 void
 gpuInitVars(int numele, int numnodes)
 {
-	cudaMalloc(&gpuptrElements, numele * sizeof(GPUElement));
+	int numblocksperele = (numele / BLOCK_SIZE) + 1;
+
+	cudaMalloc(&gpuptrElements, numblocksperele * sizeof(GPUElement));
+	cudaMalloc(&gpuptrMulData, numblocksperele * sizeof(mulData));
 	cudaMalloc(&gpuptrNodes, numnodes * sizeof(GPUNode));
-	cudaMalloc(&gpuptrMulData, numele * sizeof(mulData));
 	cudaMalloc(&gpuptr_xt, numnodes * 3 * sizeof(float));
 	cudaMalloc(&gpuptr_vt, numnodes * 3 * sizeof(float));
 	cudaMalloc(&gpuptr_extforces, numnodes * 3 * sizeof(float));
@@ -52,6 +54,16 @@ gpuInitVars(int numele, int numnodes)
 	cudaMemcpyToSymbol("COEFFM", &coeffM, sizeof(float));
 	cudaMemcpyToSymbol("dt", &dt, sizeof(float));
 
+
+		cudaError_t error = cudaGetLastError();
+		if(error != cudaSuccess)
+		{
+			// print the CUDA error message and exit
+			printf("CUDA error: %s\n", cudaGetErrorString(error));
+			//exit(-1);
+			system("pause");
+		}
+
 	//testing
 	//float F[3][3] = { {1,2,3}, {3,2,1}, {1,3,2} };
 	//float R[3][3];
@@ -68,11 +80,21 @@ void
 gpuUploadVars(GPUElement* gpuElements, GPUNode* gpuNodes,float* xt, 
 			  float* vt, float* extforces, int numnodes, int numelements)
 {
-	cudaMemcpy(gpuptrElements, gpuElements, numelements * sizeof(GPUElement), cudaMemcpyHostToDevice);
+	int numblocksperele = (numelements / BLOCK_SIZE) + 1;
+	cudaMemcpy(gpuptrElements, gpuElements, numblocksperele * sizeof(GPUElement), cudaMemcpyHostToDevice);
 	cudaMemcpy(gpuptrNodes, gpuNodes, numnodes * sizeof(GPUNode), cudaMemcpyHostToDevice);
 	cudaMemcpy(gpuptr_xt, xt, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(gpuptr_vt, vt, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(gpuptr_extforces, extforces, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice);
+
+			cudaError_t error = cudaGetLastError();
+		if(error != cudaSuccess)
+		{
+			// print the CUDA error message and exit
+			printf("CUDA error: %s\n", cudaGetErrorString(error));
+			//exit(-1);
+			system("pause");
+		}
 }
 
 __host__
@@ -87,6 +109,15 @@ void
 gpuUploadExtForces(float* extforces, int numnodes)
 {
 	cudaMemcpy(gpuptr_extforces, extforces, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice);
+
+			cudaError_t error = cudaGetLastError();
+		if(error != cudaSuccess)
+		{
+			// print the CUDA error message and exit
+			printf("CUDA error: %s\n", cudaGetErrorString(error));
+			//exit(-1);
+			system("pause");
+		}
 }
 
 
@@ -109,8 +140,9 @@ gpuDestroyVars()
 
 
 __device__
-void makeRK(float mat[12][12], float R[3][3])
+void makeRK(float mat[12][12][BLOCK_SIZE], float R[3][3])
 {
+	int ltid = threadIdx.x;
 	float RK[12][12];
 	for(int i=0;i<4;i++)
 	{
@@ -123,7 +155,7 @@ void makeRK(float mat[12][12], float R[3][3])
 					RK[a + i * 3][b + j * 3]= 0.0f;
 						
 					for(int c=0;c<3;c++)
-						RK[a + i * 3][b + j * 3] += R[a][c] * mat[c + i * 3][b + j * 3];
+						RK[a + i * 3][b + j * 3] += R[a][c] * mat[c + i * 3][b + j * 3][ltid];
 				}
 			}
 		}
@@ -131,14 +163,15 @@ void makeRK(float mat[12][12], float R[3][3])
 
 	for(int i=0;i<12;i++)
 		for(int j=0;j<12;j++)
-			mat[i][j] = RK[i][j];
+			mat[i][j][ltid] = RK[i][j];
 }
 
 
 __device__
-void makeRKRT(float mat[12][12], float R[3][3])
+void makeRKRT(float mat[12][12][BLOCK_SIZE], float R[3][3])
 {
 	float RKRT[12][12];
+	int ltid = threadIdx.x;
 
 	for(int i=0;i<4;i++)
 	{
@@ -149,7 +182,7 @@ void makeRKRT(float mat[12][12], float R[3][3])
 				{
 					RKRT[a + i * 3][b + j * 3] = 0.0f;
 					for(int c=0;c<3;c++)
-						RKRT[a + i * 3][b + j * 3] += mat[a + i * 3][c + j * 3] * R[b][c]; //R(c, b) but its RT so, R(b , c)
+						RKRT[a + i * 3][b + j * 3] += mat[a + i * 3][c + j * 3][ltid] * R[b][c]; //R(c, b) but its RT so, R(b , c)
 				}
 		}
 	}
@@ -164,7 +197,7 @@ void makeRKRT(float mat[12][12], float R[3][3])
 
 	for(int i=0;i<12;i++)
 		for(int j=0;j<12;j++)
-			mat[i][j] = RKRT[i][j];
+			mat[i][j][ltid] = RKRT[i][j];
 }
 
 
@@ -172,23 +205,26 @@ __device__
 void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 {
 	int tid = threadIdx.x + blockIdx.x * BLOCK_SIZE;
-	GPUElement* t_ele = &(elements[tid]);
-	mulData* t_solvedata = &(solverData[tid]);
+	int bid = blockIdx.x;
+	int ltid = threadIdx.x;
+
+	GPUElement* t_ele = &(elements[bid]);
+	mulData* t_solvedata = &(solverData[bid]);
 
 	float nodes[12];
 
 	for(int i=0;i<4;i++)
 	{
-		nodes[i * 3] = x[t_ele->nodeindex[i] * 3];
-		nodes[i * 3 + 1] = x[t_ele->nodeindex[i] * 3 + 1];
-		nodes[i * 3 + 2] = x[t_ele->nodeindex[i] * 3 + 2];
+		nodes[i * 3] = x[t_ele->nodeindex[i][ltid] * 3];
+		nodes[i * 3 + 1] = x[t_ele->nodeindex[i][ltid] * 3 + 1];
+		nodes[i * 3 + 2] = x[t_ele->nodeindex[i][ltid] * 3 + 2];
 	}
 
 	for(int i=0;i<12;i++)
 	{
-		t_solvedata->product[i] = 0;
+		t_solvedata->product[i][ltid] = 0;
 		for(int j=0;j<12;j++)
-			t_solvedata->product[i] += t_solvedata->system[i][j] * nodes[j];
+			t_solvedata->product[i][ltid] += t_solvedata->system[i][j][ltid] * nodes[j];
 	}
 }
 
@@ -206,12 +242,13 @@ void mulSystemGather(GPUNode* nodes, mulData* solverData, float* x)
 
 	for(int i=0;i<n;i++)
 	{
-		int tetindex = node->elementindex[i][0];
+		int tetindex = node->elementindex[i][0] / BLOCK_SIZE;
+		int tetindex2 = node->elementindex[i][0] % BLOCK_SIZE;
 		int nodeindex = node->elementindex[i][1];
 
-		x[tid * 3] += solverData[tetindex].product[nodeindex * 3];
-		x[tid * 3 + 1] += solverData[tetindex].product[nodeindex * 3 + 1];
-		x[tid * 3 + 2] += solverData[tetindex].product[nodeindex * 3 + 2];
+		x[tid * 3] += solverData[tetindex].product[nodeindex * 3][tetindex2];
+		x[tid * 3 + 1] += solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];
+		x[tid * 3 + 2] += solverData[tetindex].product[nodeindex * 3 + 2][tetindex2];
 	}
 }
 
@@ -254,71 +291,73 @@ __global__
 void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt, float* extforces, int numelements)
 {
 	int tid = threadIdx.x + blockIdx.x * BLOCK_SIZE;
+	int bid = blockIdx.x;
+	int ltid = threadIdx.x;
 
 	if(tid < numelements)
 	{
-		GPUElement* t_ele = &(elements[tid]);
-		mulData* t_solvedata = &(solverData[tid]);
+		GPUElement* t_ele = &(elements[bid]);
+		mulData* t_solvedata = &(solverData[bid]);
 
-		float nodalmass = t_ele->nodalmass;
+		float nodalmass = t_ele->nodalmass[ltid];
 
-		float nodes[12], vel[12], F[3][3]={{0},{0},{0}}, R[3][3];
+		float nodes[12], vel[12], F[3][3]={0}, R[3][3];
 
 		for(int i=0;i<4;i++)
 		{
-			nodes[i * 3] = xt[t_ele->nodeindex[i] * 3];
-			nodes[i * 3 + 1] = xt[t_ele->nodeindex[i] * 3 + 1];
-			nodes[i * 3 + 2] = xt[t_ele->nodeindex[i] * 3 + 2];
+			nodes[i * 3] = xt[t_ele->nodeindex[i][ltid] * 3];
+			nodes[i * 3 + 1] = xt[t_ele->nodeindex[i][ltid] * 3 + 1];
+			nodes[i * 3 + 2] = xt[t_ele->nodeindex[i][ltid] * 3 + 2];
 		}
 
 		for(int i=0;i<4;i++)
 		{
-			vel[i * 3] = vt[t_ele->nodeindex[i] * 3];
-			vel[i * 3 + 1] = vt[t_ele->nodeindex[i] * 3 + 1];
-			vel[i * 3 + 2] = vt[t_ele->nodeindex[i] * 3 + 2];
+			vel[i * 3] = vt[t_ele->nodeindex[i][ltid] * 3];
+			vel[i * 3 + 1] = vt[t_ele->nodeindex[i][ltid] * 3 + 1];
+			vel[i * 3 + 2] = vt[t_ele->nodeindex[i][ltid] * 3 + 2];
 		}
 
 		for(int i=0;i<3;i++)
 			for(int j=0;j<3;j++)
 				for(int k=0;k<3;k++)
-					F[i][j] += (nodes[k*3 + i] - nodes[9 + i]) * t_ele->undefShapeMatInv[k][j];
+					F[i][j] += (nodes[k*3 + i] - nodes[9 + i]) * t_ele->undefShapeMatInv[k][j][ltid];
 
 		gpuComputePolarDecomposition(F,R);
 
 
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)
-				t_solvedata->system[i][j] = t_ele->unwarpK[i][j];
+				t_solvedata->system[i][j][ltid] = t_ele->unwarpK[i][j][ltid];
 	
 		for(int i=0;i<4;i++)
 		{
-			t_solvedata->b[i * 3] = extforces[t_ele->nodeindex[i] * 3];
-			t_solvedata->b[i * 3 + 1] = extforces[t_ele->nodeindex[i] * 3 + 1];
-			t_solvedata->b[i * 3 + 2] = extforces[t_ele->nodeindex[i] * 3 + 2];
+			t_solvedata->b[i * 3][ltid] = extforces[t_ele->nodeindex[i][ltid] * 3];
+			t_solvedata->b[i * 3 + 1][ltid] = extforces[t_ele->nodeindex[i][ltid] * 3 + 1];
+			t_solvedata->b[i * 3 + 2][ltid] = extforces[t_ele->nodeindex[i][ltid] * 3 + 2];
 		}
 
 		makeRK(t_solvedata->system, R);
 
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)
-				t_solvedata->b[i] += t_solvedata->system[i][j] * t_ele->x0[j];
+				t_solvedata->b[i][ltid] += t_solvedata->system[i][j][ltid] * t_ele->x0[j][ltid];
 	
 		makeRKRT(t_solvedata->system, R);
 
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)
-				t_solvedata->b[i] -= t_solvedata->system[i][j] * nodes[j];
+				t_solvedata->b[i][ltid] -= t_solvedata->system[i][j][ltid] * nodes[j];
 
 		for(int i=0;i<12;i++)
-			t_solvedata->b[i] = t_solvedata->b[i] * dt + nodalmass * vel[i];
+			t_solvedata->b[i][ltid] = t_solvedata->b[i][ltid] * dt + nodalmass * vel[i];
 
 		//final system matrix
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)
 			{
-				t_solvedata->system[i][j] *= COEFFK;
+				t_solvedata->system[i][j][ltid] *= COEFFK;
 				if(i==j)
-					t_solvedata->system[i][i] += COEFFM * nodalmass;
+					t_solvedata->system[i][i][ltid] += COEFFM * nodalmass;
 			}
 	}
 }
@@ -342,12 +381,13 @@ void gatherB(GPUNode* nodes, mulData* solverData, float* b, int numnodes)
 
 		for(int i=0;i<n;i++)
 		{
-			int tetindex = node->elementindex[i][0];
+			int tetindex = node->elementindex[i][0] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0] % BLOCK_SIZE;
 			int nodeindex = node->elementindex[i][1];
 
-			b[tid * 3] += solverData[tetindex].b[nodeindex * 3];
-			b[tid * 3 + 1] += solverData[tetindex].b[nodeindex * 3 + 1];
-			b[tid * 3 + 2] += solverData[tetindex].b[nodeindex * 3 + 2];
+			b[tid * 3] += solverData[tetindex].b[nodeindex * 3][tetindex2];
+			b[tid * 3 + 1] += solverData[tetindex].b[nodeindex * 3 + 1][tetindex2];
+			b[tid * 3 + 2] += solverData[tetindex].b[nodeindex * 3 + 2][tetindex2];
 		}
 	}
 }
@@ -510,58 +550,126 @@ gpuTimeStep(int numelements, int numnodes)
 {
 	const int num_blocks_ele = (numelements/BLOCK_SIZE) + 1;
 	const int num_blocks_node = (numnodes/BLOCK_SIZE) + 1;
+	cudaError_t error;
 
 	printf("Started\n");
 	
-	//printf("Precompute\n");
 	precompute<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptr_xt, gpuptr_vt, gpuptr_extforces, numelements);
 	
-	//printf("GatherB\n");
+	error = cudaGetLastError();
+	if(error != cudaSuccess)
+	{
+		printf("1");
+		// print the CUDA error message and exit
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
+		//exit(-1);
+	}
+
+
 	gatherB<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptr_b, numnodes);
 
-	//printf("InitAx\n");
+	error = cudaGetLastError();
+	if(error != cudaSuccess)
+	{
+		printf("2");
+		// print the CUDA error message and exit
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
+		//exit(-1);
+	}
+
 	initAx<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptr_vt, numelements);
 
-	//printf("InitRandD\n");
+	error = cudaGetLastError();
+	if(error != cudaSuccess)
+	{
+		printf("3");
+		// print the CUDA error message and exit
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
+		//exit(-1);
+	}
+
 	initRandD<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptrR, gpuptrD, gpuptr_b, numnodes);
 
-	//printf("InitDeltaVars\n");
+	error = cudaGetLastError();
+	if(error != cudaSuccess)
+	{
+		printf("4");
+		// print the CUDA error message and exit
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
+		//exit(-1);
+	}
+
 	initDeltaVars<<<1, BLOCK_SIZE>>>(gpuptrVars, gpuptrR, numnodes);
+
+	error = cudaGetLastError();
+	if(error != cudaSuccess)
+	{
+		printf("5");
+		// print the CUDA error message and exit
+		printf("CUDA error: %s\n", cudaGetErrorString(error));
+		//exit(-1);
+	}
 
 	int i=0;
 
 	CGVars vars;
 	cudaMemcpy(&vars, gpuptrVars, sizeof(CGVars), cudaMemcpyDeviceToHost);
 
-	printf("%f %f %f %f %f\n", vars.delta0, vars.deltaNew, vars.deltaOld, vars.alpha, vars.beta);
-	//system("pause");
-
 	printf("Loop Started");
 
 	while(i < MAX_ITER && vars.deltaNew > (EPSIL * EPSIL) * vars.delta0)
 	{
-		//printf("MakeQProd\n");
 		makeQprod<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptrD, numelements);
 
-		//printf("gatherQprod\n");
+		error = cudaGetLastError();
+		if(error != cudaSuccess)
+		{
+			printf("6");
+			// print the CUDA error message and exit
+			printf("CUDA error: %s\n", cudaGetErrorString(error));
+			//exit(-1);
+		}
+
 		gatherQprod<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, numnodes);
 
-		//printf("MakeVars\n");
+		error = cudaGetLastError();
+		if(error != cudaSuccess)
+		{
+			printf("7");
+			// print the CUDA error message and exit
+			printf("CUDA error: %s\n", cudaGetErrorString(error));
+			//exit(-1);
+		}
+
 		makeVars<<<1, BLOCK_SIZE>>>(gpuptrVars, gpuptrD, gpuptrQ, gpuptrR, numnodes);
 
-		//printf("MakeXRandD\n");
+		error = cudaGetLastError();
+		if(error != cudaSuccess)
+		{
+			printf("8");
+			// print the CUDA error message and exit
+			printf("CUDA error: %s\n", cudaGetErrorString(error));
+			//exit(-1);
+		}
+
 		makeXRandD<<<num_blocks_node, BLOCK_SIZE>>>(gpuptrNodes, gpuptrVars, gpuptr_vt, gpuptrR, gpuptrD, gpuptrQ, numnodes);
 
-		//printf("Memcpy\n");
+		error = cudaGetLastError();
+		if(error != cudaSuccess)
+		{
+			printf("9");
+			// print the CUDA error message and exit
+			printf("CUDA error: %s\n", cudaGetErrorString(error));
+			//exit(-1);
+		}
+
 		cudaMemcpy(&vars, gpuptrVars, sizeof(CGVars), cudaMemcpyDeviceToHost);
-		//printf("%f %f %f %f %f\n", vars.delta0, vars.deltaNew, vars.deltaOld, vars.alpha, vars.beta);
 		i++;
-		//printf("End iter\n");
+
 	}
 
-	printf("Loop Ended: %d ", i);
+	printf("Loop Ended: %d\n", i);
 
-	//printf("Integrate\n");
 	integrate<<<num_blocks_node, BLOCK_SIZE>>>(gpuptr_xt, gpuptr_vt, numnodes);
 }
 

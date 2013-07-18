@@ -7,7 +7,9 @@ GPUIntegrator::GPUIntegrator(Mesh* _mesh, ConstrainedRows* r)
 	numnodes = mesh->getNoOfNodes();
 	numelements = mesh->getNoOfElements();
 
-	gpuElements = (GPUElement*)malloc(sizeof(GPUElement) * numelements * 3);
+	int numblocksperele = (numelements / BLOCK_SIZE) + 1;
+
+	gpuElements = (GPUElement*)malloc(sizeof(GPUElement) * numblocksperele);
 	gpuNodes = (GPUNode*)malloc(sizeof(GPUNode) * numnodes);
 
 	xt = (float*)malloc(sizeof(float) * numnodes * 3);
@@ -23,18 +25,21 @@ GPUIntegrator::assembleGPUElements()
 {
 	for(int i=0;i<numelements;i++)
 	{
+		int tid = i % BLOCK_SIZE;
+		int bid = i / BLOCK_SIZE;
+
 		GenMatrix<float,12,12>& stiff = *(mesh->elements[i]->getStiffnessMat());
 		for(int a=0;a<12;a++)
 			for(int b=0;b<12;b++)
-				gpuElements[i].unwarpK[a][b] = stiff(a,b);
+				gpuElements[bid].unwarpK[a][b][tid] = stiff(a,b);
 
 		for(int a=0;a<4;a++)
 		{
-			gpuElements[i].x0[a * 3] = mesh->elements[i]->nodes[a]->pos.x;
-			gpuElements[i].x0[a * 3 + 1] = mesh->elements[i]->nodes[a]->pos.y;
-			gpuElements[i].x0[a * 3 + 2] = mesh->elements[i]->nodes[a]->pos.z;
+			gpuElements[bid].x0[a * 3][tid] = mesh->elements[i]->nodes[a]->pos.x;
+			gpuElements[bid].x0[a * 3 + 1][tid] = mesh->elements[i]->nodes[a]->pos.y;
+			gpuElements[bid].x0[a * 3 + 2][tid] = mesh->elements[i]->nodes[a]->pos.z;
 
-			gpuElements[i].nodeindex[a] = mesh->nodeIndices[i][a];
+			gpuElements[bid].nodeindex[a][tid] = mesh->nodeIndices[i][a];
 		}
 
 		Matrix3d& inv = mesh->elements[i]->getUndeformShapeMatInv();
@@ -42,10 +47,10 @@ GPUIntegrator::assembleGPUElements()
 		for(int a=0;a<3;a++)
 			for(int b=0;b<3;b++)
 			{
-				gpuElements[i].undefShapeMatInv[a][b] = inv(a,b);
+				gpuElements[bid].undefShapeMatInv[a][b][tid] = inv(a,b);
 			}
 		
-		gpuElements[i].nodalmass = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume())/4.0;
+		gpuElements[bid].nodalmass[tid] = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume())/4.0;
 
 	}
 }

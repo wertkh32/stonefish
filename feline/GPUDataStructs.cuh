@@ -1,12 +1,14 @@
 #pragma once
 
 #define MAX_ELEMENTS_PER_NODE 32
+#define BLOCK_SIZE 64
+
 
 struct mulData
 {
-	float system[12][12];
-	float product[12];
-	float b[12];
+	float system[12][12][BLOCK_SIZE];
+	float product[12][BLOCK_SIZE];
+	float b[12][BLOCK_SIZE];
 };
 
 struct CGVars
@@ -16,11 +18,11 @@ struct CGVars
 
 struct GPUElement
 {
-	int nodeindex[4];
-	float unwarpK[12][12];
-	float x0[12];
-	float undefShapeMatInv[3][3];
-	float nodalmass;
+	int nodeindex[4][BLOCK_SIZE];
+	float unwarpK[12][12][BLOCK_SIZE];
+	float x0[12][BLOCK_SIZE];
+	float undefShapeMatInv[3][3][BLOCK_SIZE];
+	float nodalmass[BLOCK_SIZE];
 };
 
 struct GPUNode

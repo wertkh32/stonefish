@@ -60,6 +60,9 @@
     </Link>
     <CudaCompile>
       <CodeGeneration>compute_11,sm_11</CodeGeneration>
+      <Keep>true</Keep>
+      <FastMath>false</FastMath>
+      <Optimization>Od</Optimization>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
