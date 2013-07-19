@@ -34,10 +34,11 @@ void
 gpuInitVars(int numele, int numnodes)
 {
 	int numblocksperele = (numele / BLOCK_SIZE) + 1;
+	int numblockpernode = (numnodes / NODE_BLOCK_SIZE) + 1;
 
 	cudaMalloc(&gpuptrElements, numblocksperele * sizeof(GPUElement));
 	cudaMalloc(&gpuptrMulData, numblocksperele * sizeof(mulData));
-	cudaMalloc(&gpuptrNodes, numnodes * sizeof(GPUNode));
+	cudaMalloc(&gpuptrNodes, numblockpernode * sizeof(GPUNode));
 	cudaMalloc(&gpuptr_xt, numnodes * 3 * sizeof(float));
 	cudaMalloc(&gpuptr_vt, numnodes * 3 * sizeof(float));
 	cudaMalloc(&gpuptr_extforces, numnodes * 3 * sizeof(float));
@@ -82,8 +83,10 @@ gpuUploadVars(GPUElement* gpuElements, GPUNode* gpuNodes,float* xt,
 			  float* vt, float* extforces, int numnodes, int numelements)
 {
 	int numblocksperele = (numelements / BLOCK_SIZE) + 1;
+	int numblockpernode = (numnodes / NODE_BLOCK_SIZE) + 1;
+
 	cudaMemcpy(gpuptrElements, gpuElements, numblocksperele * sizeof(GPUElement), cudaMemcpyHostToDevice);
-	cudaMemcpy(gpuptrNodes, gpuNodes, numnodes * sizeof(GPUNode), cudaMemcpyHostToDevice);
+	cudaMemcpy(gpuptrNodes, gpuNodes, numblockpernode * sizeof(GPUNode), cudaMemcpyHostToDevice);
 	cudaMemcpy(gpuptr_xt, xt, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(gpuptr_vt, vt, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice);
 	cudaMemcpy(gpuptr_extforces, extforces, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice);
@@ -233,9 +236,12 @@ __device__
 void mulSystemGather(GPUNode* nodes, mulData* solverData, float* x)
 {
 	int tid = threadIdx.x + blockIdx.x * NODE_BLOCK_SIZE;
-	GPUNode* node = &(nodes[tid]);
+	int bid = blockIdx.x;
+	int ltid = threadIdx.x;
 
-	int n = node->n;
+	GPUNode* node = &(nodes[bid]);
+
+	int n = node->n[ltid];
 	
 	x[tid * 3] = 0;
 	x[tid * 3 + 1] = 0;
@@ -243,9 +249,9 @@ void mulSystemGather(GPUNode* nodes, mulData* solverData, float* x)
 
 	for(int i=0;i<n;i++)
 	{
-		int tetindex = node->elementindex[i][0] / BLOCK_SIZE;
-		int tetindex2 = node->elementindex[i][0] % BLOCK_SIZE;
-		int nodeindex = node->elementindex[i][1];
+		int tetindex = node->elementindex[i][0][ltid] / BLOCK_SIZE;
+		int tetindex2 = node->elementindex[i][0][ltid] % BLOCK_SIZE;
+		int nodeindex = node->elementindex[i][1][ltid];
 
 		x[tid * 3] += solverData[tetindex].product[nodeindex * 3][tetindex2];
 		x[tid * 3 + 1] += solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];
@@ -302,7 +308,7 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 
 		float nodalmass = t_ele->nodalmass[ltid];
 
-		float nodes[12], vel[12], F[3][3]={0}, R[3][3];
+		float nodes[12], vel[12], F[3][3]={0}, R[3][3] = {{1,0,0},{0,1,0},{0,0,1}};
 
 		for(int i=0;i<4;i++)
 		{
@@ -369,12 +375,14 @@ __global__
 void gatherB(GPUNode* nodes, mulData* solverData, float* b, int numnodes)
 {
 	int tid = threadIdx.x + blockIdx.x * NODE_BLOCK_SIZE;
+	int bid = blockIdx.x;
+	int ltid = threadIdx.x;
 
 	if(tid < numnodes)
 	{
-		GPUNode* node = &(nodes[tid]);
+		GPUNode* node = &(nodes[bid]);
 
-		int n = node->n;
+		int n = node->n[ltid];
 
 		b[tid * 3] = 0;
 		b[tid * 3 + 1] = 0;
@@ -382,9 +390,9 @@ void gatherB(GPUNode* nodes, mulData* solverData, float* b, int numnodes)
 
 		for(int i=0;i<n;i++)
 		{
-			int tetindex = node->elementindex[i][0] / BLOCK_SIZE;
-			int tetindex2 = node->elementindex[i][0] % BLOCK_SIZE;
-			int nodeindex = node->elementindex[i][1];
+			int tetindex = node->elementindex[i][0][ltid] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0][ltid] % BLOCK_SIZE;
+			int nodeindex = node->elementindex[i][1][ltid];
 
 			b[tid * 3] += solverData[tetindex].b[nodeindex * 3][tetindex2];
 			b[tid * 3 + 1] += solverData[tetindex].b[nodeindex * 3 + 1][tetindex2];

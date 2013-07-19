@@ -8,6 +8,8 @@
 #include "perfmon.h"
 
 extern void CGSolverGPU(float* A, float* x, float* b, int n);
+#define DIM 40
+
 
 /* GLUT callback Handlers */
 static Integrator* inte;
@@ -55,7 +57,7 @@ static float rot = 0.0;
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(-20,-1,-40);
+    glTranslatef(-30,-1,-50);
 	glRotatef(20 + rot,1,1,0);
     //glutSolidSphere(3,30,30);
 	//inte->debug();
@@ -68,20 +70,25 @@ static float rot = 0.0;
 	for(int i=0;i<tet->getNoOfElements();i++)
 		tet->elements[i]->renderElement();
 
+	int end = (DIM+1) * (DIM+1);
+	int start = end - (DIM+1) - 1;
+	int end2 = end * 2;
+	int start2 = end2 - (DIM+1) - 1;
+
 	if(iter>=10)
 	{
-		for(int i=929;i<961;i++)
+		for(int i=start;i<end;i++)
 		tet->nodes[i]->force = vector3<float>();
-		for(int i=1890;i<1922;i++)
+		for(int i=start2;i<end2;i++)
 		tet->nodes[i]->force = vector3<float>();
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>();
 	}
 	else
 	{
-		for(int i=929;i<961;i++)
+		for(int i=start;i<end;i++)
 		tet->nodes[i]->force = vector3<float>(0,10,0);
-		for(int i=1890;i<1922;i++)
+		for(int i=start2;i<end2;i++)
 		tet->nodes[i]->force = vector3<float>(0,10,0);
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>(0,40,0);
@@ -266,7 +273,7 @@ main(int argc, char *argv[])
 	rows.add(460);
 	rows.add(461);
 
-	MeshFunctions::makeSheet(&tet,30,30);
+	MeshFunctions::makeSheet(&tet,DIM,DIM);
 	//sheet//
 
 

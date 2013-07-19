@@ -29,7 +29,7 @@ struct GPUElement
 
 struct GPUNode
 {
-	int n;
+	int n[NODE_BLOCK_SIZE];
 	//{tet_index,tet_node_index}
-	int elementindex[MAX_ELEMENTS_PER_NODE][2];
+	int elementindex[MAX_ELEMENTS_PER_NODE][2][NODE_BLOCK_SIZE];
 };

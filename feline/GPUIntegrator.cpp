@@ -8,9 +8,10 @@ GPUIntegrator::GPUIntegrator(Mesh* _mesh, ConstrainedRows* r)
 	numelements = mesh->getNoOfElements();
 
 	int numblocksperele = (numelements / BLOCK_SIZE) + 1;
+	int numblockpernode = (numnodes / NODE_BLOCK_SIZE) + 1;
 
 	gpuElements = (GPUElement*)malloc(sizeof(GPUElement) * numblocksperele);
-	gpuNodes = (GPUNode*)malloc(sizeof(GPUNode) * numnodes);
+	gpuNodes = (GPUNode*)malloc(sizeof(GPUNode) * numblockpernode);
 
 	xt = (float*)malloc(sizeof(float) * numnodes * 3);
 	vt = (float*)malloc(sizeof(float) * numnodes * 3);
@@ -60,16 +61,18 @@ GPUIntegrator::assembleGPUNodes()
 {
 	for(int i=0;i<numnodes;i++)
 	{
-		gpuNodes[i].n = 0;
+		int tid = i % NODE_BLOCK_SIZE;
+		int bid = i / NODE_BLOCK_SIZE;
+		gpuNodes[bid].n[tid] = 0;
 		for(int a=0;a<numelements;a++)
 		{
 			for(int b=0;b<4;b++)
 			{
 				if(mesh->nodeIndices[a][b] == i)
 				{
-					gpuNodes[i].elementindex[gpuNodes[i].n][0] = a;
-					gpuNodes[i].elementindex[gpuNodes[i].n][1] = b;
-					gpuNodes[i].n++;
+					gpuNodes[bid].elementindex[gpuNodes[bid].n[tid]][0][tid] = a;
+					gpuNodes[bid].elementindex[gpuNodes[bid].n[tid]][1][tid] = b;
+					(gpuNodes[bid].n[tid])++;
 					break;
 				}
 			}
