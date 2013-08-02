@@ -1,9 +1,9 @@
 #pragma once
 
-#define MAX_ELEMENTS_PER_NODE 32
 #define BLOCK_SIZE 128				//element block size
 #define DOT_BLOCK_SIZE 512			//dot product block size
 
+#define ELEMENTS_PER_THREAD 8
 #define NODE_THREADS 4
 #define NODE_BLOCK_SIZE 128			//node block size
 #define GATHER_THREAD_NO 512
@@ -32,9 +32,10 @@ struct GPUElement
 	float nodalmass[BLOCK_SIZE];
 };
 
+
 struct GPUNode
 {
-	int n[NODE_BLOCK_SIZE];
+	int n[NODE_BLOCK_SIZE][4];
 	//{tet_index,tet_node_index}
-	int elementindex[MAX_ELEMENTS_PER_NODE][2][NODE_BLOCK_SIZE];
+	int elementindex[ELEMENTS_PER_THREAD][2][NODE_BLOCK_SIZE][4];
 };

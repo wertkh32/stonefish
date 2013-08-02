@@ -244,7 +244,7 @@ void mulSystemGather(GPUNode* nodes, mulData* solverData, float* x, int numnodes
 
 	__shared__ float cache[NODE_BLOCK_SIZE][4][3];
 	GPUNode* node = &(nodes[blockIdx.x]);
-	int n = node->n[groupid];
+	int n = node->n[groupid][grouptid];
 	
 	if(nodeno < numnodes)
 	{
@@ -253,11 +253,11 @@ void mulSystemGather(GPUNode* nodes, mulData* solverData, float* x, int numnodes
 		cache[groupid][grouptid][1] = 0;
 		cache[groupid][grouptid][2] = 0;
 
-		for(int i=grouptid;i<n;i+=NODE_THREADS)
+		for(int i=0;i<n;i++)
 		{
-			int tetindex = node->elementindex[i][0][groupid] / BLOCK_SIZE;
-			int tetindex2 = node->elementindex[i][0][groupid] % BLOCK_SIZE;
-			int nodeindex = node->elementindex[i][1][groupid];
+			int tetindex = node->elementindex[i][0][groupid][grouptid] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0][groupid][grouptid] % BLOCK_SIZE;
+			int nodeindex = node->elementindex[i][1][groupid][grouptid];
 
 			cache[groupid][grouptid][0] += solverData[tetindex].product[nodeindex * 3][tetindex2];
 			cache[groupid][grouptid][1] += solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];
@@ -400,7 +400,7 @@ void gatherB(GPUNode* nodes, mulData* solverData, float* b, int numnodes)
 
 	__shared__ float cache[NODE_BLOCK_SIZE][4][3];
 	GPUNode* node = &(nodes[blockIdx.x]);
-	int n = node->n[groupid];
+	int n = node->n[groupid][grouptid];
 	
 	if(nodeno < numnodes)
 	{
@@ -409,11 +409,11 @@ void gatherB(GPUNode* nodes, mulData* solverData, float* b, int numnodes)
 		cache[groupid][grouptid][1] = 0;
 		cache[groupid][grouptid][2] = 0;
 
-		for(int i=grouptid;i<n;i+=NODE_THREADS)
+		for(int i=0;i<n;i++)
 		{
-			int tetindex = node->elementindex[i][0][groupid] / BLOCK_SIZE;
-			int tetindex2 = node->elementindex[i][0][groupid] % BLOCK_SIZE;
-			int nodeindex = node->elementindex[i][1][groupid];
+			int tetindex = node->elementindex[i][0][groupid][grouptid] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0][groupid][grouptid] % BLOCK_SIZE;
+			int nodeindex = node->elementindex[i][1][groupid][grouptid];
 
 			cache[groupid][grouptid][0] += solverData[tetindex].b[nodeindex * 3][tetindex2];
 			cache[groupid][grouptid][1] += solverData[tetindex].b[nodeindex * 3 + 1][tetindex2];
@@ -461,7 +461,7 @@ initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, int
 
 	__shared__ float cache[NODE_BLOCK_SIZE][4][3];
 	GPUNode* node = &(nodes[blockIdx.x]);
-	int n = node->n[groupid];
+	int n = node->n[groupid][grouptid];
 	
 	if(nodeno < numnodes)
 	{
@@ -470,11 +470,11 @@ initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, int
 		cache[groupid][grouptid][1] = 0;
 		cache[groupid][grouptid][2] = 0;
 
-		for(int i=grouptid;i<n;i+=NODE_THREADS)
+		for(int i=0;i<n;i++)
 		{
-			int tetindex = node->elementindex[i][0][groupid] / BLOCK_SIZE;
-			int tetindex2 = node->elementindex[i][0][groupid] % BLOCK_SIZE;
-			int nodeindex = node->elementindex[i][1][groupid];
+			int tetindex = node->elementindex[i][0][groupid][grouptid] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0][groupid][grouptid] % BLOCK_SIZE;
+			int nodeindex = node->elementindex[i][1][groupid][grouptid];
 
 			cache[groupid][grouptid][0] += solverData[tetindex].product[nodeindex * 3][tetindex2];
 			cache[groupid][grouptid][1] += solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];

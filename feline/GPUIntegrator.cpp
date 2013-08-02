@@ -63,16 +63,23 @@ GPUIntegrator::assembleGPUNodes()
 	{
 		int tid = i % NODE_BLOCK_SIZE;
 		int bid = i / NODE_BLOCK_SIZE;
-		gpuNodes[bid].n[tid] = 0;
+		
+		int n = 0;
+		
+		for(int b=0;b<4;b++)
+			gpuNodes[bid].n[tid][b] = 0;
+
 		for(int a=0;a<numelements;a++)
 		{
 			for(int b=0;b<4;b++)
 			{
 				if(mesh->nodeIndices[a][b] == i)
 				{
-					gpuNodes[bid].elementindex[gpuNodes[bid].n[tid]][0][tid] = a;
-					gpuNodes[bid].elementindex[gpuNodes[bid].n[tid]][1][tid] = b;
-					(gpuNodes[bid].n[tid])++;
+					int t = n%4;
+					gpuNodes[bid].elementindex[gpuNodes[bid].n[tid][t]][0][tid][t] = a;
+					gpuNodes[bid].elementindex[gpuNodes[bid].n[tid][t]][1][tid][t] = b;
+					n++;
+					(gpuNodes[bid].n[tid][t])++;
 					break;
 				}
 			}
