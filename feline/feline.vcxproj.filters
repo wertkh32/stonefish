@@ -1,0 +1,164 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Math">
+      <UniqueIdentifier>{2f477b8d-8b9f-467e-a7b3-3c74c0204c64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="GPUStuff">
+      <UniqueIdentifier>{c04c2e50-a8f8-4c4e-ac77-b976a97294d3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ReadMe.txt" />
+    <None Include="gpuMat3d.cuh">
+      <Filter>GPUStuff</Filter>
+    </None>
+    <None Include="GPUIntegratorFuncs.cuh">
+      <Filter>GPUStuff</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Element.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Node.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix3d.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="ForceEqn.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix4d.cpp">
+      <Filter>Math</Filter>
+    </ClCompile>
+    <ClCompile Include="ConjugateGradientSolver.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Integrator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="PolarDecompose.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Model.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MeshFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ModelFunctions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="feline.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SymSparseMatrix.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="GPUIntegrator.cpp">
+      <Filter>GPUStuff</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="includes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="defines.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GenMatrix.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="QuickArray.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Element.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="vector3.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix3d.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="ForceEqn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Matrix4d.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="ConjugateGradientSolver.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MatrixOps.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Integrator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GenVector.h">
+      <Filter>Math</Filter>
+    </ClInclude>
+    <ClInclude Include="PolarDecompose.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Model.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MeshFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ModelFunctions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="perfmon.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SymSparseMatrix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ConstrainedRows.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GPUIntegrator.h">
+      <Filter>GPUStuff</Filter>
+    </ClInclude>
+    <ClInclude Include="GPUDataStructs.cuh">
+      <Filter>GPUStuff</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="CudaCGKernel.cu">
+      <Filter>GPUStuff</Filter>
+    </CudaCompile>
+    <CudaCompile Include="GPUIntegratorFuncs.cu">
+      <Filter>GPUStuff</Filter>
+    </CudaCompile>
+    <CudaCompile Include="GPUPolarDecompose.cu">
+      <Filter>GPUStuff</Filter>
+    </CudaCompile>
+  </ItemGroup>
+</Project>
