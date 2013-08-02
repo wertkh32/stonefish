@@ -64,6 +64,8 @@
       <FastMath>false</FastMath>
       <Optimization>Od</Optimization>
       <MaxRegCount>0</MaxRegCount>
+      <PtxAsOptionV>true</PtxAsOptionV>
+      <GPUDebugInfo>false</GPUDebugInfo>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

@@ -142,40 +142,38 @@ gpuDestroyVars()
 	cudaFree(gpuptrVars);
 }
 
-
 __device__
-void makeRK(float mat[12][12][BLOCK_SIZE], float R[3][3])
+void makeFU(float x0[12][BLOCK_SIZE], float mat[12][12], float R[3][3], float out[12])
 {
 	int ltid = threadIdx.x;
-	float RK[12][12];
-	for(int i=0;i<4;i++)
-	{
-		for(int j=0;j<4;j++)
-		{
-			for(int a=0;a<3;a++)
-			{
-				for(int b=0;b<3;b++)
-				{
-					RK[a + i * 3][b + j * 3]= 0.0f;
-						
-					for(int c=0;c<3;c++)
-						RK[a + i * 3][b + j * 3] += R[a][c] * mat[c + i * 3][b + j * 3][ltid];
-				}
-			}
-		}
-	}
+	float kx[12];
+	float x[12];
 
 	for(int i=0;i<12;i++)
+		x[i] = x0[i][ltid];
+	
+	for(int i=0;i<12;i++)
+	{
+		kx[i] = 0;
 		for(int j=0;j<12;j++)
-			mat[i][j][ltid] = RK[i][j];
+			kx[i] += mat[i][j] * x[j];
+	}
+
+	for(int i=0;i<4;i++)
+		for(int j=0;j<3;j++)
+		{
+			out[i*3 + j] = 0;
+			for(int k=0;k<3;k++)
+			out[i*3+j] += R[j][k] * kx[i*3 + k];
+		}		
+				
 }
 
-
 __device__
-void makeRKRT(float mat[12][12][BLOCK_SIZE], float R[3][3])
+void makeRKRT(float mat[12][12], float R[3][3])
 {
-	float RKRT[12][12];
-	int ltid = threadIdx.x;
+	float temp[12][12];
+	//int ltid = threadIdx.x;
 
 	for(int i=0;i<4;i++)
 	{
@@ -184,26 +182,40 @@ void makeRKRT(float mat[12][12][BLOCK_SIZE], float R[3][3])
 			for(int a=0;a<3;a++)
 				for(int b=0;b<3;b++)
 				{
-					RKRT[a + i * 3][b + j * 3] = 0.0f;
+					temp[a + i * 3][b + j * 3]= 0.0f;
+						
 					for(int c=0;c<3;c++)
-						RKRT[a + i * 3][b + j * 3] += mat[a + i * 3][c + j * 3][ltid] * R[b][c]; //R(c, b) but its RT so, R(b , c)
+						temp[a + i * 3][b + j * 3] += R[a][c] * mat[c + i * 3][b + j * 3];
 				}
 		}
 	}
+
+	for(int i=0;i<4;i++)
+	{
+		for(int j=i;j<4;j++)
+		{
+			for(int a=0;a<3;a++)
+				for(int b=0;b<3;b++)
+				{
+					mat[a + i * 3][b + j * 3] = 0.0f;
+					for(int c=0;c<3;c++)
+						mat[a + i * 3][b + j * 3] += temp[a + i * 3][c + j * 3] * R[b][c]; //R(c, b) but its RT so, R(b , c)
+				}
+		}
+	}
+
+
+
 	//lower triangle
 	for(int i=1;i<4;i++)
 		for(int j=0;j<i;j++)
 		{
 			for(int a=0;a<3;a++)
 				for(int b=0;b<3;b++)
-						RKRT[a + i * 3][b + j * 3] = RKRT[b + j * 3][a + i * 3];
+						mat[a + i * 3][b + j * 3] = mat[b + j * 3][a + i * 3];
 		}
 
-	for(int i=0;i<12;i++)
-		for(int j=0;j<12;j++)
-			mat[i][j][ltid] = RKRT[i][j];
 }
-
 
 __device__
 void mulSystem(GPUElement* elements, mulData* solverData, float* x)
@@ -230,10 +242,6 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 			t_solvedata->product[i][ltid] += t_solvedata->system[i][j][ltid] * nodes[j];
 	}
 }
-
-#define TETINDEX (node->elementindex[i][0][groupid] / BLOCK_SIZE)
-#define TETINDEX2 (node->elementindex[i][0][groupid] % BLOCK_SIZE)
-#define NODEINDEX (node->elementindex[i][1][groupid])
 
 __device__
 void mulSystemGather(GPUNode* nodes, mulData* solverData, float* x, int numnodes)
@@ -328,20 +336,14 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 
 		float nodalmass = t_ele->nodalmass[ltid];
 
-		float nodes[12], vel[12], F[3][3]={0}, R[3][3] = {{1,0,0},{0,1,0},{0,0,1}};
+		float nodes[12], b[12], F[3][3]={0}, R[3][3] = {{1,0,0},{0,1,0},{0,0,1}};
+		float K[12][12];
 
 		for(int i=0;i<4;i++)
 		{
 			nodes[i * 3] = xt[t_ele->nodeindex[i][ltid] * 3];
 			nodes[i * 3 + 1] = xt[t_ele->nodeindex[i][ltid] * 3 + 1];
 			nodes[i * 3 + 2] = xt[t_ele->nodeindex[i][ltid] * 3 + 2];
-		}
-
-		for(int i=0;i<4;i++)
-		{
-			vel[i * 3] = vt[t_ele->nodeindex[i][ltid] * 3];
-			vel[i * 3 + 1] = vt[t_ele->nodeindex[i][ltid] * 3 + 1];
-			vel[i * 3 + 2] = vt[t_ele->nodeindex[i][ltid] * 3 + 2];
 		}
 
 		for(int i=0;i<3;i++)
@@ -354,38 +356,39 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)
-				t_solvedata->system[i][j][ltid] = t_ele->unwarpK[i][j][ltid];
+				K[i][j] = t_ele->unwarpK[i][j][ltid];
 	
+		makeFU(t_ele->x0,K,R,b);
+	
+		makeRKRT(K, R);
+
+
+		for(int i=0;i<12;i++)
+			for(int j=0;j<12;j++)
+				b[i] -= K[i][j] * nodes[j];
+
 		for(int i=0;i<4;i++)
 		{
-			t_solvedata->b[i * 3][ltid] = extforces[t_ele->nodeindex[i][ltid] * 3];
-			t_solvedata->b[i * 3 + 1][ltid] = extforces[t_ele->nodeindex[i][ltid] * 3 + 1];
-			t_solvedata->b[i * 3 + 2][ltid] = extforces[t_ele->nodeindex[i][ltid] * 3 + 2];
+			b[i * 3] += extforces[t_ele->nodeindex[i][ltid] * 3];
+			b[i * 3 + 1] += extforces[t_ele->nodeindex[i][ltid] * 3 + 1];
+			b[i * 3 + 2] += extforces[t_ele->nodeindex[i][ltid] * 3 + 2];
 		}
 
-		makeRK(t_solvedata->system, R);
-
 		for(int i=0;i<12;i++)
-			for(int j=0;j<12;j++)
-				t_solvedata->b[i][ltid] += t_solvedata->system[i][j][ltid] * t_ele->x0[j][ltid];
-	
-		makeRKRT(t_solvedata->system, R);
-
-		for(int i=0;i<12;i++)
-			for(int j=0;j<12;j++)
-				t_solvedata->b[i][ltid] -= t_solvedata->system[i][j][ltid] * nodes[j];
-
-		for(int i=0;i<12;i++)
-			t_solvedata->b[i][ltid] = t_solvedata->b[i][ltid] * dt + nodalmass * vel[i];
+			t_solvedata->b[i][ltid] = b[i] * dt + nodalmass * vt[t_ele->nodeindex[(i/3)][ltid] * 3 + (i%3)];
 
 		//final system matrix
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)
 			{
-				t_solvedata->system[i][j][ltid] *= COEFFK;
+				K[i][j] *= COEFFK;
 				if(i==j)
-					t_solvedata->system[i][i][ltid] += COEFFM * nodalmass;
+					K[i][i] += COEFFM * nodalmass;
 			}
+
+		for(int i=0;i<12;i++)
+			for(int j=0;j<12;j++)
+				t_solvedata->system[i][j][ltid] =  K[i][j];
 	}
 }
 
