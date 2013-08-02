@@ -3,7 +3,12 @@
 #define MAX_ELEMENTS_PER_NODE 32
 #define BLOCK_SIZE 128				//element block size
 #define DOT_BLOCK_SIZE 512			//dot product block size
-#define NODE_BLOCK_SIZE 256			//node block size
+
+#define NODE_THREADS 4
+#define NODE_BLOCK_SIZE 128			//node block size
+#define GATHER_THREAD_NO 512
+
+#define VECTOR_BLOCK_SIZE 512
 
 
 struct mulData

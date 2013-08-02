@@ -63,6 +63,7 @@
       <Keep>true</Keep>
       <FastMath>false</FastMath>
       <Optimization>Od</Optimization>
+      <MaxRegCount>0</MaxRegCount>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

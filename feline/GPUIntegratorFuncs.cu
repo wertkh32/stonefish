@@ -208,7 +208,6 @@ void makeRKRT(float mat[12][12][BLOCK_SIZE], float R[3][3])
 __device__
 void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 {
-	int tid = threadIdx.x + blockIdx.x * BLOCK_SIZE;
 	int bid = blockIdx.x;
 	int ltid = threadIdx.x;
 
@@ -232,31 +231,52 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 	}
 }
 
+#define TETINDEX (node->elementindex[i][0][groupid] / BLOCK_SIZE)
+#define TETINDEX2 (node->elementindex[i][0][groupid] % BLOCK_SIZE)
+#define NODEINDEX (node->elementindex[i][1][groupid])
+
 __device__
-void mulSystemGather(GPUNode* nodes, mulData* solverData, float* x)
+void mulSystemGather(GPUNode* nodes, mulData* solverData, float* x, int numnodes)
 {
-	int tid = threadIdx.x + blockIdx.x * NODE_BLOCK_SIZE;
-	int bid = blockIdx.x;
-	int ltid = threadIdx.x;
+	int groupid = threadIdx.x / NODE_THREADS;
+	int grouptid = threadIdx.x % NODE_THREADS;
+	int nodeno = blockIdx.x * NODE_BLOCK_SIZE + groupid;
 
-	GPUNode* node = &(nodes[bid]);
-
-	int n = node->n[ltid];
+	__shared__ float cache[NODE_BLOCK_SIZE][4][3];
+	GPUNode* node = &(nodes[blockIdx.x]);
+	int n = node->n[groupid];
 	
-	x[tid * 3] = 0;
-	x[tid * 3 + 1] = 0;
-	x[tid * 3 + 2] = 0;
-
-	for(int i=0;i<n;i++)
+	if(nodeno < numnodes)
 	{
-		int tetindex = node->elementindex[i][0][ltid] / BLOCK_SIZE;
-		int tetindex2 = node->elementindex[i][0][ltid] % BLOCK_SIZE;
-		int nodeindex = node->elementindex[i][1][ltid];
 
-		x[tid * 3] += solverData[tetindex].product[nodeindex * 3][tetindex2];
-		x[tid * 3 + 1] += solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];
-		x[tid * 3 + 2] += solverData[tetindex].product[nodeindex * 3 + 2][tetindex2];
+		cache[groupid][grouptid][0] = 0;
+		cache[groupid][grouptid][1] = 0;
+		cache[groupid][grouptid][2] = 0;
+
+		for(int i=grouptid;i<n;i+=NODE_THREADS)
+		{
+			int tetindex = node->elementindex[i][0][groupid] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0][groupid] % BLOCK_SIZE;
+			int nodeindex = node->elementindex[i][1][groupid];
+
+			cache[groupid][grouptid][0] += solverData[tetindex].product[nodeindex * 3][tetindex2];
+			cache[groupid][grouptid][1] += solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];
+			cache[groupid][grouptid][2] += solverData[tetindex].product[nodeindex * 3 + 2][tetindex2];
+		}
 	}
+
+	__syncthreads();
+
+	if(nodeno < numnodes)
+	{
+		if(grouptid == 0)
+		{
+			x[nodeno * 3]     = cache[groupid][0][0] + cache[groupid][1][0] + cache[groupid][2][0] + cache[groupid][3][0];
+			x[nodeno * 3 + 1] = cache[groupid][0][1] + cache[groupid][1][1] + cache[groupid][2][1] + cache[groupid][3][1];
+			x[nodeno * 3 + 2] = cache[groupid][0][2] + cache[groupid][1][2] + cache[groupid][2][2] + cache[groupid][3][2];
+		}
+	}
+
 }
 
 __device__
@@ -374,29 +394,42 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 __global__
 void gatherB(GPUNode* nodes, mulData* solverData, float* b, int numnodes)
 {
-	int tid = threadIdx.x + blockIdx.x * NODE_BLOCK_SIZE;
-	int bid = blockIdx.x;
-	int ltid = threadIdx.x;
+	int groupid = threadIdx.x / NODE_THREADS;
+	int grouptid = threadIdx.x % NODE_THREADS;
+	int nodeno = blockIdx.x * NODE_BLOCK_SIZE + groupid;
 
-	if(tid < numnodes)
+	__shared__ float cache[NODE_BLOCK_SIZE][4][3];
+	GPUNode* node = &(nodes[blockIdx.x]);
+	int n = node->n[groupid];
+	
+	if(nodeno < numnodes)
 	{
-		GPUNode* node = &(nodes[bid]);
 
-		int n = node->n[ltid];
+		cache[groupid][grouptid][0] = 0;
+		cache[groupid][grouptid][1] = 0;
+		cache[groupid][grouptid][2] = 0;
 
-		b[tid * 3] = 0;
-		b[tid * 3 + 1] = 0;
-		b[tid * 3 + 2] = 0;
-
-		for(int i=0;i<n;i++)
+		for(int i=grouptid;i<n;i+=NODE_THREADS)
 		{
-			int tetindex = node->elementindex[i][0][ltid] / BLOCK_SIZE;
-			int tetindex2 = node->elementindex[i][0][ltid] % BLOCK_SIZE;
-			int nodeindex = node->elementindex[i][1][ltid];
+			int tetindex = node->elementindex[i][0][groupid] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0][groupid] % BLOCK_SIZE;
+			int nodeindex = node->elementindex[i][1][groupid];
 
-			b[tid * 3] += solverData[tetindex].b[nodeindex * 3][tetindex2];
-			b[tid * 3 + 1] += solverData[tetindex].b[nodeindex * 3 + 1][tetindex2];
-			b[tid * 3 + 2] += solverData[tetindex].b[nodeindex * 3 + 2][tetindex2];
+			cache[groupid][grouptid][0] += solverData[tetindex].b[nodeindex * 3][tetindex2];
+			cache[groupid][grouptid][1] += solverData[tetindex].b[nodeindex * 3 + 1][tetindex2];
+			cache[groupid][grouptid][2] += solverData[tetindex].b[nodeindex * 3 + 2][tetindex2];
+		}
+	}
+
+	__syncthreads();
+
+	if(nodeno < numnodes)
+	{
+		if(grouptid == 0)
+		{
+			b[nodeno * 3]     = cache[groupid][0][0] + cache[groupid][1][0] + cache[groupid][2][0] + cache[groupid][3][0];
+			b[nodeno * 3 + 1] = cache[groupid][0][1] + cache[groupid][1][1] + cache[groupid][2][1] + cache[groupid][3][1];
+			b[nodeno * 3 + 2] = cache[groupid][0][2] + cache[groupid][1][2] + cache[groupid][2][2] + cache[groupid][3][2];
 		}
 	}
 }
@@ -422,22 +455,55 @@ __global__
 void
 initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, int numnodes)
 {
-	int tid = threadIdx.x + blockIdx.x * NODE_BLOCK_SIZE;
+	int groupid = threadIdx.x / NODE_THREADS;
+	int grouptid = threadIdx.x % NODE_THREADS;
+	int nodeno = blockIdx.x * NODE_BLOCK_SIZE + groupid;
 
-	if(tid < numnodes)
-	{
-		mulSystemGather(nodes, solverData, r);
+	__shared__ float cache[NODE_BLOCK_SIZE][4][3];
+	GPUNode* node = &(nodes[blockIdx.x]);
+	int n = node->n[groupid];
 	
-		//r = b-Ax
-		r[tid * 3] = b[tid * 3] - r[tid * 3];
-		r[tid * 3 + 1] = b[tid * 3 + 1] - r[tid * 3 + 1];
-		r[tid * 3 + 2] = b[tid * 3 + 2] - r[tid * 3 + 2];
+	if(nodeno < numnodes)
+	{
 
-		//d=r
-		d[tid * 3] = r[tid * 3];
-		d[tid * 3 + 1] = r[tid * 3 + 1];
-		d[tid * 3 + 2] = r[tid * 3 + 2];
+		cache[groupid][grouptid][0] = 0;
+		cache[groupid][grouptid][1] = 0;
+		cache[groupid][grouptid][2] = 0;
+
+		for(int i=grouptid;i<n;i+=NODE_THREADS)
+		{
+			int tetindex = node->elementindex[i][0][groupid] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0][groupid] % BLOCK_SIZE;
+			int nodeindex = node->elementindex[i][1][groupid];
+
+			cache[groupid][grouptid][0] += solverData[tetindex].product[nodeindex * 3][tetindex2];
+			cache[groupid][grouptid][1] += solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];
+			cache[groupid][grouptid][2] += solverData[tetindex].product[nodeindex * 3 + 2][tetindex2];
+		}
 	}
+
+	__syncthreads();
+
+	if(nodeno < numnodes)
+	{
+		if(grouptid == 0)
+		{
+			r[nodeno * 3]     = cache[groupid][0][0] + cache[groupid][1][0] + cache[groupid][2][0] + cache[groupid][3][0];
+			r[nodeno * 3 + 1] = cache[groupid][0][1] + cache[groupid][1][1] + cache[groupid][2][1] + cache[groupid][3][1];
+			r[nodeno * 3 + 2] = cache[groupid][0][2] + cache[groupid][1][2] + cache[groupid][2][2] + cache[groupid][3][2];
+		
+			//r = b-Ax
+			r[nodeno * 3] = b[nodeno * 3] - r[nodeno * 3];
+			r[nodeno * 3 + 1] = b[nodeno * 3 + 1] - r[nodeno * 3 + 1];
+			r[nodeno * 3 + 2] = b[nodeno * 3 + 2] - r[nodeno * 3 + 2];
+
+			//d=r
+			d[nodeno * 3] = r[nodeno * 3];
+			d[nodeno * 3 + 1] = r[nodeno * 3 + 1];
+			d[nodeno * 3 + 2] = r[nodeno * 3 + 2];
+		}
+	}
+
 }
 
 //step3
@@ -479,12 +545,8 @@ __global__
 void
 gatherQprod(GPUNode* nodes, mulData* solverData, float* q, int numnodes)
 {
-	int tid = threadIdx.x + blockIdx.x * NODE_BLOCK_SIZE;
+		mulSystemGather(nodes, solverData, q, numnodes);
 
-	if(tid < numnodes)
-	{
-		mulSystemGather(nodes, solverData, q);
-	}
 }
 
 //step 6
@@ -519,22 +581,25 @@ makeVars(CGVars* vars, float* d, float* q, float* r, int numnodes)
 //x = velocity
 __global__
 void
-makeXRandD(GPUNode* nodes, CGVars* vars, float *x, float* r, float* d, float* q, int numnodes)
+makeXRandD(CGVars* vars, float *x, float* r, float* d, float* q, int numnodes)
 {
-	int tid = threadIdx.x + blockIdx.x * NODE_BLOCK_SIZE;
+	int tid = threadIdx.x + blockIdx.x * VECTOR_BLOCK_SIZE;
 	if(tid < numnodes)
 	{
-		x[tid * 3] = x[tid * 3] + vars->alpha * d[tid * 3];
-		x[tid * 3 + 1] = x[tid * 3 + 1] + vars->alpha * d[tid * 3 + 1];
-		x[tid * 3 + 2] = x[tid * 3 + 2] + vars->alpha * d[tid * 3 + 2];
+		float alpha = vars->alpha;
+		float beta = vars->beta;
 
-		r[tid * 3] = r[tid * 3] - vars->alpha * q[tid * 3];
-		r[tid * 3 + 1] = r[tid * 3 + 1] - vars->alpha * q[tid * 3 + 1];
-		r[tid * 3 + 2] = r[tid * 3 + 2] - vars->alpha * q[tid * 3 + 2];
+		x[tid * 3] = x[tid * 3] + alpha * d[tid * 3];
+		x[tid * 3 + 1] = x[tid * 3 + 1] + alpha * d[tid * 3 + 1];
+		x[tid * 3 + 2] = x[tid * 3 + 2] + alpha * d[tid * 3 + 2];
 
-		d[tid * 3] = r[tid * 3] + vars->beta * d[tid * 3];
-		d[tid * 3 + 1] = r[tid * 3 + 1] + vars->beta * d[tid * 3 + 1];
-		d[tid * 3 + 2] = r[tid * 3 + 2] + vars->beta * d[tid * 3 + 2];
+		r[tid * 3] = r[tid * 3] - alpha * q[tid * 3];
+		r[tid * 3 + 1] = r[tid * 3 + 1] - alpha * q[tid * 3 + 1];
+		r[tid * 3 + 2] = r[tid * 3 + 2] - alpha * q[tid * 3 + 2];
+
+		d[tid * 3] = r[tid * 3] + beta * d[tid * 3];
+		d[tid * 3 + 1] = r[tid * 3 + 1] + beta * d[tid * 3 + 1];
+		d[tid * 3 + 2] = r[tid * 3 + 2] + beta * d[tid * 3 + 2];
 	}
 } 
 
@@ -544,7 +609,7 @@ __global__
 void
 integrate(float *x, float* v, int numnodes)
 {
-	int tid = threadIdx.x + blockIdx.x * NODE_BLOCK_SIZE;
+	int tid = threadIdx.x + blockIdx.x * VECTOR_BLOCK_SIZE;
 	if(tid < numnodes)
 	{
 		x[tid * 3] = x[tid * 3] + dt * v[tid * 3];
@@ -558,13 +623,16 @@ void
 gpuTimeStep(int numelements, int numnodes)
 {
 	const int num_blocks_ele = (numelements/BLOCK_SIZE) + 1;
-	const int num_blocks_node = (numnodes/BLOCK_SIZE) + 1;
+	const int num_blocks_node = (numnodes/NODE_BLOCK_SIZE) + 1;
+	const int num_blocks_vec = (numnodes/VECTOR_BLOCK_SIZE) + 1;
+
 	cudaError_t error;
 
 	printf("Started\n");
 	
 	precompute<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptr_xt, gpuptr_vt, gpuptr_extforces, numelements);
 	
+	cudaDeviceSynchronize();
 	error = cudaGetLastError();
 	if(error != cudaSuccess)
 	{
@@ -575,8 +643,9 @@ gpuTimeStep(int numelements, int numnodes)
 	}
 
 
-	gatherB<<<num_blocks_node, NODE_BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptr_b, numnodes);
+	gatherB<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_b, numnodes);
 
+	cudaDeviceSynchronize();
 	error = cudaGetLastError();
 	if(error != cudaSuccess)
 	{
@@ -588,6 +657,7 @@ gpuTimeStep(int numelements, int numnodes)
 
 	initAx<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptr_vt, numelements);
 
+	cudaDeviceSynchronize();
 	error = cudaGetLastError();
 	if(error != cudaSuccess)
 	{
@@ -597,8 +667,9 @@ gpuTimeStep(int numelements, int numnodes)
 		//exit(-1);
 	}
 
-	initRandD<<<num_blocks_node, NODE_BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptrR, gpuptrD, gpuptr_b, numnodes);
+	initRandD<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrR, gpuptrD, gpuptr_b, numnodes);
 
+	cudaDeviceSynchronize();
 	error = cudaGetLastError();
 	if(error != cudaSuccess)
 	{
@@ -610,6 +681,7 @@ gpuTimeStep(int numelements, int numnodes)
 
 	initDeltaVars<<<1, DOT_BLOCK_SIZE>>>(gpuptrVars, gpuptrR, numnodes);
 
+	cudaDeviceSynchronize();
 	error = cudaGetLastError();
 	if(error != cudaSuccess)
 	{
@@ -630,6 +702,7 @@ gpuTimeStep(int numelements, int numnodes)
 	{
 		makeQprod<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptrD, numelements);
 
+		cudaDeviceSynchronize();
 		error = cudaGetLastError();
 		if(error != cudaSuccess)
 		{
@@ -639,8 +712,9 @@ gpuTimeStep(int numelements, int numnodes)
 			//exit(-1);
 		}
 
-		gatherQprod<<<num_blocks_node, NODE_BLOCK_SIZE>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, numnodes);
+		gatherQprod<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, numnodes);
 
+		cudaDeviceSynchronize();
 		error = cudaGetLastError();
 		if(error != cudaSuccess)
 		{
@@ -652,6 +726,7 @@ gpuTimeStep(int numelements, int numnodes)
 
 		makeVars<<<1, DOT_BLOCK_SIZE>>>(gpuptrVars, gpuptrD, gpuptrQ, gpuptrR, numnodes);
 
+		cudaDeviceSynchronize();
 		error = cudaGetLastError();
 		if(error != cudaSuccess)
 		{
@@ -661,8 +736,9 @@ gpuTimeStep(int numelements, int numnodes)
 			//exit(-1);
 		}
 
-		makeXRandD<<<num_blocks_node, NODE_BLOCK_SIZE>>>(gpuptrNodes, gpuptrVars, gpuptr_vt, gpuptrR, gpuptrD, gpuptrQ, numnodes);
+		makeXRandD<<<num_blocks_vec, VECTOR_BLOCK_SIZE>>>(gpuptrVars, gpuptr_vt, gpuptrR, gpuptrD, gpuptrQ, numnodes);
 
+		cudaDeviceSynchronize();
 		error = cudaGetLastError();
 		if(error != cudaSuccess)
 		{
@@ -679,6 +755,6 @@ gpuTimeStep(int numelements, int numnodes)
 
 	printf("Loop Ended: %d\n", i);
 
-	integrate<<<num_blocks_node, NODE_BLOCK_SIZE>>>(gpuptr_xt, gpuptr_vt, numnodes);
+	integrate<<<num_blocks_vec, VECTOR_BLOCK_SIZE>>>(gpuptr_xt, gpuptr_vt, numnodes);
 }
 
