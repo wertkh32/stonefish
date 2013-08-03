@@ -230,16 +230,18 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 
 	for(int i=0;i<4;i++)
 	{
-		nodes[i * 3] = x[t_ele->nodeindex[i][ltid] * 3];
-		nodes[i * 3 + 1] = x[t_ele->nodeindex[i][ltid] * 3 + 1];
-		nodes[i * 3 + 2] = x[t_ele->nodeindex[i][ltid] * 3 + 2];
+		int index = t_ele->nodeindex[i][ltid];
+		nodes[i * 3] = x[index * 3];
+		nodes[i * 3 + 1] = x[index * 3 + 1];
+		nodes[i * 3 + 2] = x[index * 3 + 2];
 	}
 
 	for(int i=0;i<12;i++)
 	{
-		t_solvedata->product[i][ltid] = 0;
+		float temp = 0;
 		for(int j=0;j<12;j++)
-			t_solvedata->product[i][ltid] += t_solvedata->system[i][j][ltid] * nodes[j];
+			 temp += t_solvedata->system[i][j][ltid] * nodes[j];
+		t_solvedata->product[i][ltid] = temp;
 	}
 }
 
@@ -336,7 +338,7 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 
 		float nodalmass = t_ele->nodalmass[ltid];
 
-		float nodes[12], b[12], F[3][3]={0}, R[3][3] = {{1,0,0},{0,1,0},{0,0,1}};
+		float nodes[12], b[12], R[3][3]={0};// = {{1,0,0},{0,1,0},{0,0,1}};
 		float K[12][12];
 
 		for(int i=0;i<4;i++)
@@ -349,14 +351,16 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 		for(int i=0;i<3;i++)
 			for(int j=0;j<3;j++)
 				for(int k=0;k<3;k++)
-					F[i][j] += (nodes[k*3 + i] - nodes[9 + i]) * t_ele->undefShapeMatInv[k][j][ltid];
+					R[i][j] += (nodes[k*3 + i] - nodes[9 + i]) * t_ele->undefShapeMatInv[k][j][ltid];
 
-		gpuComputePolarDecomposition(F,R);
+		gpuComputePolarDecomposition(R,R);
 
 
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)
+			{
 				K[i][j] = t_ele->unwarpK[i][j][ltid];
+			}
 	
 		makeFU(t_ele->x0,K,R,b);
 	
