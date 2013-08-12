@@ -66,7 +66,7 @@ GPUIntegrator::assembleGPUNodes()
 		
 		int n = 0;
 		
-		for(int b=0;b<4;b++)
+		for(int b=0;b<NODE_THREADS;b++)
 			gpuNodes[bid].n[tid][b] = 0;
 
 		for(int a=0;a<numelements;a++)
@@ -75,7 +75,7 @@ GPUIntegrator::assembleGPUNodes()
 			{
 				if(mesh->nodeIndices[a][b] == i)
 				{
-					int t = n%4;
+					int t = n%NODE_THREADS;
 					gpuNodes[bid].elementindex[gpuNodes[bid].n[tid][t]][0][tid][t] = a;
 					gpuNodes[bid].elementindex[gpuNodes[bid].n[tid][t]][1][tid][t] = b;
 					n++;

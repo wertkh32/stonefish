@@ -31,7 +31,7 @@ public:
 	void preComputeUndeformedStiffnessMat();
 	void preComputeMassMat();
 	float dt;
-
+	//float B[3][3];
 
 	Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, float _density);
 	Matrix3d computeDeformationMat();

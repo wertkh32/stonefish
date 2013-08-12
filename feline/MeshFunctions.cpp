@@ -52,3 +52,54 @@ void MeshFunctions::makeSheet(Mesh** mesh, int n, int m)
 			(*mesh)->addElement(m * n + i * m + j, m * n + (i+1) * m + (j+1), i * m + (j + 1),(i+1) * m + j, 50,0.1,10);
 		}
 }
+
+
+void MeshFunctions::makeCube(Mesh** mesh, int n, int m, int d)
+{
+	n++;
+	m++;
+	d++;
+
+	Node* list = (Node*)malloc(sizeof(Node) * n * m * d);
+	
+	for(int k=0; k<d;k++)
+		for(int i=0;i<n;i++)
+			for(int j=0;j<m;j++)	
+			{
+				list[k * m * n + i * m + j] = Node(vector3<float>(i,k,j),vector3<float>(),vector3<float>(0,0,0));
+			}
+
+	*mesh = new Mesh(list, n*m*d);
+
+	for(int k=0; k<d-1;k++)
+		for(int i=0;i<n-1;i++)
+			for(int j=0;j<m-1;j++)
+			{
+				//int nextbase = i * m + j;
+				//int nexttop = m * n + i * m + j;
+				(*mesh)->addElement(k * m * n + i * m + j, 
+									k * m * n + (i+1) * m + j, 
+									k * m * n + i * m + (j + 1), 
+									k * m * n + m * n + i * m + j, 50,0.1,10);
+
+				(*mesh)->addElement(k * m * n + (i+1) * m + (j+1), 
+									k * m * n + (i+1) * m + j, 
+									k * m * n + i * m + (j + 1), 
+									k * m * n + m * n + (i + 1) * m + (j + 1), 50,0.1,10);
+
+				(*mesh)->addElement(k * m * n + m * n + i * m + j, 
+									k * m * n + m * n + (i+1) * m + j, 
+									k * m * n + m * n + (i+1) * m + (j+1), 
+									k * m * n + (i+1) * m + j, 50,0.1,10);
+
+				(*mesh)->addElement(k * m * n + m * n + i * m + j, 
+									k * m * n + m * n + i * m + (j+1), 
+									k * m * n + m * n + (i+1) * m + (j+1), 
+									k * m * n + i * m + (j+1), 50,0.1,10);
+
+				(*mesh)->addElement(k * m * n + m * n + i * m + j, 
+									k * m * n + m * n + (i+1) * m + (j+1), 
+									k * m * n + i * m + (j + 1),
+									k * m * n + (i+1) * m + j, 50,0.1,10);
+			}
+}

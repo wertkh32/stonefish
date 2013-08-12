@@ -66,6 +66,11 @@
       <MaxRegCount>0</MaxRegCount>
       <PtxAsOptionV>true</PtxAsOptionV>
       <GPUDebugInfo>false</GPUDebugInfo>
+      <AdditionalCompilerOptions>
+      </AdditionalCompilerOptions>
+      <HostDebugInfo>false</HostDebugInfo>
+      <Warning>W3</Warning>
+      <RuntimeChecks>RTC1</RuntimeChecks>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

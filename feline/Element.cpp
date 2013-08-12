@@ -46,6 +46,11 @@ void Element::preComputeUndeformedStiffnessMat()
 						nodes[0]->pos.y, nodes[1]->pos.y, nodes[2]->pos.y, nodes[3]->pos.y,
 						nodes[0]->pos.z, nodes[1]->pos.z, nodes[2]->pos.z, nodes[3]->pos.z).inverse();
 
+	//for(int i=0;i<3;i++)
+	//	for(int j=0;j<3;j++)
+	//		B[i][j] = inv(i,j+1);
+
+
 	//strain matrix B = LN = dN/dx
 	//checked correct.
 	float strainMatrix[6][12] = 

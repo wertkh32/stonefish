@@ -7,18 +7,18 @@ Mesh::Mesh(Node node_list[], int n)
 		nodes.push(node_list+i);
 	numnodes = n;
 
-	globalStiffness = (float**)malloc(sizeof(float*) * n * 3);
-	globalMass = (float**)malloc(sizeof(float*) * n * 3);
-	for(int i=0;i<n * 3;i++)
-	{
-		globalStiffness[i] = (float*)malloc(sizeof(float) * n * 3);
-		globalMass[i] = (float*)malloc(sizeof(float) * n * 3);
-	}
+	//globalStiffness = (float**)malloc(sizeof(float*) * n * 3);
+	//globalMass = (float**)malloc(sizeof(float*) * n * 3);
+	//for(int i=0;i<n * 3;i++)
+	//{
+	//	globalStiffness[i] = (float*)malloc(sizeof(float) * n * 3);
+	//	globalMass[i] = (float*)malloc(sizeof(float) * n * 3);
+	//}
 
 	dt = 1.0/FPS;
 
-	resetGlobalStiffness();
-	resetGlobalMass();
+	//resetGlobalStiffness();
+	//resetGlobalMass();
 }
 
 float**
