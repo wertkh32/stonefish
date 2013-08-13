@@ -179,8 +179,9 @@ void makeFU(float f0[12][BLOCK_SIZE], float R[3][3], float out[12])
 }
 
 __device__
-void makeRKRT(float mat[12][12], float R[3][3], float xt[12], float b[12])
+void makeRKRT(float mat[12][12][BLOCK_SIZE], float R[3][3], float xt[12], float b[12])
 {
+	int ltid = threadIdx.x;
 	float temp[12];
 	float temp2[12];
 
@@ -196,7 +197,7 @@ void makeRKRT(float mat[12][12], float R[3][3], float xt[12], float b[12])
 	{
 		temp2[i] = 0;
 		for(int j=0;j<12;j++)
-			temp2[i] += mat[i][j] * temp[j];
+			temp2[i] += mat[i][j][ltid] * temp[j];
 	}
 
 	for(int i=0;i<4;i++)
@@ -386,16 +387,8 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 		gpuComputePolarDecomposition(R,R);
 	
 		makeFU(t_ele->f0,R,b);
-
-		float K[12][12];
-
-		for(int i=0;i<12;i++)
-			for(int j=0;j<12;j++)
-			{
-				K[i][j] = t_ele->unwarpK[i][j][ltid];
-			}
 	
-		makeRKRT(K, R, nodes, b);
+		makeRKRT(t_ele->unwarpK, R, nodes, b);
 
 		#pragma unroll 4
 		for(int i=0;i<4;i++)
