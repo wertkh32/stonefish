@@ -29,6 +29,9 @@ GPUIntegrator::assembleGPUElements()
 		int tid = i % BLOCK_SIZE;
 		int bid = i / BLOCK_SIZE;
 
+		float x0[12];
+		float f0[12] = {0};
+
 		GenMatrix<float,12,12>& stiff = *(mesh->elements[i]->getStiffnessMat());
 		for(int a=0;a<12;a++)
 			for(int b=0;b<12;b++)
@@ -36,10 +39,24 @@ GPUIntegrator::assembleGPUElements()
 
 		for(int a=0;a<4;a++)
 		{
-			gpuElements[bid].x0[a * 3][tid] = mesh->elements[i]->nodes[a]->pos.x;
-			gpuElements[bid].x0[a * 3 + 1][tid] = mesh->elements[i]->nodes[a]->pos.y;
-			gpuElements[bid].x0[a * 3 + 2][tid] = mesh->elements[i]->nodes[a]->pos.z;
+			x0[a*3] = mesh->elements[i]->nodes[a]->pos.x;
+			x0[a*3 + 1] = mesh->elements[i]->nodes[a]->pos.y;
+			x0[a*3 + 2] = mesh->elements[i]->nodes[a]->pos.z;
+		}
 
+		for(int a=0;a<12;a++)
+			for(int b=0;b<12;b++)
+			{
+				f0[a] += stiff(a,b) * x0[b];
+			}
+
+		for(int a=0;a<12;a++)
+		{
+			gpuElements[bid].f0[a][tid] = f0[a];
+		}
+
+		for(int a=0;a<4;a++)
+		{
 			gpuElements[bid].nodeindex[a][tid] = mesh->nodeIndices[i][a];
 		}
 

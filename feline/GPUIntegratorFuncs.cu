@@ -160,77 +160,50 @@ gpuDestroyVars()
 }
 
 __device__
-void makeFU(float x0[12][BLOCK_SIZE], float mat[12][12], float R[3][3], float out[12])
+void makeFU(float f0[12][BLOCK_SIZE], float R[3][3], float out[12])
 {
 	int ltid = threadIdx.x;
-	float kx[12];
 	float x[12];
 
 	#pragma unroll 12
 	for(int i=0;i<12;i++)
-		x[i] = x0[i][ltid];
-	
-	for(int i=0;i<12;i++)
-	{
-		kx[i] = 0;
-		for(int j=0;j<12;j++)
-			kx[i] += mat[i][j] * x[j];
-	}
+		x[i] = f0[i][ltid];
 
 	for(int i=0;i<4;i++)
 		for(int j=0;j<3;j++)
 		{
 			out[i*3 + j] = 0;
 			for(int k=0;k<3;k++)
-			out[i*3+j] += R[j][k] * kx[i*3 + k];
+			out[i*3+j] += R[j][k] * x[i*3 + k];
 		}		
-				
 }
 
 __device__
-void makeRKRT(float mat[12][12], float R[3][3])
+void makeRKRT(float mat[12][12], float R[3][3], float xt[12], float b[12])
 {
-	float temp[12][12];
-	//int ltid = threadIdx.x;
+	float temp[12];
+	float temp2[12];
 
 	for(int i=0;i<4;i++)
-	{
-		for(int j=i;j<4;j++)
+		for(int j=0;j<3;j++)
 		{
-			for(int a=0;a<3;a++)
-				for(int b=0;b<3;b++)
-				{
-					temp[a + i * 3][b + j * 3]= 0.0f;
-						
-					for(int c=0;c<3;c++)
-						temp[a + i * 3][b + j * 3] += R[a][c] * mat[c + i * 3][b + j * 3];
-				}
+			temp[i*3 + j] = 0;
+			for(int k=0;k<3;k++)
+			temp[i*3+j] += R[k][j] * xt[i*3 + k]; //RT first
 		}
+
+	for(int i=0;i<12;i++)
+	{
+		temp2[i] = 0;
+		for(int j=0;j<12;j++)
+			temp2[i] += mat[i][j] * temp[j];
 	}
 
 	for(int i=0;i<4;i++)
-	{
-		for(int j=i;j<4;j++)
+		for(int j=0;j<3;j++)
 		{
-			for(int a=0;a<3;a++)
-				for(int b=0;b<3;b++)
-				{
-					mat[a + i * 3][b + j * 3] = 0.0f;
-					for(int c=0;c<3;c++)
-						mat[a + i * 3][b + j * 3] += temp[a + i * 3][c + j * 3] * R[b][c]; //R(c, b) but its RT so, R(b , c)
-				}
-		}
-	}
-
-
-
-	//lower triangle
-	for(int i=1;i<4;i++)
-		for(int j=0;j<i;j++)
-		{
-			for(int a=0;a<3;a++)
-				for(int b=0;b<3;b++)
-						mat[a + i * 3][b + j * 3] = mat[b + j * 3][a + i * 3];
+			for(int k=0;k<3;k++)
+			b[i*3+j] -= R[j][k] * temp2[i*3 + k];
 		}
 
 }
@@ -245,6 +218,10 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 	mulData* t_solvedata = &(solverData[bid]);
 
 	float nodes[12];
+	float temp[12];
+	float temp2[12];
+	float R[3][3];
+	float nodalmass = t_ele->nodalmass[ltid] * COEFFM;
 
 	#pragma unroll 4
 	for(int i=0;i<4;i++)
@@ -255,14 +232,38 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 		nodes[i * 3 + 2] = x[index * 3 + 2];
 	}
 
+	for(int i=0;i<3;i++)
+		for(int j=0;j<3;j++)
+			R[i][j] = t_solvedata->R[i][j][ltid];
+	
+	//rotate by x by RT first
+	for(int i=0;i<4;i++)
+		for(int j=0;j<3;j++)
+		{
+			temp[i*3 + j] = 0;
+			for(int k=0;k<3;k++)
+			temp[i*3+j] += R[k][j] * nodes[i*3 + k];
+		}
+
+	// mul by K
 	for(int i=0;i<12;i++)
 	{
-		float temp = 0;
-		#pragma unroll 12
+		temp2[i] = 0;
 		for(int j=0;j<12;j++)
-			 temp += t_solvedata->system[i][j][ltid] * nodes[j];
-		t_solvedata->product[i][ltid] = temp;
+			 temp2[i] += t_ele->unwarpK[i][j][ltid] * temp[j];
 	}
+
+	// rotate by R
+	for(int i=0;i<4;i++)
+		for(int j=0;j<3;j++)
+		{
+			float temp3 = 0;
+			for(int k=0;k<3;k++)
+				temp3 += R[j][k] * temp[i*3 + k];
+			temp3 *= COEFFK;
+			temp3 += nodalmass * nodes[i*3 + j];
+			t_solvedata->product[i*3 + j][ltid] = temp3;
+		}
 }
 
 __device__
@@ -356,10 +357,9 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 		GPUElement* t_ele = &(elements[bid]);
 		mulData* t_solvedata = &(solverData[bid]);
 
-		float nodalmass = t_ele->nodalmass[ltid];
+		float nodalmass = t_ele->nodalmass[ltid] * COEFFM;
 
-		float nodes[12], b[12], R[3][3]={0};// = {{1,0,0},{0,1,0},{0,0,1}};
-		float K[12][12];
+		float nodes[12], b[12], R[3][3]={0}, D[3][3];
 		int index[4];
 
 		#pragma unroll 4
@@ -376,11 +376,18 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 
 		for(int i=0;i<3;i++)
 			for(int j=0;j<3;j++)
+				D[i][j] = t_ele->undefShapeMatInv[i][j][ltid];
+
+		for(int i=0;i<3;i++)
+			for(int j=0;j<3;j++)
 				for(int k=0;k<3;k++)
-					R[i][j] += (nodes[k*3 + i] - nodes[9 + i]) * t_ele->undefShapeMatInv[k][j][ltid];
+					R[i][j] += (nodes[k*3 + i] - nodes[9 + i]) * D[k][j];
 
 		gpuComputePolarDecomposition(R,R);
+	
+		makeFU(t_ele->f0,R,b);
 
+		float K[12][12];
 
 		for(int i=0;i<12;i++)
 			for(int j=0;j<12;j++)
@@ -388,14 +395,7 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 				K[i][j] = t_ele->unwarpK[i][j][ltid];
 			}
 	
-		makeFU(t_ele->x0,K,R,b);
-	
-		makeRKRT(K, R);
-
-
-		for(int i=0;i<12;i++)
-			for(int j=0;j<12;j++)
-				b[i] -= K[i][j] * nodes[j];
+		makeRKRT(K, R, nodes, b);
 
 		#pragma unroll 4
 		for(int i=0;i<4;i++)
@@ -405,22 +405,13 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 			b[i * 3 + 2] += extforces[index[i] * 3 + 2];
 		}
 
-		//final system matrix
-		for(int i=0;i<12;i++)
-			for(int j=0;j<12;j++)
-			{
-				K[i][j] *= COEFFK;
-				if(i==j)
-					K[i][i] += COEFFM * nodalmass;
-			}
-
 		#pragma unroll 12
 		for(int i=0;i<12;i++)
 			t_solvedata->b[i][ltid] = b[i] * dt + nodalmass * vt[t_ele->nodeindex[(i/3)][ltid] * 3 + (i%3)];
 
-		for(int i=0;i<12;i++)
-			for(int j=0;j<12;j++)
-				t_solvedata->system[i][j][ltid] =  K[i][j];
+		for(int i=0;i<3;i++)
+			for(int j=0;j<3;j++)
+				t_solvedata->R[i][j][ltid] =  R[i][j];
 	}
 }
 
@@ -828,8 +819,8 @@ void mulK(float x[12], float B[3][3][BLOCK_SIZE], float c1[BLOCK_SIZE], float c2
 		for(int j=0;j<3;j++)
 			b[i][j] = B[i][j][ltid];
 	
-	float con1 = c1[ltid];
-	float con2 = c2[ltid];
+	float con1 = c1[ltid] * COEFFK;
+	float con2 = c2[ltid] * COEFFK;
 	float con3 = (con1 - con2)/2.0;
 
 	float b4 = -b[0][0] -b[1][0] -b[2][0]; 
@@ -866,4 +857,36 @@ void mulK(float x[12], float B[3][3][BLOCK_SIZE], float c1[BLOCK_SIZE], float c2
 	x[10] = c4 * temp2[1] + b4 * temp2[3] + d4 * temp2[4];
 	x[11] = d4 * temp2[2] + c4 * temp2[4] + b4 * temp2[5];
 }
+
+
+__device__
+void mulRKRT(float x[12], float R[3][3], float B[3][3][BLOCK_SIZE], float c1[BLOCK_SIZE], float c2[BLOCK_SIZE], float nodalmass)
+{
+	float temp[12];
+	for(int i=0;i<4;i++)
+		for(int j=0;j<3;j++)
+		{
+			temp[i*3 + j] = 0;;
+			for(int k=0;k<3;k++)
+			temp[i*3+j] += R[k][j] * x[i*3 + k]; //R[j][k] but RT so R[k][j]
+		}
+
+	mulK(temp, B, c1, c2);
+	
+	for(int i=0;i<4;i++)
+		for(int j=0;j<3;j++)
+		{
+			temp[i*3 + j] = 0;
+			for(int k=0;k<3;k++)
+			temp[i*3+j] += R[j][k] * x[i*3 + k]; 
+		}
+
+	for(int i=0;i<12;i++)
+	{
+		x[i] = temp[i] + nodalmass * x[i]; 
+	}
+
+}
+
+
 */

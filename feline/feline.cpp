@@ -7,8 +7,8 @@
 #include "ModelFunctions.h"
 #include "perfmon.h"
 
-extern void CGSolverGPU(float* A, float* x, float* b, int n);
-#define DIM 60
+//extern void CGSolverGPU(float* A, float* x, float* b, int n);
+#define DIM 80
 
 
 /* GLUT callback Handlers */
@@ -57,8 +57,8 @@ static float rot = 0.0;
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(-40,-1,-90);
-	glRotatef(20 + rot,1,1,0);
+    glTranslatef(-40,-1,-140);
+	glRotatef(20,1,0,0);
     //glutSolidSphere(3,30,30);
 	//inte->debug();
 	//inte->debug();

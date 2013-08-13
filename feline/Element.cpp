@@ -1,6 +1,5 @@
 #include "Element.h"
 
-
 Element::Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, float _density)
 {
 	nodes[0] = n1;

@@ -15,7 +15,8 @@
 
 struct mulData
 {
-	float system[12][12][BLOCK_SIZE];
+	//float system[12][12][BLOCK_SIZE];
+	float R[3][3][BLOCK_SIZE];
 	float product[12][BLOCK_SIZE];
 	float b[12][BLOCK_SIZE];
 };
@@ -29,7 +30,7 @@ struct GPUElement
 {
 	int nodeindex[4][BLOCK_SIZE];
 	float unwarpK[12][12][BLOCK_SIZE];
-	float x0[12][BLOCK_SIZE];
+	float f0[12][BLOCK_SIZE];
 	float undefShapeMatInv[3][3][BLOCK_SIZE];
 	float nodalmass[BLOCK_SIZE];
 };
