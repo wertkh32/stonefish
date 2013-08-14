@@ -45,10 +45,6 @@ void Element::preComputeUndeformedStiffnessMat()
 						nodes[0]->pos.y, nodes[1]->pos.y, nodes[2]->pos.y, nodes[3]->pos.y,
 						nodes[0]->pos.z, nodes[1]->pos.z, nodes[2]->pos.z, nodes[3]->pos.z).inverse();
 
-	//for(int i=0;i<3;i++)
-	//	for(int j=0;j<3;j++)
-	//		B[i][j] = inv(i,j+1);
-
 
 	//strain matrix B = LN = dN/dx
 	//checked correct.
@@ -85,6 +81,13 @@ void Element::preComputeUndeformedStiffnessMat()
 
 	undeformStiffnessMat = strainMat.transpose() * matConstantsMat * strainMat;
 	undeformStiffnessMat.scalarMul(undeformVolume);
+
+	for(int i=0;i<3;i++)
+		for(int j=0;j<3;j++)
+			B[i][j] = inv(i,j+1);
+
+	con1 = c1 * undeformVolume * (1.0/(2.0 * undeformVolume)) * (1.0/(2.0 * undeformVolume));
+	con2 = c2 * undeformVolume * (1.0/(2.0 * undeformVolume)) * (1.0/(2.0 * undeformVolume));
 	/*
 	printf("start");
 	for(int i=0;i<12;i++,printf("\n"))
@@ -94,6 +97,7 @@ void Element::preComputeUndeformedStiffnessMat()
 		}
 	*/
 	
+	/*
 	for(int i=0;i<4;i++)
 		for(int j=0;j<4;j++)
 			sparseStiff->setBlockFilled(i,j,true);
@@ -103,7 +107,7 @@ void Element::preComputeUndeformedStiffnessMat()
 		{
 			sparseStiff->setValue(i,j,undeformStiffnessMat(i,j));
 		}
-	
+	*/
 
 }
 

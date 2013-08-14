@@ -29,7 +29,10 @@ struct CGVars
 struct GPUElement
 {
 	int nodeindex[4][BLOCK_SIZE];
-	float unwarpK[12][12][BLOCK_SIZE];
+	//float unwarpK[12][12][BLOCK_SIZE];
+	float B[3][3][BLOCK_SIZE]; //({1,2,3},{b,c,d}), ({4},{b,c,d}) = SUM(-({1,2,3},{b,c,d}))
+	float c1[BLOCK_SIZE], c2[BLOCK_SIZE];
+	
 	float f0[12][BLOCK_SIZE];
 	float undefShapeMatInv[3][3][BLOCK_SIZE];
 	float nodalmass[BLOCK_SIZE];
@@ -60,4 +63,16 @@ struct GPUTinyElement
 	float undefShapeMatInv[3][3][BLOCK_SIZE];
 	float nodalmass[BLOCK_SIZE];
 };
+*/
+
+/*
+#if defined(__CUDACC__) // NVCC
+   #define MY_ALIGN(n) __align__(n)
+#elif defined(__GNUC__) // GCC
+  #define MY_ALIGN(n) __attribute__((aligned(n)))
+#elif defined(_MSC_VER) // MSVC
+  #define MY_ALIGN(n) __declspec(align(n))
+#else
+  #error "Please provide a definition for MY_ALIGN macro for your host compiler!"
+#endif
 */

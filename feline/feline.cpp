@@ -228,6 +228,7 @@ main(int argc, char *argv[])
 	//tet = mod->mesh;
 
 	//sheet//
+	/*
 	rows.add(0);
 	rows.add(1);
 	rows.add(2);
@@ -272,6 +273,7 @@ main(int argc, char *argv[])
 	rows.add(459);
 	rows.add(460);
 	rows.add(461);
+	*/
 
 	MeshFunctions::makeSheet(&tet,DIM,DIM);
 	//sheet//
