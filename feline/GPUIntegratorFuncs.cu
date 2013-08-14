@@ -250,6 +250,7 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 	for(int i=0;i<12;i++)
 	{
 		temp2[i] = 0;
+		#pragma unroll 12
 		for(int j=0;j<12;j++)
 			 temp2[i] += t_ele->unwarpK[i][j][ltid] * temp[j];
 	}
@@ -260,7 +261,7 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 		{
 			float temp3 = 0;
 			for(int k=0;k<3;k++)
-				temp3 += R[j][k] * temp[i*3 + k];
+				temp3 += R[j][k] * temp2[i*3 + k];
 			temp3 *= COEFFK;
 			temp3 += nodalmass * nodes[i*3 + j];
 			t_solvedata->product[i*3 + j][ltid] = temp3;
@@ -362,14 +363,12 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 
 		float nodes[12], b[12], R[3][3]={0}, D[3][3];
 		int index[4];
-
-		#pragma unroll 4
-		for(int i=0;i<4;i++)
-			index[i] = t_ele->nodeindex[i][ltid];
+			
 
 		#pragma unroll 4
 		for(int i=0;i<4;i++)
 		{
+			index[i] = t_ele->nodeindex[i][ltid];
 			nodes[i * 3] = xt[index[i] * 3];
 			nodes[i * 3 + 1] = xt[index[i] * 3 + 1];
 			nodes[i * 3 + 2] = xt[index[i] * 3 + 2];
@@ -384,8 +383,12 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 				for(int k=0;k<3;k++)
 					R[i][j] += (nodes[k*3 + i] - nodes[9 + i]) * D[k][j];
 
-		gpuComputePolarDecomposition(R,R);
+		gpuComputePolarDecomposition(R);
 	
+		for(int i=0;i<3;i++)
+			for(int j=0;j<3;j++)
+				t_solvedata->R[i][j][ltid] =  R[i][j];
+
 		makeFU(t_ele->f0,R,b);
 	
 		makeRKRT(t_ele->unwarpK, R, nodes, b);
@@ -400,11 +403,9 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 
 		#pragma unroll 12
 		for(int i=0;i<12;i++)
-			t_solvedata->b[i][ltid] = b[i] * dt + nodalmass * vt[t_ele->nodeindex[(i/3)][ltid] * 3 + (i%3)];
+			t_solvedata->b[i][ltid] = b[i] * dt + nodalmass * vt[index[(i/3)] * 3 + (i%3)];
 
-		for(int i=0;i<3;i++)
-			for(int j=0;j<3;j++)
-				t_solvedata->R[i][j][ltid] =  R[i][j];
+		
 	}
 }
 

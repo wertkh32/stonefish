@@ -43,16 +43,16 @@ void crossProduct(const float* a, const float* b, float* c)
 // Output: Q (3x3 rotation mtx), S (3x3 symmetric mtx)
 __host__
 __device__
-float gpuComputePolarDecomposition(const float M[3][3], float Q[3][3])
+void gpuComputePolarDecomposition(float Mk[3][3])
 {
-  float Mk[3][3];
+  //float Mk[3][3];
   float Ek[3][3];
   float det, M_oneNorm, M_infNorm, E_oneNorm;
 
   // Mk = M^T
-  for(int i=0; i<3; i++)
-    for(int j=0; j<3; j++)
-      Mk[i][j] = M[j][i];
+  //for(int i=0; i<3; i++)
+  //  for(int j=0; j<3; j++)
+  //    Mk[i][j] = M[j][i];
 
   M_oneNorm = oneNorm(Mk); 
   M_infNorm = infNorm(Mk);
@@ -97,9 +97,9 @@ float gpuComputePolarDecomposition(const float M[3][3], float Q[3][3])
   while ( E_oneNorm > M_oneNorm * TOLERANCE );
 
   // Q = Mk^T 
-  for(int i=0; i<3; i++)
-    for(int j=0; j<3; j++)
-      Q[i][j] = Mk[j][i];
+  //for(int i=0; i<3; i++)
+  //  for(int j=0; j<3; j++)
+  //    Q[i][j] = Mk[j][i];
 
-  return (det);
+  //return (det);
 }
