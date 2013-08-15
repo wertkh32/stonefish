@@ -41,9 +41,9 @@ struct GPUElement
 
 struct GPUNode
 {
-	int n[NODE_BLOCK_SIZE][NODE_THREADS];
+	int n[NODE_THREADS][NODE_BLOCK_SIZE];
 	//{tet_index,tet_node_index}
-	int elementindex[ELEMENTS_PER_THREAD][2][NODE_BLOCK_SIZE][NODE_THREADS];
+	int elementindex[ELEMENTS_PER_THREAD][2][NODE_THREADS][NODE_BLOCK_SIZE];
 };
 
 

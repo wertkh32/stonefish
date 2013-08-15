@@ -16,6 +16,7 @@ GPUIntegrator::GPUIntegrator(Mesh* _mesh, ConstrainedRows* r)
 	xt = (float*)malloc(sizeof(float) * numnodes * 3);
 	vt = (float*)malloc(sizeof(float) * numnodes * 3);
 	extforces = (float*)malloc(sizeof(float) * numnodes * 3);
+	mass = (float*)malloc(sizeof(float) * numnodes * 3);
 
 	initVars();
 	copyVarstoGPU();
@@ -90,7 +91,7 @@ GPUIntegrator::assembleGPUNodes()
 		int n = 0;
 		
 		for(int b=0;b<NODE_THREADS;b++)
-			gpuNodes[bid].n[tid][b] = 0;
+			gpuNodes[bid].n[b][tid] = 0;
 
 		for(int a=0;a<numelements;a++)
 		{
@@ -99,21 +100,21 @@ GPUIntegrator::assembleGPUNodes()
 				if(mesh->nodeIndices[a][b] == i)
 				{
 					int t = n%NODE_THREADS;
-					gpuNodes[bid].elementindex[gpuNodes[bid].n[tid][t]][0][tid][t] = a;
-					gpuNodes[bid].elementindex[gpuNodes[bid].n[tid][t]][1][tid][t] = b;
+					gpuNodes[bid].elementindex[gpuNodes[bid].n[t][tid]][0][t][tid] = a;
+					gpuNodes[bid].elementindex[gpuNodes[bid].n[t][tid]][1][t][tid] = b;
 					n++;
-					(gpuNodes[bid].n[tid][t])++;
+					(gpuNodes[bid].n[t][tid])++;
 					break;
 				}
 			}
 		}
 	}
 }
-/*
+
 void
 GPUIntegrator::assembleLumpedMass()
 {
-	for(int i=0;i<n*3;i++)
+	for(int i=0;i<numnodes*3;i++)
 		mass[i] = 0;
 
 	for(int i=0;i<mesh->elements.size();i++)
@@ -127,7 +128,7 @@ GPUIntegrator::assembleLumpedMass()
 		}
 	}
 }
-*/
+
 void GPUIntegrator::assembleXt()
 {
 	for(int i=0;i<numnodes;i++)
@@ -167,12 +168,13 @@ GPUIntegrator::initVars()
 	assembleXt();
 	assembleVt();
 	assembleExtForce();
+	assembleLumpedMass();
 }
 
 void
 GPUIntegrator::copyVarstoGPU()
 {
-	gpuUploadVars(gpuElements, gpuNodes, xt, vt, extforces, numnodes, numelements);
+	gpuUploadVars(gpuElements, gpuNodes, xt, vt, extforces, mass, numnodes, numelements);
 }
 
 void

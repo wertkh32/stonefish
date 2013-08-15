@@ -21,6 +21,7 @@ mulData*	gpuptrMulData;
 float*   gpuptr_xt;//dynamic
 float*   gpuptr_vt;//dynamic
 float*	 gpuptr_extforces;//dynamic
+float*	 gpuptr_mass;//static
 float*	 gpuptr_b;//dynamic
 
 //for CG
@@ -57,6 +58,7 @@ gpuInitVars(int numele, int numnodes)
 	HANDLE_ERROR( cudaMalloc(&gpuptr_xt, numnodes * 3 * sizeof(float)) );
 	HANDLE_ERROR( cudaMalloc(&gpuptr_vt, numnodes * 3 * sizeof(float)) );
 	HANDLE_ERROR( cudaMalloc(&gpuptr_extforces, numnodes * 3 * sizeof(float)) );
+	HANDLE_ERROR( cudaMalloc(&gpuptr_mass, numnodes * 3 * sizeof(float)) );
 	HANDLE_ERROR( cudaMalloc(&gpuptr_b, numnodes * 3 * sizeof(float)) );
 
 	HANDLE_ERROR( cudaMalloc(&gpuptrR, numnodes * 3 * sizeof(float)) );
@@ -80,22 +82,12 @@ gpuInitVars(int numele, int numnodes)
 			//exit(-1);
 			system("pause");
 		}
-
-	//testing
-	//float F[3][3] = { {1,2,3}, {3,2,1}, {1,3,2} };
-	//float R[3][3];
-	//gpuComputePolarDecomposition(F,R);
-
-	//for(int i=0;i<3;i++, printf("\n"))
-	//	for(int j=0; j<3; j++)
-	//		printf("%f ", R[i][j]);
-	//system("pause");
 }
 
 __host__
 void
 gpuUploadVars(GPUElement* gpuElements, GPUNode* gpuNodes,float* xt, 
-			  float* vt, float* extforces, int numnodes, int numelements)
+			  float* vt, float* extforces, float* mass, int numnodes, int numelements)
 {
 	int numblocksperele = (numelements / BLOCK_SIZE) + 1;
 	int numblockpernode = (numnodes / NODE_BLOCK_SIZE) + 1;
@@ -105,6 +97,7 @@ gpuUploadVars(GPUElement* gpuElements, GPUNode* gpuNodes,float* xt,
 	HANDLE_ERROR( cudaMemcpy(gpuptr_xt, xt, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice) );
 	HANDLE_ERROR( cudaMemcpy(gpuptr_vt, vt, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice) );
 	HANDLE_ERROR( cudaMemcpy(gpuptr_extforces, extforces, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice) );
+	HANDLE_ERROR( cudaMemcpy(gpuptr_mass, mass, numnodes * 3 * sizeof(float), cudaMemcpyHostToDevice) );
 
 		cudaDeviceSynchronize();
 		cudaError_t error = cudaGetLastError();
@@ -152,6 +145,7 @@ gpuDestroyVars()
 	cudaFree(gpuptr_xt);
 	cudaFree(gpuptr_vt);
 	cudaFree(gpuptr_extforces);
+	cudaFree(gpuptr_mass);
 	cudaFree(gpuptr_b);
 	cudaFree(gpuptrR);
 	cudaFree(gpuptrD);
@@ -265,7 +259,7 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 	float nodes[12];
 	float temp[12];
 	float R[3][3];
-	float nodalmass = t_ele->nodalmass[ltid] * COEFFM;
+	//float nodalmass = t_ele->nodalmass[ltid] * COEFFM;
 
 	#pragma unroll 4
 	for(int i=0;i<4;i++)
@@ -299,7 +293,7 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 			for(int k=0;k<3;k++)
 				temp3 += R[j][k] * temp[i*3 + k];
 			temp3 *= COEFFK;
-			temp3 += nodalmass * nodes[i*3 + j];
+			//temp3 += nodalmass * nodes[i*3 + j];
 			t_solvedata->product[i*3 + j][ltid] = temp3;
 		}
 }
@@ -435,11 +429,11 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 			b[i * 3 + 2] += extforces[index[i] * 3 + 2];
 		}
 
-		float nodalmass = t_ele->nodalmass[ltid];
+		//float nodalmass = t_ele->nodalmass[ltid];
 
 		#pragma unroll 12
 		for(int i=0;i<12;i++)
-			t_solvedata->b[i][ltid] = b[i] * dt + nodalmass * vt[index[(i/3)] * 3 + (i%3)];
+			t_solvedata->b[i][ltid] = b[i] * dt;// + nodalmass * vt[index[(i/3)] * 3 + (i%3)];
 
 	}
 }
@@ -447,32 +441,32 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 //step 2
 //precompute
 __global__
-void gatherB(GPUNode* nodes, mulData* solverData, float* b, int numnodes)
+void gatherB(GPUNode* nodes, mulData* solverData, float* b, float* mass, float* vt,int numnodes)
 {
-	int groupid = threadIdx.x / NODE_THREADS;
-	int grouptid = threadIdx.x % NODE_THREADS;
+	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
+	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
 	int nodeno = blockIdx.x * NODE_BLOCK_SIZE + groupid;
 
-	__shared__ float cache[NODE_BLOCK_SIZE][NODE_THREADS][3];
+	__shared__ float cache[NODE_THREADS][NODE_BLOCK_SIZE][3];
 	GPUNode* node = &(nodes[blockIdx.x]);
-	int n = node->n[groupid][grouptid];
+	int n = node->n[grouptid][groupid];
 	
 	if(nodeno < numnodes)
 	{
 
-		cache[groupid][grouptid][0] = 0;
-		cache[groupid][grouptid][1] = 0;
-		cache[groupid][grouptid][2] = 0;
+		cache[grouptid][groupid][0] = 0;
+		cache[grouptid][groupid][1] = 0;
+		cache[grouptid][groupid][2] = 0;
 
 		for(int i=0;i<n;i++)
 		{
-			int tetindex = node->elementindex[i][0][groupid][grouptid] / BLOCK_SIZE;
-			int tetindex2 = node->elementindex[i][0][groupid][grouptid] % BLOCK_SIZE;
-			int nodeindex = node->elementindex[i][1][groupid][grouptid];
+			int tetindex = node->elementindex[i][0][grouptid][groupid] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0][grouptid][groupid] % BLOCK_SIZE;
+			int nodeindex = node->elementindex[i][1][grouptid][groupid];
 
-			cache[groupid][grouptid][0] += solverData[tetindex].b[nodeindex * 3][tetindex2];
-			cache[groupid][grouptid][1] += solverData[tetindex].b[nodeindex * 3 + 1][tetindex2];
-			cache[groupid][grouptid][2] += solverData[tetindex].b[nodeindex * 3 + 2][tetindex2];
+			cache[grouptid][groupid][0] += solverData[tetindex].b[nodeindex * 3][tetindex2];
+			cache[grouptid][groupid][1] += solverData[tetindex].b[nodeindex * 3 + 1][tetindex2];
+			cache[grouptid][groupid][2] += solverData[tetindex].b[nodeindex * 3 + 2][tetindex2];
 		}
 	}
 
@@ -482,9 +476,9 @@ void gatherB(GPUNode* nodes, mulData* solverData, float* b, int numnodes)
 	{
 		if(grouptid == 0)
 		{
-			b[nodeno * 3]     = cache[groupid][0][0] + cache[groupid][1][0] + cache[groupid][2][0] + cache[groupid][3][0];
-			b[nodeno * 3 + 1] = cache[groupid][0][1] + cache[groupid][1][1] + cache[groupid][2][1] + cache[groupid][3][1];
-			b[nodeno * 3 + 2] = cache[groupid][0][2] + cache[groupid][1][2] + cache[groupid][2][2] + cache[groupid][3][2];
+			b[nodeno * 3]     = cache[0][groupid][0] + cache[1][groupid][0] + cache[2][groupid][0] + cache[3][groupid][0] + mass[nodeno * 3] * vt[nodeno * 3];
+			b[nodeno * 3 + 1] = cache[0][groupid][1] + cache[1][groupid][1] + cache[2][groupid][1] + cache[3][groupid][1] + mass[nodeno * 3 + 1] * vt[nodeno * 3 + 1];
+			b[nodeno * 3 + 2] = cache[0][groupid][2] + cache[1][groupid][2] + cache[2][groupid][2] + cache[3][groupid][2] + mass[nodeno * 3 + 2] * vt[nodeno * 3 + 2];
 		}
 	}
 }
@@ -508,49 +502,45 @@ initAx(GPUElement* elements, mulData* solverData, float* x, int numelements)
 //init CG
 __global__
 void
-initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, int numnodes)
+initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, float* mass, float* vt, int numnodes)
 {
-	int groupid = threadIdx.x / NODE_THREADS;
-	int grouptid = threadIdx.x % NODE_THREADS;
+	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
+	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
 	int nodeno = blockIdx.x * NODE_BLOCK_SIZE + groupid;
 
-	__shared__ float cache[NODE_BLOCK_SIZE][NODE_THREADS][3];
+	__shared__ float cache[NODE_THREADS][NODE_BLOCK_SIZE][3];
 	GPUNode* node = &(nodes[blockIdx.x]);
-	int n = node->n[groupid][grouptid];
+	int n = node->n[grouptid][groupid];
 	
 	if(nodeno < numnodes)
 	{
 
-		cache[groupid][grouptid][0] = 0;
-		cache[groupid][grouptid][1] = 0;
-		cache[groupid][grouptid][2] = 0;
+		cache[grouptid][groupid][0] = 0;
+		cache[grouptid][groupid][1] = 0;
+		cache[grouptid][groupid][2] = 0;
 
 		for(int i=0;i<n;i++)
 		{
-			int tetindex = node->elementindex[i][0][groupid][grouptid] / BLOCK_SIZE;
-			int tetindex2 = node->elementindex[i][0][groupid][grouptid] % BLOCK_SIZE;
-			int nodeindex = node->elementindex[i][1][groupid][grouptid];
+			int tetindex = node->elementindex[i][0][grouptid][groupid] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0][grouptid][groupid] % BLOCK_SIZE;
+			int nodeindex = node->elementindex[i][1][grouptid][groupid];
 
-			cache[groupid][grouptid][0] += solverData[tetindex].product[nodeindex * 3][tetindex2];
-			cache[groupid][grouptid][1] += solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];
-			cache[groupid][grouptid][2] += solverData[tetindex].product[nodeindex * 3 + 2][tetindex2];
+			cache[grouptid][groupid][0] += solverData[tetindex].product[nodeindex * 3][tetindex2];
+			cache[grouptid][groupid][1] += solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];
+			cache[grouptid][groupid][2] += solverData[tetindex].product[nodeindex * 3 + 2][tetindex2];
 		}
 	}
-	
+
 	__syncthreads();
 
 	if(nodeno < numnodes)
 	{
 		if(grouptid == 0)
-		{
-			r[nodeno * 3]     = cache[groupid][0][0] + cache[groupid][1][0] + cache[groupid][2][0] + cache[groupid][3][0];
-			r[nodeno * 3 + 1] = cache[groupid][0][1] + cache[groupid][1][1] + cache[groupid][2][1] + cache[groupid][3][1];
-			r[nodeno * 3 + 2] = cache[groupid][0][2] + cache[groupid][1][2] + cache[groupid][2][2] + cache[groupid][3][2];
-		
+		{		
 			//r = b-Ax
-			r[nodeno * 3] = b[nodeno * 3] - r[nodeno * 3];
-			r[nodeno * 3 + 1] = b[nodeno * 3 + 1] - r[nodeno * 3 + 1];
-			r[nodeno * 3 + 2] = b[nodeno * 3 + 2] - r[nodeno * 3 + 2];
+			r[nodeno * 3] = b[nodeno * 3] - (cache[0][groupid][0] + cache[1][groupid][0] + cache[2][groupid][0] + cache[3][groupid][0] + mass[nodeno * 3] * vt[nodeno * 3] * COEFFM);
+			r[nodeno * 3 + 1] = b[nodeno * 3 + 1] - (cache[0][groupid][1] + cache[1][groupid][1] + cache[2][groupid][1] + cache[3][groupid][1] + mass[nodeno * 3 + 1] * vt[nodeno * 3 + 1] * COEFFM);
+			r[nodeno * 3 + 2] = b[nodeno * 3 + 2] - (cache[0][groupid][2] + cache[1][groupid][2] + cache[2][groupid][2] + cache[3][groupid][2] + mass[nodeno * 3 + 2] * vt[nodeno * 3 + 2] * COEFFM);
 
 			//d=r
 			d[nodeno * 3] = r[nodeno * 3];
@@ -598,9 +588,46 @@ makeQprod(GPUElement* elements, mulData* solverData, float* d, int numelements)
 //q = Ad
 __global__
 void
-gatherQprod(GPUNode* nodes, mulData* solverData, float* q, int numnodes)
+gatherQprod(GPUNode* nodes, mulData* solverData, float* q, float* mass, float* d, int numnodes)
 {
-		mulSystemGather(nodes, solverData, q, numnodes);
+	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
+	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
+	int nodeno = blockIdx.x * NODE_BLOCK_SIZE + groupid;
+
+	__shared__ float cache[NODE_THREADS][NODE_BLOCK_SIZE][3];
+	GPUNode* node = &(nodes[blockIdx.x]);
+	int n = node->n[grouptid][groupid];
+	
+	if(nodeno < numnodes)
+	{
+
+		cache[grouptid][groupid][0] = 0;
+		cache[grouptid][groupid][1] = 0;
+		cache[grouptid][groupid][2] = 0;
+
+		for(int i=0;i<n;i++)
+		{
+			int tetindex = node->elementindex[i][0][grouptid][groupid] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0][grouptid][groupid] % BLOCK_SIZE;
+			int nodeindex = node->elementindex[i][1][grouptid][groupid];
+
+			cache[grouptid][groupid][0] += solverData[tetindex].product[nodeindex * 3][tetindex2];
+			cache[grouptid][groupid][1] += solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];
+			cache[grouptid][groupid][2] += solverData[tetindex].product[nodeindex * 3 + 2][tetindex2];
+		}
+	}
+
+	__syncthreads();
+
+	if(nodeno < numnodes)
+	{
+		if(grouptid == 0)
+		{
+			q[nodeno * 3]     = cache[0][groupid][0] + cache[1][groupid][0] + cache[2][groupid][0] + cache[3][groupid][0] + mass[nodeno * 3] * d[nodeno * 3] * COEFFM;
+			q[nodeno * 3 + 1] = cache[0][groupid][1] + cache[1][groupid][1] + cache[2][groupid][1] + cache[3][groupid][1] + mass[nodeno * 3 + 1] * d[nodeno * 3 + 1] * COEFFM;
+			q[nodeno * 3 + 2] = cache[0][groupid][2] + cache[1][groupid][2] + cache[2][groupid][2] + cache[3][groupid][2] + mass[nodeno * 3 + 2] * d[nodeno * 3 + 2] * COEFFM;
+		}
+	}
 
 }
 
@@ -698,7 +725,7 @@ gpuTimeStep(int numelements, int numnodes)
 	}
 
 
-	gatherB<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_b, numnodes);
+	gatherB<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_b, gpuptr_mass, gpuptr_vt, numnodes);
 
 	cudaDeviceSynchronize();
 	error = cudaGetLastError();
@@ -722,7 +749,7 @@ gpuTimeStep(int numelements, int numnodes)
 		//exit(-1);
 	}
 
-	initRandD<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrR, gpuptrD, gpuptr_b, numnodes);
+	initRandD<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrR, gpuptrD, gpuptr_b, gpuptr_mass, gpuptr_vt, numnodes);
 
 	cudaDeviceSynchronize();
 	error = cudaGetLastError();
@@ -767,7 +794,7 @@ gpuTimeStep(int numelements, int numnodes)
 			//exit(-1);
 		}
 
-		gatherQprod<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, numnodes);
+		gatherQprod<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, gpuptr_mass, gpuptrD,numnodes);
 
 		cudaDeviceSynchronize();
 		error = cudaGetLastError();

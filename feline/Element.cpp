@@ -16,17 +16,17 @@ Element::Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, flo
 	//lambda = (E*v)/((1.0+v)*(1.0-2.0*v));
 
 	preCompute();
-	
+
 	mass = density * undeformVolume;
 	nodalMass = mass / 4;
 }
 
 void Element::preCompute()
 {
-	undeformShapeMat = 
-			Matrix3d(nodes[0]->pos.x - nodes[3]->pos.x,nodes[1]->pos.x - nodes[3]->pos.x,nodes[2]->pos.x - nodes[3]->pos.x,
-					nodes[0]->pos.y - nodes[3]->pos.y,nodes[1]->pos.y - nodes[3]->pos.y,nodes[2]->pos.y - nodes[3]->pos.y,
-					nodes[0]->pos.z - nodes[3]->pos.z,nodes[1]->pos.z - nodes[3]->pos.z,nodes[2]->pos.z - nodes[3]->pos.z);
+	undeformShapeMat =
+		Matrix3d(nodes[0]->pos.x - nodes[3]->pos.x,nodes[1]->pos.x - nodes[3]->pos.x,nodes[2]->pos.x - nodes[3]->pos.x,
+		nodes[0]->pos.y - nodes[3]->pos.y,nodes[1]->pos.y - nodes[3]->pos.y,nodes[2]->pos.y - nodes[3]->pos.y,
+		nodes[0]->pos.z - nodes[3]->pos.z,nodes[1]->pos.z - nodes[3]->pos.z,nodes[2]->pos.z - nodes[3]->pos.z);
 	undeformShapeMatInv = undeformShapeMat.inverse();
 	//undeformShapeMatInvT = undeformShapeMatInv.transpose();
 	undeformVolume = (1.0/6.0) * fabs(undeformShapeMat.determinant());
@@ -37,18 +37,18 @@ void Element::preCompute()
 
 void Element::preComputeUndeformedStiffnessMat()
 {
-	
+
 	//inv is the inverse of the matrix relating volume coords to cartesian coords
-	Matrix4d inv =	  Matrix4d
-					  ( 1.0, 1.0, 1.0, 1.0,
-						nodes[0]->pos.x, nodes[1]->pos.x, nodes[2]->pos.x, nodes[3]->pos.x,
-						nodes[0]->pos.y, nodes[1]->pos.y, nodes[2]->pos.y, nodes[3]->pos.y,
-						nodes[0]->pos.z, nodes[1]->pos.z, nodes[2]->pos.z, nodes[3]->pos.z).inverse();
+	Matrix4d inv =	Matrix4d
+		( 1.0, 1.0, 1.0, 1.0,
+		nodes[0]->pos.x, nodes[1]->pos.x, nodes[2]->pos.x, nodes[3]->pos.x,
+		nodes[0]->pos.y, nodes[1]->pos.y, nodes[2]->pos.y, nodes[3]->pos.y,
+		nodes[0]->pos.z, nodes[1]->pos.z, nodes[2]->pos.z, nodes[3]->pos.z).inverse();
 
 
 	//strain matrix B = LN = dN/dx
 	//checked correct.
-	float strainMatrix[6][12] = 
+	float strainMatrix[6][12] =
 	{
 		{ inv(0,1), 0, 0, inv(1,1), 0, 0, inv(2,1), 0, 0, inv(3,1), 0, 0 },
 		{ 0, inv(0,2), 0, 0, inv(1,2), 0, 0, inv(2,2), 0, 0, inv(3,2), 0 },
@@ -63,12 +63,12 @@ void Element::preComputeUndeformedStiffnessMat()
 
 	//material constants
 	float c1 = (E*(1-v))/((1.0-2.0*v)*(1.0+v)),
-		  c2 = (E*v)/((1.0-2.0*v)*(1.0+v)),
-		  c3 = (c1 - c2)/2.0;
+		c2 = (E*v)/((1.0-2.0*v)*(1.0+v)),
+		c3 = (c1 - c2)/2.0;
 	//printf("%f %f %f\n",c1,c2,c3);
 
-	float C[6][6] = 
-	{ 
+	float C[6][6] =
+	{
 		{ c1, c2, c2, 0, 0, 0 },
 		{c2, c1, c2, 0, 0, 0 },
 		{c2, c2, c1, 0, 0, 0 },
@@ -91,29 +91,29 @@ void Element::preComputeUndeformedStiffnessMat()
 	/*
 	printf("start");
 	for(int i=0;i<12;i++,printf("\n"))
-		for(int j=0;j<12;j++)
-		{
-			printf("%f ",undeformStiffnessMat(i,j));
-		}
+	for(int j=0;j<12;j++)
+	{
+	printf("%f ",undeformStiffnessMat(i,j));
+	}
 	*/
-	
+
 	/*
 	for(int i=0;i<4;i++)
-		for(int j=0;j<4;j++)
-			sparseStiff->setBlockFilled(i,j,true);
+	for(int j=0;j<4;j++)
+	sparseStiff->setBlockFilled(i,j,true);
 
 	for(int i=0;i<12;i++)
-		for(int j=0;j<12;j++)
-		{
-			sparseStiff->setValue(i,j,undeformStiffnessMat(i,j));
-		}
+	for(int j=0;j<12;j++)
+	{
+	sparseStiff->setValue(i,j,undeformStiffnessMat(i,j));
+	}
 	*/
 
 }
 
 void Element::preComputeMassMat()
 {
-	float mass[12][12] = 
+	float mass[12][12] =
 	{
 		{ 2, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0 },
 		{ 0, 2, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0 },
@@ -131,23 +131,23 @@ void Element::preComputeMassMat()
 
 	massMat = GenMatrix<float,12,12>(mass);
 	massMat.scalarMul( (density * undeformVolume) / 20.);
-	
+
 	/*
 	for(int i=0;i<12;i++)
 	{
-		for(int j=0;j<12;j++)
-			printf("%f ", massMat(i,j));
-		printf("\n");
+	for(int j=0;j<12;j++)
+	printf("%f ", massMat(i,j));
+	printf("\n");
 	}
 	*/
 }
 
 Matrix3d Element::computeDeformationMat()
 {
-	Matrix3d deformShapeMat 
-				   (nodes[0]->pos_t.x - nodes[3]->pos_t.x,nodes[1]->pos_t.x - nodes[3]->pos_t.x,nodes[2]->pos_t.x - nodes[3]->pos_t.x,
-					nodes[0]->pos_t.y - nodes[3]->pos_t.y,nodes[1]->pos_t.y - nodes[3]->pos_t.y,nodes[2]->pos_t.y - nodes[3]->pos_t.y,
-					nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
+	Matrix3d deformShapeMat
+		(nodes[0]->pos_t.x - nodes[3]->pos_t.x,nodes[1]->pos_t.x - nodes[3]->pos_t.x,nodes[2]->pos_t.x - nodes[3]->pos_t.x,
+		nodes[0]->pos_t.y - nodes[3]->pos_t.y,nodes[1]->pos_t.y - nodes[3]->pos_t.y,nodes[2]->pos_t.y - nodes[3]->pos_t.y,
+		nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
 	return deformShapeMat * undeformShapeMatInv;
 }
 
@@ -155,30 +155,30 @@ Matrix3d Element::computeDeformationMat()
 
 Matrix3d Element::computeDeformShapeMat()
 {
-	Matrix3d deformShapeMat 
-				   (nodes[0]->pos_t.x - nodes[3]->pos_t.x,nodes[1]->pos_t.x - nodes[3]->pos_t.x,nodes[2]->pos_t.x - nodes[3]->pos_t.x,
-					nodes[0]->pos_t.y - nodes[3]->pos_t.y,nodes[1]->pos_t.y - nodes[3]->pos_t.y,nodes[2]->pos_t.y - nodes[3]->pos_t.y,
-					nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
+	Matrix3d deformShapeMat
+		(nodes[0]->pos_t.x - nodes[3]->pos_t.x,nodes[1]->pos_t.x - nodes[3]->pos_t.x,nodes[2]->pos_t.x - nodes[3]->pos_t.x,
+		nodes[0]->pos_t.y - nodes[3]->pos_t.y,nodes[1]->pos_t.y - nodes[3]->pos_t.y,nodes[2]->pos_t.y - nodes[3]->pos_t.y,
+		nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
 	return deformShapeMat;
 }
 
 
 void
-Element::computeRKRTandRK()
+	Element::computeRKRTandRK()
 {
 	static const float alpha = 0.1, beta = 0.1;
 	static const float coeffK = dt * beta + dt * dt, coeffM = 1 + dt * alpha;
-	
+
 	Matrix3d F,R,S;
 	F = computeDeformationMat();
 	PolarDecompose::compute(F,R,S);
-	
+
 	//for(int i=0;i<4;i++)
-	//	for(int j=0;j<3;j++)
-	//		for(int k=0;k<3;k++)
-	//		{
-	//			Rot(i * 3 + j, i * 3 + k) = R(j,k);
-	//		}
+	// for(int j=0;j<3;j++)
+	// for(int k=0;k<3;k++)
+	// {
+	// Rot(i * 3 + j, i * 3 + k) = R(j,k);
+	// }
 
 
 	for(int i=0;i<4;i++)
@@ -216,16 +216,16 @@ Element::computeRKRTandRK()
 		{
 			for(int a=0;a<3;a++)
 				for(int b=0;b<3;b++)
-						RKRT(a + i * 3, b + j * 3) = RKRT(b + j * 3, a + i * 3);
+					RKRT(a + i * 3, b + j * 3) = RKRT(b + j * 3, a + i * 3);
 		}
 
-	for(int i=0;i<12;i++)
-		for(int j=0;j<12;j++)
-		{
-			A(i,j) = coeffK * RKRT(i,j);
-			if(i==j)
-				A(i,j) += coeffM * nodalMass;
-		}
+		for(int i=0;i<12;i++)
+			for(int j=0;j<12;j++)
+			{
+				A(i,j) = coeffK * RKRT(i,j);
+				if(i==j)
+					A(i,j) += coeffM * nodalMass;
+			}
 
 }
 
@@ -276,82 +276,78 @@ void Element::getRKRTandRK(SparseMatrix& RK, SparseMatrix& RKRT)
 /*
 void Element::computeMatFreeVars()
 {
-	Matrix3d deformShapeMat 
-				   (nodes[0]->pos_t.x - nodes[3]->pos_t.x,nodes[1]->pos_t.x - nodes[3]->pos_t.x,nodes[2]->pos_t.x - nodes[3]->pos_t.x,
-					nodes[0]->pos_t.y - nodes[3]->pos_t.y,nodes[1]->pos_t.y - nodes[3]->pos_t.y,nodes[2]->pos_t.y - nodes[3]->pos_t.y,
-					nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
-	Ft = deformShapeMat * undeformShapeMatInv;
-	PolarDecompose::computeFull(Ft,Rt,St);
-	float traceS = St.trace();
-	Matrix3d trSI = Matrix3d(traceS,0,0,
-							 0,traceS,0,
-							 0,0,traceS);
-	trSI_Sinv = (trSI - St).inverse();
-	//trSI_Sinv.print();
-	S_Itrace = (St - Matrix3d(1,0,0,
-							0,1,0,
-							0,0,1)).trace();
+Matrix3d deformShapeMat
+(nodes[0]->pos_t.x - nodes[3]->pos_t.x,nodes[1]->pos_t.x - nodes[3]->pos_t.x,nodes[2]->pos_t.x - nodes[3]->pos_t.x,
+nodes[0]->pos_t.y - nodes[3]->pos_t.y,nodes[1]->pos_t.y - nodes[3]->pos_t.y,nodes[2]->pos_t.y - nodes[3]->pos_t.y,
+nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
+Ft = deformShapeMat * undeformShapeMatInv;
+PolarDecompose::computeFull(Ft,Rt,St);
+float traceS = St.trace();
+Matrix3d trSI = Matrix3d(traceS,0,0,
+0,traceS,0,
+0,0,traceS);
+trSI_Sinv = (trSI - St).inverse();
+//trSI_Sinv.print();
+S_Itrace = (St - Matrix3d(1,0,0,
+0,1,0,
+0,0,1)).trace();
 }
 
 Matrix3d
 Element::computePiolaStressTensor()
 {
-	
-	//Matrix3d I = Matrix3d(1,0,0,
-	//							 0,1,0,
-	//							 0,0,1);
-	//float dF_Itrace = (Ft-I).trace();
-	
-	return //(Ft + Ft.transpose() - I * 2) * miu + I * dF_Itrace;
-		(Ft - Rt) * (2 * miu) + Rt * (S_Itrace * lambda);
+//Matrix3d I = Matrix3d(1,0,0,
+// 0,1,0,
+// 0,0,1);
+//float dF_Itrace = (Ft-I).trace();
+return //(Ft + Ft.transpose() - I * 2) * miu + I * dF_Itrace;
+(Ft - Rt) * (2 * miu) + Rt * (S_Itrace * lambda);
 }
 
 Matrix3d
 Element::computeRKtensor(Matrix3d& dF)
 {
-	Matrix3d I = Matrix3d(1,0,0,
-								 0,1,0,
-								 0,0,1);
-	//Assume compute Ft Rt St has been computed
-	
-	Matrix3d RtT = Rt.transpose();
-	Matrix3d W = RtT * dF;
-	vector3<float> w = vector3<float>(W(1,2) - W(2,1), W(2,0) - W(0,2),W(0,1)-W(1,0));
-	Matrix3d dR = Rt * Matrix3d::skew(trSI_Sinv * w);
+Matrix3d I = Matrix3d(1,0,0,
+0,1,0,
+0,0,1);
+//Assume compute Ft Rt St has been computed
+Matrix3d RtT = Rt.transpose();
+Matrix3d W = RtT * dF;
+vector3<float> w = vector3<float>(W(1,2) - W(2,1), W(2,0) - W(0,2),W(0,1)-W(1,0));
+Matrix3d dR = Rt * Matrix3d::skew(trSI_Sinv * w);
 
-	float F_Itrace = (Ft-I).trace();
-	float dFtrace = dF.trace();
+float F_Itrace = (Ft-I).trace();
+float dFtrace = dF.trace();
 
-	return //dR * ((Ft + Ft.transpose() - I * 2) * miu + (I *(F_Itrace * lambda))) + Rt *
-		((dF + dF.transpose()) * miu + (I * (dFtrace * lambda)));
+return //dR * ((Ft + Ft.transpose() - I * 2) * miu + (I *(F_Itrace * lambda))) + Rt *
+((dF + dF.transpose()) * miu + (I * (dFtrace * lambda)));
 
 }
 
 Matrix3d
 Element::computeDiffPiolaStressTensor(Matrix3d& dF)
 {
-	Matrix3d I = Matrix3d(1,0,0,
-								 0,1,0,
-								 0,0,1);
-	//Assume compute Ft Rt St has been computed
-	Matrix3d RtT = Rt.transpose();
-	Matrix3d W = RtT * dF;
-	vector3<float> w = vector3<float>(W(1,2) - W(2,1), W(2,0) - W(0,2),W(0,1)-W(1,0));
+Matrix3d I = Matrix3d(1,0,0,
+0,1,0,
+0,0,1);
+//Assume compute Ft Rt St has been computed
+Matrix3d RtT = Rt.transpose();
+Matrix3d W = RtT * dF;
+vector3<float> w = vector3<float>(W(1,2) - W(2,1), W(2,0) - W(0,2),W(0,1)-W(1,0));
 
-	Matrix3d dR = Rt * Matrix3d::skew(trSI_Sinv * w);
-	
-	// 2EdF + v * tr(W) * R + {v * tr(S - I) - 2 * E} * dR
-	float dFtrace = dF.trace();
-	//printf("[miu: %f, lambda: %f, dftrace:%f]\n",miu,lambda,dFtrace);
-	//(I * (dFtrace * lambda)).print();
+Matrix3d dR = Rt * Matrix3d::skew(trSI_Sinv * w);
+// 2EdF + v * tr(W) * R + {v * tr(S - I) - 2 * E} * dR
+float dFtrace = dF.trace();
+//printf("[miu: %f, lambda: %f, dftrace:%f]\n",miu,lambda,dFtrace);
+//(I * (dFtrace * lambda)).print();
 
-	return ((dF + dF.transpose()) * miu + (I * (dFtrace * lambda)));
-			//dF * (2 * miu) + Rt * (W.trace() * lambda) + dR * (v * S_Itrace - 2 * miu);
+return ((dF + dF.transpose()) * miu + (I * (dFtrace * lambda)));
+//dF * (2 * miu) + Rt * (W.trace() * lambda) + dR * (v * S_Itrace - 2 * miu);
 }
 */
 
 void
-Element::renderElement()
+	Element::renderElement()
 {
 	glPushMatrix();
 	glBegin(GL_LINES);
@@ -376,7 +372,7 @@ Element::renderElement()
 
 	glEnd();
 
-	
+
 	glPopMatrix();
 }
 

@@ -16,6 +16,7 @@ class GPUIntegrator
 	float*   xt;//dynamic
 	float*   vt;//dynamic
 	float*	 extforces;//dynamic
+	float*	 mass;
 
 public:
 	GPUIntegrator(Mesh* _mesh, ConstrainedRows* r=0);
@@ -27,7 +28,7 @@ public:
 	void assembleVt();
 	void assembleExtForce();
 
-	//void assembleLumpedMass();
+	void assembleLumpedMass();
 
 	void initVars();
 	void copyVarstoGPU();
