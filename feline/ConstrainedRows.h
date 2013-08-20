@@ -1,6 +1,6 @@
 #pragma once
 #include "QuickArray.h"
-#define MAX_ROWS_CONSTRAINED 50
+#define MAX_ROWS_CONSTRAINED 200
 
 enum DOF
 {

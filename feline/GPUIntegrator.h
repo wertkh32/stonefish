@@ -17,6 +17,7 @@ class GPUIntegrator
 	float*   vt;//dynamic
 	float*	 extforces;//dynamic
 	float*	 mass;
+	char*	 allowed;
 
 public:
 	GPUIntegrator(Mesh* _mesh, ConstrainedRows* r=0);

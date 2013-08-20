@@ -37,7 +37,7 @@ resize(int width, int height)
     glViewport(0, 0, width, height);
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    glFrustum(-ar, ar, -1.0, 1.0, 2.0, 100.0);
+    glFrustum(-ar, ar, -1.0, 1.0, 2.0, 200.0);
     
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity() ;
@@ -228,52 +228,9 @@ main(int argc, char *argv[])
 	//tet = mod->mesh;
 
 	//sheet//
-	/*
-	rows.add(0);
-	rows.add(1);
-	rows.add(2);
-	rows.add(3);
-	rows.add(4);
-	rows.add(5);
-	rows.add(6);
-	rows.add(7);
-	rows.add(8);
-	rows.add(9);
-	rows.add(10);
-	rows.add(11);
-	rows.add(12);
-	rows.add(13);
-	rows.add(14);
-	rows.add(15);
-	rows.add(16);
-	rows.add(17);
-	rows.add(18);
-	rows.add(19);
-	rows.add(20);
 	
-
-	rows.add(441);
-	rows.add(442);
-	rows.add(443);
-	rows.add(444);
-	rows.add(445);
-	rows.add(446);
-	rows.add(447);
-	rows.add(448);
-	rows.add(449);
-	rows.add(450);
-	rows.add(451);
-	rows.add(452);
-	rows.add(453);
-	rows.add(454);
-	rows.add(455);
-	rows.add(456);
-	rows.add(457);
-	rows.add(458);
-	rows.add(459);
-	rows.add(460);
-	rows.add(461);
-	*/
+	for(int i=0;i<DIM+1;i++)
+		rows.add(i);
 
 	MeshFunctions::makeSheet(&tet,DIM,DIM);
 	//sheet//

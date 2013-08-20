@@ -2,7 +2,7 @@
 #include "GPUDataStructs.cuh"
 
 void gpuUploadVars(GPUElement* gpuElements, GPUNode* gpuNodes,float* xt, 
-			  float* vt, float* extforces, float* mass, int numnodes, int numelements);
+			  float* vt, float* extforces, float* mass, char* allowed, int numnodes, int numelements);
 
 void gpuUploadExtForces(float* extforces, int numnodes);
 

@@ -1,12 +1,14 @@
 #pragma once
 
 #define BLOCK_SIZE 128				//element block size
+//#define THREAD_BLOCK_SIZE 64		//actual number of threads
+//#define ELE_PER_THREAD 2
 #define DOT_BLOCK_SIZE 512			//dot product block size
 
 #define ELEMENTS_PER_THREAD 16
-#define NODE_THREADS 4
+#define NODE_THREADS 2
 #define NODE_BLOCK_SIZE 128			//node block size
-#define GATHER_THREAD_NO 512
+#define GATHER_THREAD_NO 256
 
 #define VECTOR_BLOCK_SIZE 512
 

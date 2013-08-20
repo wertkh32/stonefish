@@ -17,6 +17,16 @@ GPUIntegrator::GPUIntegrator(Mesh* _mesh, ConstrainedRows* r)
 	vt = (float*)malloc(sizeof(float) * numnodes * 3);
 	extforces = (float*)malloc(sizeof(float) * numnodes * 3);
 	mass = (float*)malloc(sizeof(float) * numnodes * 3);
+	allowed = (char*)malloc(sizeof(bool) * numnodes);
+
+	for(int i=0;i<numnodes;i++)
+		allowed[i] = 0;
+
+	for(int i=0;i<r->list.size();i++)
+	{
+		printf("BOOOOOO %d | %d\n",r->list[i] / 3, r->list[i] % 3);
+		allowed[r->list[i] / 3] |= (1<<(r->list[i] % 3));
+	}
 
 	initVars();
 	copyVarstoGPU();
@@ -74,7 +84,7 @@ GPUIntegrator::assembleGPUElements()
 			{
 				gpuElements[bid].undefShapeMatInv[a][b][tid] = inv(a,b);
 			}
-		
+
 		gpuElements[bid].nodalmass[tid] = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume())/4.0;
 
 	}
@@ -174,7 +184,7 @@ GPUIntegrator::initVars()
 void
 GPUIntegrator::copyVarstoGPU()
 {
-	gpuUploadVars(gpuElements, gpuNodes, xt, vt, extforces, mass, numnodes, numelements);
+	gpuUploadVars(gpuElements, gpuNodes, xt, vt, extforces, mass, allowed, numnodes, numelements);
 }
 
 void
