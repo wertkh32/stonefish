@@ -48,7 +48,16 @@ QuadTetElement::computeB(float point[4])
 	J[1][1] = 4 * (x[4][1] * point[0] + x[1][1] * (point[1] - 0.25) + x[5][1] * point[2] + x[8][1] * point[3]);
 	J[1][2] = 4 * (x[4][2] * point[0] + x[1][2] * (point[1] - 0.25) + x[5][2] * point[2] + x[8][2] * point[3]);
 
+	J[2][0] = 4 * (x[6][0] * point[0] + x[5][0] * point[1] + x[2][0] * (point[2] - 0.25) + x[9][0] * point[3]);
+	J[2][1] = 4 * (x[6][1] * point[0] + x[5][1] * point[1] + x[2][1] * (point[2] - 0.25) + x[9][1] * point[3]);
+	J[2][2] = 4 * (x[6][2] * point[0] + x[5][2] * point[1] + x[2][2] * (point[2] - 0.25) + x[9][2] * point[3]);
+
+	J[3][0] = 4 * (x[7][0] * point[0] + x[8][0] * point[1] + x[9][0] * point[2] + x[3][0] * (point[3] - 0.25) );
+	J[3][1] = 4 * (x[7][1] * point[0] + x[8][1] * point[1] + x[9][1] * point[2] + x[3][1] * (point[3] - 0.25) );
+	J[3][2] = 4 * (x[7][2] * point[0] + x[8][2] * point[1] + x[9][2] * point[2] + x[3][2] * (point[3] - 0.25) );
+
 	
+
 }
 
 QuadTetElement::~QuadTetElement(void)
