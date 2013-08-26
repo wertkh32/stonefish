@@ -110,6 +110,7 @@
     <ClCompile Include="ModelFunctions.cpp" />
     <ClCompile Include="Node.cpp" />
     <ClCompile Include="PolarDecompose.cpp" />
+    <ClCompile Include="QuadTetElement.cpp" />
     <ClCompile Include="SymSparseMatrix.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -139,6 +140,7 @@
     <ClInclude Include="Node.h" />
     <ClInclude Include="perfmon.h" />
     <ClInclude Include="PolarDecompose.h" />
+    <ClInclude Include="QuadTetElement.h" />
     <ClInclude Include="QuickArray.h" />
     <ClInclude Include="SymSparseMatrix.h" />
     <ClInclude Include="vector3.h" />
