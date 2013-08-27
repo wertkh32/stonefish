@@ -19,26 +19,34 @@ QuadTetElement::QuadTetElement(Node* corner1, Node* corner2, Node* corner3, Node
 		nodes[7] = mid41;
 		nodes[8] = mid42;
 		nodes[9] = mid43;
+	
+		for(int i=0;i<10;i++)
+		{
+			x[i][0] = nodes[i]->pos.x;
+			x[i][1] = nodes[i]->pos.y;
+			x[i][2] = nodes[i]->pos.z;
+		}
+
+		//from characteristic polynomial
+		volume = fabs(Matrix3d(x[0][0] - x[3][0], x[1][0] - x[3][0], x[2][0] - x[3][0],
+		        			   x[0][1] - x[3][1], x[1][1] - x[3][1], x[2][1] - x[3][1],
+							   x[0][2] - x[3][2], x[1][2] - x[3][2], x[2][2] - x[3][2]).determinant());
+
+		mass = volume * density;
+
+		nodemass[0] = nodemass[1] = nodemass[2] = nodemass[3] = (1.0/32.0) * mass;
+		nodemass[4] = nodemass[5] = nodemass[6] = nodemass[7] = nodemass[8] = nodemass[9] = (7.0/48.0) * mass; 
+
 }
 
-#define JAC(d,x,y) (J[x][d] - J[y][d])
-
 void
-QuadTetElement::computeB(float s[4])
+QuadTetElement::computeB(float s[4], GenMatrix<float, 6, 30>* B, float* Jdet)
 {
 	// Jx1 Jy1 Jz1
 	// Jx2 Jy2 Jz2
 	// Jx3 Jy3 Jz3
 	// Jx4 Jy4 Jz4
 
-	float x[10][3];
-
-	for(int i=0;i<10;i++)
-	{
-		x[i][0] = nodes[i]->pos.x;
-		x[i][1] = nodes[i]->pos.y;
-		x[i][2] = nodes[i]->pos.z;
-	}
 
 	Matrix4d J = Matrix4d(0.25, 0.25, 0.25, 0.25,
 						  x[0][0] * (s[0] - 0.25) + x[4][0] * s[1] + x[6][0] * s[2] + x[7][0] * s[3],   x[4][0] * s[0] + x[1][0] * (s[1] - 0.25) + x[5][0] * s[2] + x[0][0] * s[3],   x[6][0] * s[0] + x[5][0] * s[1] + x[2][0] * (s[2] - 0.25) + x[9][0] * s[3],   x[7][0] * s[0] + x[8][0] * s[1] + x[9][0] * s[2] + x[3][0] * (s[3] - 0.25),
@@ -79,7 +87,8 @@ QuadTetElement::computeB(float s[4])
 						   {0, dNdX[2][0], dNdX[1][0], 0, dNdX[2][1], dNdX[1][1], 0, dNdX[2][2], dNdX[1][2], 0, dNdX[2][3], dNdX[1][3], 0, dNdX[2][4], dNdX[1][4], 0, dNdX[2][5], dNdX[1][5], 0, dNdX[2][6], dNdX[1][6], 0, dNdX[2][7], dNdX[1][7], 0, dNdX[2][8], dNdX[1][8], 0, dNdX[2][9], dNdX[1][9]},
 						   {dNdX[2][0], 0, dNdX[0][0], dNdX[2][1], 0, dNdX[0][1], dNdX[2][2], 0, dNdX[0][2], dNdX[2][3], 0, dNdX[0][3], dNdX[2][4], 0, dNdX[0][4], dNdX[2][5], 0, dNdX[0][5], dNdX[2][6], 0, dNdX[0][6], dNdX[2][7], 0, dNdX[0][7], dNdX[2][8], 0, dNdX[0][8], dNdX[2][9], 0, dNdX[0][9]} };
 
-		B = GenMatrix<float,6,30>(b);
+		*B = GenMatrix<float,6,30>(b);
+		*Jdet = J.determinant();
 }
 
 void 
@@ -102,10 +111,31 @@ QuadTetElement::computeStiffness()
 		{0, 0, 0, 0, 0, c3 }
 	};
 
-	GenMatrix<float,6,6> matConstantsMat = GenMatrix<float,6,6>(C);
-	
-	K = B.transpose() * matConstantsMat * B;
+	GenMatrix<float,6,6> E(C);
 
+
+	K.zeroOut();
+
+	float a = (5.0 + 3.0 * sqrt(5.0))/20.;
+	float b = (5.0 - sqrt(5.0))/20.;
+
+	float S[4][4] = { {a,b,b,b},
+					  {b,a,b,b},
+					  {b,b,a,b},
+					  {b,b,b,a} };
+
+	float weight = 0.25;
+
+	for(int i=0;i<4;i++)
+	{
+		GenMatrix<float, 6, 30> B;
+		float det;
+
+		computeB(S[i],&B, &det);
+		K = K + (B.transpose() * E * B * (det * weight));
+	}
+
+	K = K * (1.0/6.0);
 }
 
 QuadTetElement::~QuadTetElement(void)

@@ -8,8 +8,11 @@ class QuadTetElement
 {
 public:
 	Node* nodes[10];
+	float x[10][3];
+	float volume;
+	float mass;
+	float nodemass[10];
 	float E, v, density, dt;
-	GenMatrix<float,6,30> B;
 	GenMatrix<float, 30, 30> K;
 	
 	QuadTetElement(Node* corner1, Node* corner2, Node* corner3, Node* corner4,
@@ -17,7 +20,7 @@ public:
 				   Node* mid42, Node* mid43,
 				   float _E, float _v, float _density);
 
-	void computeB(float point[4]);
+	void computeB(float s[4], GenMatrix<float, 6, 30>* B, float* Jdet);
 	void computeStiffness();
 
 	GenMatrix<float, 30, 30>& getStiffness(){return K;}

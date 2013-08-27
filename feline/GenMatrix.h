@@ -33,9 +33,13 @@ public:
 	
 	template<int K>
 	GenMatrix<T,N,K> operator*(GenMatrix<T,M,K>& mat2);
+	GenMatrix<T,N,M> operator*(T k);
+
+	GenMatrix<T,N,M> operator+(GenMatrix<T,N,M>& mat2);
+	GenMatrix<T,N,M> zeroOut(){for(int i=0;i<N;i++)for(int j=0;j<M;j++)mat[i][j]=0;};
 
 	GenMatrix<T,M,N> transpose();
-	GenMatrix<T,M,N> inverse();
+	GenMatrix<T,N,M> inverse();
 
 	void scalarMul(T k)
 	{
@@ -58,6 +62,32 @@ GenMatrix<T,N,K> GenMatrix<T,N,M>::operator*(GenMatrix<T,M,K>& mat2)
 	return result;
 }
 
+
+template<class T,int N, int M>
+GenMatrix<T,N,M> GenMatrix<T,N,M>::operator*(T k)
+{
+	GenMatrix<T,N,K> result;
+	for(int i = 0; i<N; i++)
+	{
+			for(int j = 0; j<M; j++)
+				result(i,j) = mat[i][j] * k;
+	}
+	return result;
+}
+
+template<class T,int N, int M>
+GenMatrix<T,N,M> GenMatrix<T,N,M>::operator+(GenMatrix<T,N,M>& mat2)
+{
+	GenMatrix<T,N,K> result;
+	for(int i = 0; i<N; i++)
+	{
+			for(int j = 0; j<M; j++)
+				result(i,j) = mat[i][j] + mat2(i,j);
+	}
+	return result;
+}
+\
+
 template<class T,int N, int M>
 GenMatrix<T,M,N> GenMatrix<T,N,M>::transpose()
 {
@@ -70,7 +100,7 @@ GenMatrix<T,M,N> GenMatrix<T,N,M>::transpose()
 }
 
 template<class T,int N, int M>
-GenMatrix<T,M,N> GenMatrix<T,N,M>::inverse()
+GenMatrix<T,N,M> GenMatrix<T,N,M>::inverse()
 {
 	//////////////////////////////////////////
 	//simulate find of inverse using a float width matrix in form
