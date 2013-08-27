@@ -46,7 +46,66 @@ QuadTetElement::computeB(float s[4])
 						  x[0][2] * (s[0] - 0.25) + x[4][2] * s[1] + x[6][2] * s[2] + x[7][2] * s[3],   x[4][2] * s[0] + x[1][2] * (s[1] - 0.25) + x[5][2] * s[2] + x[0][2] * s[3],   x[6][2] * s[0] + x[5][2] * s[1] + x[2][2] * (s[2] - 0.25) + x[9][2] * s[3],   x[7][2] * s[0] + x[8][2] * s[1] + x[9][2] * s[2] + x[3][2] * (s[3] - 0.25)) * 4;
 	
 	Matrix4d Jinv = J.inverse();
+
+	//PT
+	float P[3][4] = { {Jinv(0,1), Jinv(1,1), Jinv(2,1), Jinv(3,1)},
+					  {Jinv(0,2), Jinv(1,2), Jinv(2,2), Jinv(3,2)},
+					  {Jinv(0,3), Jinv(1,3), Jinv(2,3), Jinv(3,3)} };
+
+
+	float dN[4][10] = { {4 * s[0] - 1, 0, 0, 0, 4 * s[1], 0, 4 * s[2], 4 * s[3], 0, 0},
+
+						{0, 4 * s[1] - 1, 0, 0, 4 * s[0], 4 * s[2], 0, 0, 4 * s[3], 0},
+						
+						{0, 0, 4 * s[2] - 1, 0, 0, 4 * s[1], 4 * s[0], 0, 0, 4 * s[3]},
+						
+						{0, 0, 0, 4 * s[0] - 1, 0, 0, 0, 4 * s[0], 4 * s[1], 4 * s[2]} };
+
+	float dNdX[3][10];
+
+	//PT * dN
+	for(int i=0;i<3;i++)
+		for(int j=0;j<10;j++)
+		{
+			dNdX[i][j] = 0;
+			for(int k=0;k<4;k++)
+				dNdX[i][j] += P[i][k] * dN[k][j];
+		}
+
+		float b[6][30] = { {dNdX[0][0], 0, 0, dNdX[0][1], 0, 0, dNdX[0][2], 0, 0, dNdX[0][3], 0, 0, dNdX[0][4], 0, 0, dNdX[0][5], 0, 0, dNdX[0][6], 0, 0, dNdX[0][7], 0, 0, dNdX[0][8], 0, 0, dNdX[0][9], 0, 0},
+						   {0, dNdX[1][0], 0, 0, dNdX[1][1], 0, 0, dNdX[1][2], 0, 0, dNdX[1][3], 0, 0, dNdX[1][4], 0, 0, dNdX[1][5], 0, 0, dNdX[1][6], 0, 0, dNdX[1][7], 0, 0, dNdX[1][8], 0, 0, dNdX[1][9], 0},
+						   {0, 0, dNdX[2][0], 0, 0, dNdX[2][1], 0, 0, dNdX[2][2], 0, 0, dNdX[2][3], 0, 0, dNdX[2][4], 0, 0, dNdX[2][5], 0, 0, dNdX[2][6], 0, 0, dNdX[2][7], 0, 0, dNdX[2][8], 0, 0, dNdX[2][9]},
+						   {dNdX[1][0], dNdX[0][0], 0, dNdX[1][1], dNdX[0][1], 0, dNdX[1][2], dNdX[0][2], 0, dNdX[1][3], dNdX[0][3], 0, dNdX[1][4], dNdX[0][4], 0, dNdX[1][5], dNdX[0][5], 0, dNdX[1][6], dNdX[0][6], 0, dNdX[1][7], dNdX[0][7], 0, dNdX[1][8], dNdX[0][8], 0, dNdX[1][9], dNdX[0][9], 0},
+						   {0, dNdX[2][0], dNdX[1][0], 0, dNdX[2][1], dNdX[1][1], 0, dNdX[2][2], dNdX[1][2], 0, dNdX[2][3], dNdX[1][3], 0, dNdX[2][4], dNdX[1][4], 0, dNdX[2][5], dNdX[1][5], 0, dNdX[2][6], dNdX[1][6], 0, dNdX[2][7], dNdX[1][7], 0, dNdX[2][8], dNdX[1][8], 0, dNdX[2][9], dNdX[1][9]},
+						   {dNdX[2][0], 0, dNdX[0][0], dNdX[2][1], 0, dNdX[0][1], dNdX[2][2], 0, dNdX[0][2], dNdX[2][3], 0, dNdX[0][3], dNdX[2][4], 0, dNdX[0][4], dNdX[2][5], 0, dNdX[0][5], dNdX[2][6], 0, dNdX[0][6], dNdX[2][7], 0, dNdX[0][7], dNdX[2][8], 0, dNdX[0][8], dNdX[2][9], 0, dNdX[0][9]} };
+
+		B = GenMatrix<float,6,30>(b);
+}
+
+void 
+QuadTetElement::computeStiffness()
+{
+	//TO ADD: 4 point Gaussian Quadrature
+	//material constants
+	float c1 = (E*(1-v))/((1.0-2.0*v)*(1.0+v)),
+		c2 = (E*v)/((1.0-2.0*v)*(1.0+v)),
+		c3 = (c1 - c2)/2.0;
+	//printf("%f %f %f\n",c1,c2,c3);
+
+	float C[6][6] =
+	{
+		{ c1, c2, c2, 0, 0, 0 },
+		{c2, c1, c2, 0, 0, 0 },
+		{c2, c2, c1, 0, 0, 0 },
+		{0, 0, 0, c3, 0, 0 },
+		{0, 0, 0, 0, c3, 0 },
+		{0, 0, 0, 0, 0, c3 }
+	};
+
+	GenMatrix<float,6,6> matConstantsMat = GenMatrix<float,6,6>(C);
 	
+	K = B.transpose() * matConstantsMat * B;
+
 }
 
 QuadTetElement::~QuadTetElement(void)
