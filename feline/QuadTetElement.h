@@ -1,5 +1,7 @@
 #pragma once
 #include "Node.h"
+#include "Matrix4d.h"
+#include "Matrix3d.h"
 
 class QuadTetElement
 {
