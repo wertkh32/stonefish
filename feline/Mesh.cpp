@@ -7,18 +7,7 @@ Mesh::Mesh(Node node_list[], int n)
 		nodes.push(node_list+i);
 	numnodes = n;
 
-	//globalStiffness = (float**)malloc(sizeof(float*) * n * 3);
-	//globalMass = (float**)malloc(sizeof(float*) * n * 3);
-	//for(int i=0;i<n * 3;i++)
-	//{
-	//	globalStiffness[i] = (float*)malloc(sizeof(float) * n * 3);
-	//	globalMass[i] = (float*)malloc(sizeof(float) * n * 3);
-	//}
-
 	dt = 1.0/FPS;
-
-	//resetGlobalStiffness();
-	//resetGlobalMass();
 }
 
 float**
@@ -83,13 +72,13 @@ Mesh::resetGlobalMass()
 }
 
 void
-Mesh::addElement(int ind0, int ind1, int ind2, int ind3, float _E, float _v, float density)
+Mesh::addElement(int ind[4], float _E, float _v, float density)
 {
-	nodeIndices[elements.size()][0] = ind0;
-	nodeIndices[elements.size()][1] = ind1;
-	nodeIndices[elements.size()][2] = ind2;
-	nodeIndices[elements.size()][3] = ind3;
-	elements.push(new Element(nodes[ind0], nodes[ind1], nodes[ind2], nodes[ind3], _E, _v, density));
+	nodeIndices[elements.size()][0] = ind[0];
+	nodeIndices[elements.size()][1] = ind[1];
+	nodeIndices[elements.size()][2] = ind[2];
+	nodeIndices[elements.size()][3] = ind[3];
+	elements.push(new TetElement(nodes[ind[0]], nodes[ind[1]], nodes[ind[2]], nodes[ind[3]], _E, _v, density));
 }
 
 /*

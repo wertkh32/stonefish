@@ -1,24 +1,15 @@
 #include "QuadTetElement.h"
 
 
-QuadTetElement::QuadTetElement(Node* corner1, Node* corner2, Node* corner3, Node* corner4,
-							   Node* mid12, Node* mid23, Node* mid31, Node* mid41,
-							   Node* mid42, Node* mid43,
+QuadTetElement::QuadTetElement(Node* nodess[10],
 							   float _E, float _v, float _density)
 {
 		E = _E;
 		v = _v;
 		density = _density;
-		nodes[0] = corner1;
-		nodes[1] = corner2;
-		nodes[2] = corner3;
-		nodes[3] = corner4;
-		nodes[4] = mid12;
-		nodes[5] = mid23;
-		nodes[6] = mid31;
-		nodes[7] = mid41;
-		nodes[8] = mid42;
-		nodes[9] = mid43;
+
+		for(int i=0;i<10;i++)
+			nodes[i] = nodess[i];
 	
 		for(int i=0;i<10;i++)
 		{
@@ -27,16 +18,47 @@ QuadTetElement::QuadTetElement(Node* corner1, Node* corner2, Node* corner3, Node
 			x[i][2] = nodes[i]->pos.z;
 		}
 
-		//from characteristic polynomial
-		volume = fabs(Matrix3d(x[0][0] - x[3][0], x[1][0] - x[3][0], x[2][0] - x[3][0],
-		        			   x[0][1] - x[3][1], x[1][1] - x[3][1], x[2][1] - x[3][1],
-							   x[0][2] - x[3][2], x[1][2] - x[3][2], x[2][2] - x[3][2]).determinant());
+}
 
-		mass = volume * density;
+void QuadTetElement::precompute()
+{
+	//from characteristic polynomial
+	undeformShapeMatInv =
+		Matrix3d(nodes[0]->pos.x - nodes[3]->pos.x,nodes[1]->pos.x - nodes[3]->pos.x,nodes[2]->pos.x - nodes[3]->pos.x,
+				 nodes[0]->pos.y - nodes[3]->pos.y,nodes[1]->pos.y - nodes[3]->pos.y,nodes[2]->pos.y - nodes[3]->pos.y,
+				 nodes[0]->pos.z - nodes[3]->pos.z,nodes[1]->pos.z - nodes[3]->pos.z,nodes[2]->pos.z - nodes[3]->pos.z).inverse();
 
-		nodemass[0] = nodemass[1] = nodemass[2] = nodemass[3] = (1.0/32.0) * mass;
-		nodemass[4] = nodemass[5] = nodemass[6] = nodemass[7] = nodemass[8] = nodemass[9] = (7.0/48.0) * mass; 
+	computeLumpedMasses();
+	computeStiffness();
+}
 
+void QuadTetElement::computeLumpedMasses()
+{
+	//from characteristic polynomial
+	volume = fabs(Matrix3d(x[0][0] - x[3][0], x[1][0] - x[3][0], x[2][0] - x[3][0],
+	        			   x[0][1] - x[3][1], x[1][1] - x[3][1], x[2][1] - x[3][1],
+						   x[0][2] - x[3][2], x[1][2] - x[3][2], x[2][2] - x[3][2]).determinant());
+
+	mass = volume * density;
+
+	nodemass[0] = nodemass[1] = nodemass[2] = nodemass[3] = (1.0/32.0) * mass;
+	nodemass[4] = nodemass[5] = nodemass[6] = nodemass[7] = nodemass[8] = nodemass[9] = (7.0/48.0) * mass; 
+}
+
+Matrix3d QuadTetElement::computeDeformationMat()
+{
+	Matrix3d deformShapeMat
+		(nodes[0]->pos_t.x - nodes[3]->pos_t.x,nodes[1]->pos_t.x - nodes[3]->pos_t.x,nodes[2]->pos_t.x - nodes[3]->pos_t.x,
+		nodes[0]->pos_t.y - nodes[3]->pos_t.y,nodes[1]->pos_t.y - nodes[3]->pos_t.y,nodes[2]->pos_t.y - nodes[3]->pos_t.y,
+		nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
+	return deformShapeMat * undeformShapeMatInv;
+}
+
+void QuadTetElement::computeRotation()
+{
+	Matrix3d F,S;
+	F = computeDeformationMat();
+	PolarDecompose::compute(F,R,S);
 }
 
 void

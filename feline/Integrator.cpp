@@ -117,7 +117,7 @@ Integrator::assembleLumpedMassVec()
 	for(int i=0;i<mesh->elements.size();i++)
 	{
 		float elenodemass = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume()) /4;
-		for(int j=0;j<4;j++)
+		for(int j=0;j<NUM_NODES_PER_ELE;j++)
 		{
 			mass[mesh->nodeIndices[i][j] * 3] += elenodemass;
 			mass[mesh->nodeIndices[i][j] * 3 + 1] += elenodemass;
@@ -150,35 +150,58 @@ Integrator::computeElementMatrices()
 {
 	for(int i=0;i<mesh->elements.size();i++)
 	{
-		mesh->elements[i]->computeRKRTandRK();
+		//mesh->elements[i]->computeRKRTandRK();
 		//mesh->elements[i]->computeMatFreeVars();
+		mesh->elements[i]->computeRotation();
 	}
 }
 
 void
 Integrator::mulRK(float* in, float* out)
 {
+
 	for(int i=0;i<mesh->elements.size();i++)
 		{
-			Element& ele = *(mesh->elements[i]);
-			GenMatrix<float,12,12>& A = *(ele.getRK());
-			for(int a=0;a<4;a++)
+			TetElement& ele = *(mesh->elements[i]);
+			GenMatrix<float,NUM_NODES_PER_ELE * 3,NUM_NODES_PER_ELE * 3>& A = *(ele.getStiffnessMat());
+			Matrix3d& R = ele.getRotation();
+
+			float pos[NUM_NODES_PER_ELE * 3] = {0};
+			float pos2[NUM_NODES_PER_ELE * 3] = {0};
+
+			for(int a=0;a<NUM_NODES_PER_ELE;a++)
 			{
 				int x = mesh->nodeIndices[i][a];
-				for(int b=0;b<4;b++)
-				{
-					int y = mesh->nodeIndices[i][b];
-					for(int c=0;c<3;c++)
-						for(int d=0;d<3;d++)
-						{
-							out[x*3 + c] += A(a*3+c,b*3+d) * in[y*3 + d];
-						}
-					//for(int g=0;g<3;g++)
-					//	printf("%f ",out[x*3+g]);
-					//printf("\n");
-				}
+
+				pos[a * 3] = in[x * 3];
+				pos[a * 3 + 1] = in[x * 3 + 1];
+				pos[a * 3 + 2] = in[x * 3 + 2];
 			}
-			//system("pause");
+
+			for(int a=0;a<NUM_NODES_PER_ELE * 3;a++)
+				for(int b=0;b<NUM_NODES_PER_ELE * 3;b++)
+					pos2[a] += A(a,b) * pos[b];
+
+
+			for(int a=0;a<NUM_NODES_PER_ELE;a++)
+			{
+				pos[a*3] = 0;
+				pos[a*3+1] = 0;
+				pos[a*3+2] = 0;
+
+				for(int b=0;b<3;b++)
+					for(int c=0;c<3;c++)
+						pos[a*3+b] += R(b,c) * pos2[a*3+c];
+			}
+
+			for(int a=0;a<NUM_NODES_PER_ELE;a++)
+			{
+				int x = mesh->nodeIndices[i][a];
+
+				out[x * 3] += pos[a * 3];
+				out[x * 3 + 1] += pos[a * 3 + 1];
+				out[x * 3 + 2] += pos[a * 3 + 2];
+			}
 		}
 }
 
@@ -187,20 +210,52 @@ Integrator::mulRKRT(float* in, float* out)
 {
 		for(int i=0;i<mesh->elements.size();i++)
 		{
-			Element& ele = *(mesh->elements[i]);
-			GenMatrix<float,12,12>& A = *(ele.getRKRT());
-			for(int a=0;a<4;a++)
+			TetElement& ele = *(mesh->elements[i]);
+			GenMatrix<float,NUM_NODES_PER_ELE * 3,NUM_NODES_PER_ELE * 3>& A = *(ele.getStiffnessMat());
+			Matrix3d& R = ele.getRotation();
+
+			float pos[NUM_NODES_PER_ELE * 3] = {0};
+			float pos2[NUM_NODES_PER_ELE * 3] = {0};
+			float pos3[NUM_NODES_PER_ELE * 3] = {0};
+
+			for(int a=0;a<NUM_NODES_PER_ELE;a++)
 			{
 				int x = mesh->nodeIndices[i][a];
-				for(int b=0;b<4;b++)
-				{
-					int y = mesh->nodeIndices[i][b];
+
+				pos[a * 3] = in[x * 3];
+				pos[a * 3 + 1] = in[x * 3 + 1];
+				pos[a * 3 + 2] = in[x * 3 + 2];
+			}
+
+			for(int a=0;a<NUM_NODES_PER_ELE;a++)
+			{
+				for(int b=0;b<3;b++)
 					for(int c=0;c<3;c++)
-						for(int d=0;d<3;d++)
-						{
-							out[x*3 + c] += A(a*3+c,b*3+d) * in[y*3 + d];
-						}
-				}
+						pos2[a*3+b] += R(c,b) * pos[a*3+c];
+			}
+
+			for(int a=0;a<NUM_NODES_PER_ELE * 3;a++)
+				for(int b=0;b<NUM_NODES_PER_ELE * 3;b++)
+					pos3[a] += A(a,b) * pos2[b];
+
+			for(int a=0;a<NUM_NODES_PER_ELE;a++)
+			{
+				pos[a*3] = 0;
+				pos[a*3+1] = 0;
+				pos[a*3+2] = 0;
+
+				for(int b=0;b<3;b++)
+					for(int c=0;c<3;c++)
+						pos[a*3+b] += R(b,c) * pos3[a*3+c];
+			}
+
+			for(int a=0;a<NUM_NODES_PER_ELE;a++)
+			{
+				int x = mesh->nodeIndices[i][a];
+
+				out[x * 3] += pos[a * 3];
+				out[x * 3 + 1] += pos[a * 3 + 1];
+				out[x * 3 + 2] += pos[a * 3 + 2];
 			}
 
 		}

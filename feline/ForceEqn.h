@@ -1,13 +1,13 @@
 #pragma once
-#include "Element.h"
+#include "TetElement.h"
 
 //implements linear elasticity. For now.
 
 class ForceEqn
 {
-	Element* element;
+	TetElement* element;
 public:
-	ForceEqn(Element* e);
+	ForceEqn(TetElement* e);
 	~ForceEqn(void);
 };
 

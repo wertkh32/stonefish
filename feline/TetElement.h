@@ -7,21 +7,21 @@
 #include "SymSparseMatrix.h"
 #include "PolarDecompose.h"
 
-class Element
+class TetElement
 {
 public:
 	//implements a tetrahedra element
 	Node* nodes[4];
 	Matrix3d stiffnessMat;
 	Matrix3d undeformShapeMat,
-		     undeformShapeMatInv;
+		     undeformShapeMatInv,
+			 R;
 
 
 	GenMatrix<float,6,12> strainMat;
 	GenMatrix<float,6,6> matConstantsMat;
 	GenMatrix<float,12,12> undeformStiffnessMat,
 						   massMat, RK, RKRT, A;
-	SparseMatrix *sparseStiff;
 
 	float undeformVolume;
 	float mass, nodalMass;
@@ -36,7 +36,7 @@ public:
 	float B[3][3];
 	float con1, con2;
 
-	Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, float _density);
+	TetElement(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, float _density);
 	Matrix3d computeDeformationMat();
 	Matrix3d computeDeformShapeMat();
 
@@ -62,6 +62,10 @@ public:
 	GenMatrix<float,12,12>* getRKRT(){return &RKRT;}
 	GenMatrix<float,12,12>* getA(){return &A;}
 	
+	void computeRotation();
+	Matrix3d& getRotation(){return R;}
+
+
 	//mat free vars for timestep
 	//Matrix3d undeformShapeMatInvT;
 	//Matrix3d Ft, Rt, St, trSI_Sinv;
@@ -77,6 +81,6 @@ public:
 
 	void renderElement();
 
-	~Element(void);
+	~TetElement(void);
 };
 

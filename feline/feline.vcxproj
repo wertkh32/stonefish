@@ -97,7 +97,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ConjugateGradientSolver.cpp" />
-    <ClCompile Include="Element.cpp" />
+    <ClCompile Include="QuadTetMesh.cpp" />
+    <ClCompile Include="TetElement.cpp" />
     <ClCompile Include="feline.cpp" />
     <ClCompile Include="ForceEqn.cpp" />
     <ClCompile Include="GPUIntegrator.cpp" />
@@ -120,7 +121,8 @@
     <ClInclude Include="ConjugateGradientSolver.h" />
     <ClInclude Include="ConstrainedRows.h" />
     <ClInclude Include="defines.h" />
-    <ClInclude Include="Element.h" />
+    <ClInclude Include="QuadTetMesh.h" />
+    <ClInclude Include="TetElement.h" />
     <ClInclude Include="ForceEqn.h" />
     <ClInclude Include="GenVector.h" />
     <ClInclude Include="GPUDataStructs.cuh">

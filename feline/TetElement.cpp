@@ -1,6 +1,6 @@
-#include "Element.h"
+#include "TetElement.h"
 
-Element::Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, float _density)
+TetElement::TetElement(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, float _density)
 {
 	nodes[0] = n1;
 	nodes[1] = n2;
@@ -9,7 +9,6 @@ Element::Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, flo
 	E =_E;
 	v = _v;
 	density = _density;
-	sparseStiff = new SparseMatrix(4);
 	dt = 1.0/FPS;
 
 	//miu = E / (2.0*(1+v));
@@ -18,10 +17,10 @@ Element::Element(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _v, flo
 	preCompute();
 
 	mass = density * undeformVolume;
-	nodalMass = mass / 4;
+	nodalMass = mass / 4.0;
 }
 
-void Element::preCompute()
+void TetElement::preCompute()
 {
 	undeformShapeMat =
 		Matrix3d(nodes[0]->pos.x - nodes[3]->pos.x,nodes[1]->pos.x - nodes[3]->pos.x,nodes[2]->pos.x - nodes[3]->pos.x,
@@ -35,7 +34,7 @@ void Element::preCompute()
 	preComputeMassMat();
 }
 
-void Element::preComputeUndeformedStiffnessMat()
+void TetElement::preComputeUndeformedStiffnessMat()
 {
 
 	//inv is the inverse of the matrix relating volume coords to cartesian coords
@@ -111,7 +110,7 @@ void Element::preComputeUndeformedStiffnessMat()
 
 }
 
-void Element::preComputeMassMat()
+void TetElement::preComputeMassMat()
 {
 	float mass[12][12] =
 	{
@@ -142,7 +141,7 @@ void Element::preComputeMassMat()
 	*/
 }
 
-Matrix3d Element::computeDeformationMat()
+Matrix3d TetElement::computeDeformationMat()
 {
 	Matrix3d deformShapeMat
 		(nodes[0]->pos_t.x - nodes[3]->pos_t.x,nodes[1]->pos_t.x - nodes[3]->pos_t.x,nodes[2]->pos_t.x - nodes[3]->pos_t.x,
@@ -153,7 +152,7 @@ Matrix3d Element::computeDeformationMat()
 
 
 
-Matrix3d Element::computeDeformShapeMat()
+Matrix3d TetElement::computeDeformShapeMat()
 {
 	Matrix3d deformShapeMat
 		(nodes[0]->pos_t.x - nodes[3]->pos_t.x,nodes[1]->pos_t.x - nodes[3]->pos_t.x,nodes[2]->pos_t.x - nodes[3]->pos_t.x,
@@ -162,9 +161,17 @@ Matrix3d Element::computeDeformShapeMat()
 	return deformShapeMat;
 }
 
+void TetElement::computeRotation()
+{
+	Matrix3d F,RR,S;
+	F = computeDeformationMat();
+	PolarDecompose::compute(F,RR,S);
+
+	R = RR;
+}
 
 void
-	Element::computeRKRTandRK()
+TetElement::computeRKRTandRK()
 {
 	static const float alpha = 0.1, beta = 0.1;
 	static const float coeffK = dt * beta + dt * dt, coeffM = 1 + dt * alpha;
@@ -229,7 +236,7 @@ void
 
 }
 
-void Element::getRKRTandRK(GenMatrix<float,12,12>*& ptrRK, GenMatrix<float,12,12>*& ptrRKRT)
+void TetElement::getRKRTandRK(GenMatrix<float,12,12>*& ptrRK, GenMatrix<float,12,12>*& ptrRKRT)
 {
 	computeRKRTandRK();
 	//RK = Rot * undeformStiffnessMat;
@@ -238,8 +245,9 @@ void Element::getRKRTandRK(GenMatrix<float,12,12>*& ptrRK, GenMatrix<float,12,12
 	ptrRKRT = &RKRT;
 }
 
-void Element::getRKRTandRK(SparseMatrix& RK, SparseMatrix& RKRT)
+void TetElement::getRKRTandRK(SparseMatrix& RK, SparseMatrix& RKRT)
 {
+	/*
 	Matrix3d F,R,S;
 	F = computeDeformationMat();
 	PolarDecompose::compute(F,R,S);
@@ -271,7 +279,7 @@ void Element::getRKRTandRK(SparseMatrix& RK, SparseMatrix& RKRT)
 			RKRT.setBlock(i,j,RKRT.getBlock(j,i).transpose(),true);
 		}
 	}
-
+	*/
 }
 /*
 void Element::computeMatFreeVars()
@@ -347,7 +355,7 @@ return ((dF + dF.transpose()) * miu + (I * (dFtrace * lambda)));
 */
 
 void
-	Element::renderElement()
+TetElement::renderElement()
 {
 	glPushMatrix();
 	glBegin(GL_LINES);
@@ -376,6 +384,6 @@ void
 	glPopMatrix();
 }
 
-Element::~Element(void)
+TetElement::~TetElement(void)
 {
 }

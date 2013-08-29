@@ -8,7 +8,7 @@
 #include "perfmon.h"
 
 //extern void CGSolverGPU(float* A, float* x, float* b, int n);
-#define DIM 80
+#define DIM 5
 
 
 /* GLUT callback Handlers */
@@ -57,19 +57,24 @@ static float rot = 0.0;
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(-40,-1,-140);
+    //glTranslatef(-40,-1,-140);
+	glTranslatef(-1,-1,-10);
 	glRotatef(20,1,0,0);
     //glutSolidSphere(3,30,30);
 	//inte->debug();
-	//inte->debug();
+	//if(iter==1)inte->debug();
+
+	//if(iter<2)
+	//{
 	perfmon p;
 	p.startTimer();
-	ginte->timeStep();
+	//ginte->timeStep();
+	inte->timeStep();
 	p.stopTimer();
 	p.print();
 	for(int i=0;i<tet->getNoOfElements();i++)
 		tet->elements[i]->renderElement();
-
+	//}
 	int end = (DIM+1) * (DIM+1);
 	int start = end - (DIM+1) - 1;
 	int end2 = end * 2;
@@ -109,8 +114,9 @@ key(unsigned char key, int x, int y)
     {
         case 27 : 
         case 'q':
-			ginte->~GPUIntegrator();
-            exit(0);
+			//ginte->~GPUIntegrator();
+            inte->~Integrator();
+			exit(0);
             break;
 		case ' ':
 			iter = 0;
@@ -236,7 +242,8 @@ main(int argc, char *argv[])
 	//sheet//
 
 
-	ginte = new GPUIntegrator(tet,&rows);
+	//ginte = new GPUIntegrator(tet,&rows);
+	inte = new Integrator(tet,&rows);
 	//conjugate gradient test
 	// works
 	/*

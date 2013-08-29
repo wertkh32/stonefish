@@ -2,7 +2,7 @@
 #include "ForceEqn.h"
 
 
-ForceEqn::ForceEqn(Element* e)
+ForceEqn::ForceEqn(TetElement* e)
 {
 	element = e;
 }

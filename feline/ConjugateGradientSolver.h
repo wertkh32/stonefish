@@ -8,6 +8,7 @@
 #define MAX_ITER 10
 #define EPSILON 0.01
 
+#define NUM_NODES_PER_ELE 4
 
 
 //use pure arrays
@@ -46,40 +47,77 @@ class ConjugateGradientSolver
 
 void sysMulMatFree(float* in, float* out, bool* allowed, Mesh* mesh)
 {	
-		for(int i=0;i<n;i++)
-			out[i] = 0;
-
+	static const float alpha = 0.1, beta = 0.3;
+	static const float coeffK = (1.0/FPS) * beta + (1.0/FPS) * (1.0/FPS), coeffM = 1 + (1.0/FPS) * alpha;
+		
+	for(int i=0;i<n;i++)
+	{
+		out[i] = 0;
+		if(!allowed[i])
+			in[i] = 0;
+	}
 		//mesh->mulA(in,out);
 		//mesh->mulRKRT(in,out);
 		
-		for(int i=0;i<mesh->elements.size();i++)
+	for(int i=0;i<mesh->elements.size();i++)
 		{
-			Element& ele = *(mesh->elements[i]);
+			TetElement& ele = *(mesh->elements[i]);
+			GenMatrix<float,NUM_NODES_PER_ELE * 3,NUM_NODES_PER_ELE * 3>& A = *(ele.getStiffnessMat());
+			Matrix3d& R = ele.getRotation();
 
+			float mass = ele.nodalMass * coeffM;
 
-			GenMatrix<float,12,12>& A = *(ele.getA());
+			float pos[NUM_NODES_PER_ELE * 3] = {0};
+			float pos2[NUM_NODES_PER_ELE * 3] = {0};
+			float pos3[NUM_NODES_PER_ELE * 3] = {0};
 
-			for(int a=0;a<4;a++)
+			for(int a=0;a<NUM_NODES_PER_ELE;a++)
 			{
 				int x = mesh->nodeIndices[i][a];
-				for(int b=0;b<3;b++)
-				{
-					if(allowed[x*3+b])
-					for(int c=0;c<4;c++)
-					{
-						    int y = mesh->nodeIndices[i][c];
-							for(int d=0;d<3;d++)
-							{
-								if(allowed[y*3+d])
-									out[x*3 + b] += A(a*3+b,c*3+d) * in[y*3 + d];
-		
-							}
-					}
-				}
+
+				pos[a * 3] = in[x * 3];
+				pos[a * 3 + 1] = in[x * 3 + 1];
+				pos[a * 3 + 2] = in[x * 3 + 2];
 			}
-			
+
+			for(int a=0;a<NUM_NODES_PER_ELE;a++)
+			{
+				for(int b=0;b<3;b++)
+					for(int c=0;c<3;c++)
+						pos2[a*3+b] += R(c,b) * pos[a*3+c];
+			}
+
+			for(int a=0;a<NUM_NODES_PER_ELE * 3;a++)
+				for(int b=0;b<NUM_NODES_PER_ELE * 3;b++)
+					pos3[a] += A(a,b) * pos2[b];
+
+			for(int a=0;a<NUM_NODES_PER_ELE;a++)
+			{
+				pos2[a*3] = 0;
+				pos2[a*3+1] = 0;
+				pos2[a*3+2] = 0;
+
+				for(int b=0;b<3;b++)
+					for(int c=0;c<3;c++)
+						pos2[a*3+b] += R(b,c) * pos3[a*3+c];
+			}
+
+			for(int a=0;a<NUM_NODES_PER_ELE;a++)
+			{
+				int x = mesh->nodeIndices[i][a];
+
+				out[x * 3] += pos2[a * 3] * coeffK + mass * pos[a * 3];
+				out[x * 3 + 1] += pos2[a * 3 + 1] * coeffK + mass * pos[a * 3 + 1];
+				out[x * 3 + 2] += pos2[a * 3 + 2] * coeffK + mass * pos[a * 3 + 2];
+			}
+
 		}
 		
+		for(int i=0;i<n;i++)
+		{
+			if(!allowed[i])
+				out[i] = 0;
+		}
 		
 }
 

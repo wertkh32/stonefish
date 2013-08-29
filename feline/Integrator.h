@@ -4,7 +4,6 @@
 #include "SymSparseMatrix.h"
 #include "PolarDecompose.h"
 
-
 class Integrator
 {
 	Mesh* mesh;

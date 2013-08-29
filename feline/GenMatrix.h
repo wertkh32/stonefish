@@ -36,7 +36,7 @@ public:
 	GenMatrix<T,N,M> operator*(T k);
 
 	GenMatrix<T,N,M> operator+(GenMatrix<T,N,M>& mat2);
-	GenMatrix<T,N,M> zeroOut(){for(int i=0;i<N;i++)for(int j=0;j<M;j++)mat[i][j]=0;};
+	void zeroOut(){for(int i=0;i<N;i++)for(int j=0;j<M;j++)mat[i][j]=0;};
 
 	GenMatrix<T,M,N> transpose();
 	GenMatrix<T,N,M> inverse();
@@ -66,7 +66,7 @@ GenMatrix<T,N,K> GenMatrix<T,N,M>::operator*(GenMatrix<T,M,K>& mat2)
 template<class T,int N, int M>
 GenMatrix<T,N,M> GenMatrix<T,N,M>::operator*(T k)
 {
-	GenMatrix<T,N,K> result;
+	GenMatrix<T,N,M> result;
 	for(int i = 0; i<N; i++)
 	{
 			for(int j = 0; j<M; j++)
@@ -78,7 +78,7 @@ GenMatrix<T,N,M> GenMatrix<T,N,M>::operator*(T k)
 template<class T,int N, int M>
 GenMatrix<T,N,M> GenMatrix<T,N,M>::operator+(GenMatrix<T,N,M>& mat2)
 {
-	GenMatrix<T,N,K> result;
+	GenMatrix<T,N,M> result;
 	for(int i = 0; i<N; i++)
 	{
 			for(int j = 0; j<M; j++)
