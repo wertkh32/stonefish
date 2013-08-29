@@ -1,6 +1,8 @@
 #include "QuadTetElement.h"
 
-
+//first 4 are corner vertices
+//next six are points on the edges
+//1,2,3,4, 12, 23, 31, 41, 42, 43
 QuadTetElement::QuadTetElement(Node* nodess[10],
 							   float _E, float _v, float _density)
 {
@@ -16,8 +18,69 @@ QuadTetElement::QuadTetElement(Node* nodess[10],
 			x[i][0] = nodes[i]->pos.x;
 			x[i][1] = nodes[i]->pos.y;
 			x[i][2] = nodes[i]->pos.z;
+
+			printf("%f %f %f\n",x[i][0],x[i][1],x[i][2]);
 		}
 
+		precompute();
+}
+
+void QuadTetElement::renderElement()
+{
+
+	//1,2,3,4, 5 = 12, 6 = 23, 7 = 31, 8 = 41, 9 = 42, 10 = 43
+	glPushMatrix();
+
+	glBegin(GL_LINE_STRIP);
+
+		glVertex3fv(nodes[3]->pos_t.coords);
+		glVertex3fv(nodes[7]->pos_t.coords);
+		glVertex3fv(nodes[0]->pos_t.coords);
+
+	glEnd();
+
+	glBegin(GL_LINE_STRIP);
+
+		glVertex3fv(nodes[3]->pos_t.coords);
+		glVertex3fv(nodes[8]->pos_t.coords);
+		glVertex3fv(nodes[1]->pos_t.coords);
+
+	glEnd();
+
+	glBegin(GL_LINE_STRIP);
+
+		glVertex3fv(nodes[3]->pos_t.coords);
+		glVertex3fv(nodes[9]->pos_t.coords);
+		glVertex3fv(nodes[2]->pos_t.coords);
+
+	glEnd();
+
+	glBegin(GL_LINE_STRIP);
+
+		glVertex3fv(nodes[0]->pos_t.coords);
+		glVertex3fv(nodes[4]->pos_t.coords);
+		glVertex3fv(nodes[1]->pos_t.coords);
+
+	glEnd();
+
+	glBegin(GL_LINE_STRIP);
+		
+		glVertex3fv(nodes[1]->pos_t.coords);
+		glVertex3fv(nodes[5]->pos_t.coords);
+		glVertex3fv(nodes[2]->pos_t.coords);
+	
+	glEnd();
+
+	glBegin(GL_LINE_STRIP);
+
+		glVertex3fv(nodes[2]->pos_t.coords);
+		glVertex3fv(nodes[6]->pos_t.coords);
+		glVertex3fv(nodes[0]->pos_t.coords);
+
+	glEnd();
+
+
+	glPopMatrix();
 }
 
 void QuadTetElement::precompute()

@@ -2,13 +2,14 @@
 
 #include "includes.h"
 #include "Mesh.h"
+#include "QuadTetMesh.h"
 #include "QuickArray.h"
 #include "ConstrainedRows.h"
 
 #define MAX_ITER 10
 #define EPSILON 0.01
 
-#define NUM_NODES_PER_ELE 4
+#define NUM_NODES_PER_ELE 10
 
 
 //use pure arrays
@@ -45,7 +46,7 @@ class ConjugateGradientSolver
 	}
 
 
-void sysMulMatFree(float* in, float* out, bool* allowed, Mesh* mesh)
+void sysMulMatFree(float* in, float* out, bool* allowed, QuadTetMesh* mesh)
 {	
 	static const float alpha = 0.1, beta = 0.3;
 	static const float coeffK = (1.0/FPS) * beta + (1.0/FPS) * (1.0/FPS), coeffM = 1 + (1.0/FPS) * alpha;
@@ -61,11 +62,11 @@ void sysMulMatFree(float* in, float* out, bool* allowed, Mesh* mesh)
 		
 	for(int i=0;i<mesh->elements.size();i++)
 		{
-			TetElement& ele = *(mesh->elements[i]);
-			GenMatrix<float,NUM_NODES_PER_ELE * 3,NUM_NODES_PER_ELE * 3>& A = *(ele.getStiffnessMat());
+			QuadTetElement& ele = *(mesh->elements[i]);
+			GenMatrix<float,NUM_NODES_PER_ELE * 3,NUM_NODES_PER_ELE * 3>& A = ele.getStiffnessMat();
 			Matrix3d& R = ele.getRotation();
 
-			float mass = ele.nodalMass * coeffM;
+			//float mass = ele.nodalMass * coeffM;
 
 			float pos[NUM_NODES_PER_ELE * 3] = {0};
 			float pos2[NUM_NODES_PER_ELE * 3] = {0};
@@ -106,9 +107,9 @@ void sysMulMatFree(float* in, float* out, bool* allowed, Mesh* mesh)
 			{
 				int x = mesh->nodeIndices[i][a];
 
-				out[x * 3] += pos2[a * 3] * coeffK + mass * pos[a * 3];
-				out[x * 3 + 1] += pos2[a * 3 + 1] * coeffK + mass * pos[a * 3 + 1];
-				out[x * 3 + 2] += pos2[a * 3 + 2] * coeffK + mass * pos[a * 3 + 2];
+				out[x * 3] += pos2[a * 3] * coeffK + ele.nodemass[a] * pos[a * 3];
+				out[x * 3 + 1] += pos2[a * 3 + 1] * coeffK + ele.nodemass[a] * pos[a * 3 + 1];
+				out[x * 3 + 2] += pos2[a * 3 + 2] * coeffK + ele.nodemass[a] * pos[a * 3 + 2];
 			}
 
 		}
@@ -129,7 +130,7 @@ public:
 	void solve(float* x, float* b);
 	void solveWithConstraints(float* x, float* b, bool* allowed);
 	void solveWithConstraints(float* x, float* b, bool* allowed, bool** matmap);
-	void solveWithConstraints(float* x, float* b, bool* allowed, Mesh* mesh);
+	void solveWithConstraints(float* x, float* b, bool* allowed, QuadTetMesh* mesh);
 
 	float dot(float* a, float* b, int k)
 	{

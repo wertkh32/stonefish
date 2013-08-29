@@ -1,7 +1,7 @@
 ﻿#include "Integrator.h"
 
 
-Integrator::Integrator(Mesh* _mesh, ConstrainedRows* r)
+Integrator::Integrator(QuadTetMesh* _mesh, ConstrainedRows* r)
 {
 	rowSet = r;
 	mesh = _mesh;
@@ -116,12 +116,12 @@ Integrator::assembleLumpedMassVec()
 
 	for(int i=0;i<mesh->elements.size();i++)
 	{
-		float elenodemass = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume()) /4;
+		//float elenodemass = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume()) /4;
 		for(int j=0;j<NUM_NODES_PER_ELE;j++)
 		{
-			mass[mesh->nodeIndices[i][j] * 3] += elenodemass;
-			mass[mesh->nodeIndices[i][j] * 3 + 1] += elenodemass;
-			mass[mesh->nodeIndices[i][j] * 3 + 2] += elenodemass;
+			mass[mesh->nodeIndices[i][j] * 3] += mesh->elements[i]->nodemass[j];
+			mass[mesh->nodeIndices[i][j] * 3 + 1] += mesh->elements[i]->nodemass[j];
+			mass[mesh->nodeIndices[i][j] * 3 + 2] += mesh->elements[i]->nodemass[j];
 		}
 	}
 }
@@ -162,8 +162,8 @@ Integrator::mulRK(float* in, float* out)
 
 	for(int i=0;i<mesh->elements.size();i++)
 		{
-			TetElement& ele = *(mesh->elements[i]);
-			GenMatrix<float,NUM_NODES_PER_ELE * 3,NUM_NODES_PER_ELE * 3>& A = *(ele.getStiffnessMat());
+			QuadTetElement& ele = *(mesh->elements[i]);
+			GenMatrix<float,NUM_NODES_PER_ELE * 3,NUM_NODES_PER_ELE * 3>& A = ele.getStiffnessMat();
 			Matrix3d& R = ele.getRotation();
 
 			float pos[NUM_NODES_PER_ELE * 3] = {0};
@@ -210,8 +210,8 @@ Integrator::mulRKRT(float* in, float* out)
 {
 		for(int i=0;i<mesh->elements.size();i++)
 		{
-			TetElement& ele = *(mesh->elements[i]);
-			GenMatrix<float,NUM_NODES_PER_ELE * 3,NUM_NODES_PER_ELE * 3>& A = *(ele.getStiffnessMat());
+			QuadTetElement& ele = *(mesh->elements[i]);
+			GenMatrix<float,NUM_NODES_PER_ELE * 3,NUM_NODES_PER_ELE * 3>& A = (ele.getStiffnessMat());
 			Matrix3d& R = ele.getRotation();
 
 			float pos[NUM_NODES_PER_ELE * 3] = {0};
@@ -298,7 +298,7 @@ Integrator::assembleKxt()
 void
 Integrator::assembleRotations()
 {
-	
+	/*
 	for(int i=0;i<n*3;i++)
 		for(int j=0;j<n*3;j++)
 		{
@@ -323,6 +323,7 @@ Integrator::assembleRotations()
 					}
 			
 	}
+	*/
 }
 
 void

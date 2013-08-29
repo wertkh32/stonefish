@@ -306,7 +306,7 @@ void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, bool* all
 
 }
 
-void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, bool* allowed, Mesh* mesh)
+void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, bool* allowed, QuadTetMesh* mesh)
 {
 	float deltaOld, deltaNew, delta0,alpha,beta;
 	int it;

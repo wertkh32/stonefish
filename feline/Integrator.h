@@ -6,7 +6,7 @@
 
 class Integrator
 {
-	Mesh* mesh;
+	QuadTetMesh* mesh;
 	int n;
 	float dt;
 	bool **matmap;
@@ -18,7 +18,7 @@ class Integrator
 	ConjugateGradientSolver solver;
 
 public:
-	Integrator(Mesh* _mesh, ConstrainedRows* r=0);
+	Integrator(QuadTetMesh* _mesh, ConstrainedRows* r=0);
 	
 	//precomputation
 	void assembleLumpedMassVec();

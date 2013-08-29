@@ -29,8 +29,9 @@ public:
 
 	void computeB(float s[4], GenMatrix<float, 6, 30>* B, float* Jdet);
 	void computeStiffness();
-	
-	GenMatrix<float, 30, 30>& getStiffness(){return K;}
+	void renderElement();
+
+	GenMatrix<float, 30, 30>& getStiffnessMat(){return K;}
 	//timestep
 	void computeRotation();
 	Matrix3d& getRotation(){return R;}

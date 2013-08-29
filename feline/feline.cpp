@@ -15,6 +15,7 @@
 static Integrator* inte;
 static GPUIntegrator *ginte;
 static Mesh* tet;
+static QuadTetMesh* quadtet;
 static int iter = 10;
 Model * mod;
 
@@ -72,8 +73,13 @@ static float rot = 0.0;
 	inte->timeStep();
 	p.stopTimer();
 	p.print();
-	for(int i=0;i<tet->getNoOfElements();i++)
-		tet->elements[i]->renderElement();
+
+	for(int i=0;i<quadtet->getNoOfElements();i++)
+		quadtet->elements[i]->renderElement();
+
+	
+	//for(int i=0;i<tet->getNoOfElements();i++)
+	//	tet->elements[i]->renderElement();
 	//}
 	int end = (DIM+1) * (DIM+1);
 	int start = end - (DIM+1) - 1;
@@ -83,21 +89,23 @@ static float rot = 0.0;
 	if(iter>=10)
 	{
 		for(int i=start;i<end;i++)
-		tet->nodes[i]->force = vector3<float>();
+		quadtet->nodes[i]->force = vector3<float>();
 		for(int i=start2;i<end2;i++)
-		tet->nodes[i]->force = vector3<float>();
+		quadtet->nodes[i]->force = vector3<float>();
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>();
 	}
 	else
 	{
 		for(int i=start;i<end;i++)
-		tet->nodes[i]->force = vector3<float>(0,10,0);
+		quadtet->nodes[i]->force = vector3<float>(0,10,0);
 		for(int i=start2;i<end2;i++)
-		tet->nodes[i]->force = vector3<float>(0,10,0);
+		quadtet->nodes[i]->force = vector3<float>(0,10,0);
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>(0,40,0);
 	}
+
+	
 	//mod->interpolateVerts();
 	//mod->render();
 
@@ -238,12 +246,16 @@ main(int argc, char *argv[])
 	for(int i=0;i<DIM+1;i++)
 		rows.add(i);
 
-	MeshFunctions::makeSheet(&tet,DIM,DIM);
+	MeshFunctions::makeQuadTetSheet<DIM,DIM>(&quadtet);
+	
+
+
+	//QuadTetMesh();
 	//sheet//
 
 
 	//ginte = new GPUIntegrator(tet,&rows);
-	inte = new Integrator(tet,&rows);
+	inte = new Integrator(quadtet,&rows);
 	//conjugate gradient test
 	// works
 	/*
