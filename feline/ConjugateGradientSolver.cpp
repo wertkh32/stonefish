@@ -401,8 +401,9 @@ void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, bool* all
 	}
 	printf("[%d]",it); 
 
-	for(int i=0;i<n;i++)
-		printf("%f ",x[i]);
+	//for(int i=0;i<n;i++)
+	//	printf("%f ",x[i]);
+	//system("pause");
 }
 
 ConjugateGradientSolver::~ConjugateGradientSolver(void)

@@ -30,6 +30,7 @@ public:
 	void computeB(float s[4], GenMatrix<float, 6, 30>* B, float* Jdet);
 	void computeStiffness();
 	void renderElement();
+	void renderCurveLine(int node1, int node2, int node3);
 
 	GenMatrix<float, 30, 30>& getStiffnessMat(){return K;}
 	//timestep
