@@ -6,7 +6,7 @@
 #include "QuickArray.h"
 #include "ConstrainedRows.h"
 
-#define MAX_ITER 10
+#define MAX_ITER 20
 #define EPSILON 0.01
 
 #define NUM_NODES_PER_ELE 10
@@ -50,7 +50,7 @@ void sysMulMatFree(float* in, float* out, bool* allowed, QuadTetMesh* mesh)
 {	
 	static const float alpha = 0.1, beta = 0.3;
 	static const float coeffK = (1.0/FPS) * beta + (1.0/FPS) * (1.0/FPS), coeffM = 1 + (1.0/FPS) * alpha;
-		
+
 	for(int i=0;i<n;i++)
 	{
 		out[i] = 0;
@@ -107,9 +107,9 @@ void sysMulMatFree(float* in, float* out, bool* allowed, QuadTetMesh* mesh)
 			{
 				int x = mesh->nodeIndices[i][a];
 
-				out[x * 3] += pos2[a * 3] * coeffK + ele.nodemass[a] * pos[a * 3];
-				out[x * 3 + 1] += pos2[a * 3 + 1] * coeffK + ele.nodemass[a] * pos[a * 3 + 1];
-				out[x * 3 + 2] += pos2[a * 3 + 2] * coeffK + ele.nodemass[a] * pos[a * 3 + 2];
+				out[x * 3] += pos2[a * 3] * coeffK + ele.nodemass[a] * coeffM * pos[a * 3];
+				out[x * 3 + 1] += pos2[a * 3 + 1] * coeffK + ele.nodemass[a] * coeffM * pos[a * 3 + 1];
+				out[x * 3 + 2] += pos2[a * 3 + 2] * coeffK + ele.nodemass[a] * coeffM * pos[a * 3 + 2];
 			}
 
 		}

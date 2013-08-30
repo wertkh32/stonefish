@@ -85,7 +85,7 @@ static float rot = 0.0;
 	int start = end - (DIM+1) - 1;
 	int end2 = end * 2;
 	int start2 = end2 - (DIM+1) - 1;
-
+	
 	if(iter>=10)
 	{
 		for(int i=start;i<end;i++)
@@ -104,7 +104,7 @@ static float rot = 0.0;
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>(0,40,0);
 	}
-
+	
 	
 	//mod->interpolateVerts();
 	//mod->render();
@@ -123,7 +123,7 @@ key(unsigned char key, int x, int y)
         case 27 : 
         case 'q':
 			//ginte->~GPUIntegrator();
-            inte->~Integrator();
+            //inte->~Integrator();
 			exit(0);
             break;
 		case ' ':
@@ -252,7 +252,25 @@ main(int argc, char *argv[])
 
 	//QuadTetMesh();
 	//sheet//
+	Node* nodeset[10];
+	nodeset[0] = new Node(vector3<float>(2,3,4),vector3<float>(),vector3<float>());
+	nodeset[1] = new Node(vector3<float>(6,3,2),vector3<float>(),vector3<float>());
+	nodeset[2] = new Node(vector3<float>(2,5,1),vector3<float>(),vector3<float>());
+	nodeset[3] = new Node(vector3<float>(4,3,6),vector3<float>(),vector3<float>());
+	nodeset[4] = new Node((nodeset[0]->pos + nodeset[1]->pos) * 0.5,vector3<float>(),vector3<float>());
+	nodeset[5] = new Node((nodeset[1]->pos + nodeset[2]->pos) * 0.5,vector3<float>(),vector3<float>());
+	nodeset[6] = new Node((nodeset[2]->pos + nodeset[0]->pos) * 0.5,vector3<float>(),vector3<float>());
+	nodeset[7] = new Node((nodeset[0]->pos + nodeset[3]->pos) * 0.5,vector3<float>(),vector3<float>());
+	nodeset[8] = new Node((nodeset[1]->pos + nodeset[3]->pos) * 0.5,vector3<float>(),vector3<float>());
+	nodeset[9] = new Node((nodeset[2]->pos + nodeset[3]->pos) * 0.5,vector3<float>(),vector3<float>());
 
+
+	QuadTetElement q = QuadTetElement(nodeset,480,(1.0/3.0),0.5);
+	for(int i=0;i<30;i++, putchar('\n'),putchar('\n'))
+		for(int j=0;j<30;j++)
+			printf("%f ",q.K(i,j));
+	system("pause");
+	
 
 	//ginte = new GPUIntegrator(tet,&rows);
 	inte = new Integrator(quadtet,&rows);
