@@ -8,7 +8,7 @@
 #include "perfmon.h"
 
 //extern void CGSolverGPU(float* A, float* x, float* b, int n);
-#define DIM 5
+#define DIM 4
 
 
 /* GLUT callback Handlers */
@@ -59,7 +59,7 @@ static float rot = 0.0;
     glPushMatrix();
     glColor3f(1.0,0,0);
     //glTranslatef(-40,-1,-140);
-	glTranslatef(-5,-3,-30);
+	glTranslatef(-5,-3,-15);
 	glRotatef(20,1,0,0);
     //glutSolidSphere(3,30,30);
 	//inte->debug();
@@ -88,27 +88,27 @@ static float rot = 0.0;
 	
 	if(iter>=10)
 	{
-		/*
+		
 		for(int i=start;i<end;i++)
 		quadtet->nodes[i]->force = vector3<float>();
 		for(int i=start2;i<end2;i++)
 		quadtet->nodes[i]->force = vector3<float>();
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>();
-		*/
-		quadtet->nodes[2]->force = vector3<float>();
+		
+		//quadtet->nodes[2]->force = vector3<float>();
 	}
 	else
 	{
-		/*
+		
 		for(int i=start;i<end;i++)
-		quadtet->nodes[i]->force = vector3<float>(0,10,0);
+		quadtet->nodes[i]->force = vector3<float>(0,20,0);
 		for(int i=start2;i<end2;i++)
-		quadtet->nodes[i]->force = vector3<float>(0,10,0);
+		quadtet->nodes[i]->force = vector3<float>(0,20,0);
 		//for(int i=2;i<8;i++)
 		//tet->nodes[i]->force = vector3<float>(0,40,0);
-		*/
-		quadtet->nodes[2]->force = vector3<float>(3,0,3);
+		
+		//quadtet->nodes[2]->force = vector3<float>(3,0,3);
 	}
 	
 	
@@ -249,21 +249,22 @@ main(int argc, char *argv[])
 
 	//sheet//
 	
-	//for(int i=0;i<DIM+1;i++)
-		//rows.add(i);
+	for(int i=0;i<DIM+1;i++)
+		rows.add(i);
 
-	//MeshFunctions::makeQuadTetSheet<DIM,DIM>(&quadtet);
-	rows.add(0);
+	MeshFunctions::makeQuadTetSheet<DIM,DIM>(&quadtet);
+	//rows.add(0);
 
 
 	//QuadTetMesh();
 	//sheet//
 	//quad tet ele stiffness test
-	Node nodeset[10];
-	nodeset[0] = Node(vector3<float>(2,3,4),vector3<float>(),vector3<float>());
-	nodeset[1] = Node(vector3<float>(6,3,2),vector3<float>(),vector3<float>());
-	nodeset[2] = Node(vector3<float>(2,5,1),vector3<float>(),vector3<float>());
-	nodeset[3] = Node(vector3<float>(4,3,6),vector3<float>(),vector3<float>());
+	/*
+	Node nodeset[14];
+	nodeset[0] = Node(vector3<float>(0,0,0),vector3<float>(),vector3<float>());
+	nodeset[1] = Node(vector3<float>(0,0,1),vector3<float>(),vector3<float>());
+	nodeset[2] = Node(vector3<float>(1,0,0),vector3<float>(),vector3<float>());
+	nodeset[3] = Node(vector3<float>(0,1,0),vector3<float>(),vector3<float>());
 	nodeset[4] = Node((nodeset[0].pos + nodeset[1].pos) * 0.5,vector3<float>(),vector3<float>());
 	nodeset[5] = Node((nodeset[1].pos + nodeset[2].pos) * 0.5,vector3<float>(),vector3<float>());
 	nodeset[6] = Node((nodeset[2].pos + nodeset[0].pos) * 0.5,vector3<float>(),vector3<float>());
@@ -271,15 +272,23 @@ main(int argc, char *argv[])
 	nodeset[8] = Node((nodeset[1].pos + nodeset[3].pos) * 0.5,vector3<float>(),vector3<float>());
 	nodeset[9] = Node((nodeset[2].pos + nodeset[3].pos) * 0.5,vector3<float>(),vector3<float>());
 
-
+	nodeset[10] = Node(vector3<float>(0,-1,0),vector3<float>(),vector3<float>());
+	nodeset[11] = Node((nodeset[0].pos + nodeset[10].pos) * 0.5,vector3<float>(),vector3<float>());
+	nodeset[12] = Node((nodeset[1].pos + nodeset[10].pos) * 0.5,vector3<float>(),vector3<float>());
+	nodeset[13] = Node((nodeset[2].pos + nodeset[10].pos) * 0.5,vector3<float>(),vector3<float>());
+	*/
 	//QuadTetElement q = QuadTetElement(nodeset,480,(1.0/3.0),0.5);
 	//for(int i=0;i<30;i++, putchar('\n'),putchar('\n'))
 	//	for(int j=0;j<30;j++)
 	//		printf("%f ",q.K(i,j));
 	//system("pause");
+	/*
 	int aaa[10] = {0,1,2,3,4,5,6,7,8,9};
-	quadtet = new QuadTetMesh(nodeset,10);
-	quadtet->addElement(aaa,50,0.1,10);
+	int bbb[10] = {0,1,2,10,4,5,6,11,12,13};
+	quadtet = new QuadTetMesh(nodeset,14);
+	quadtet->addElement(aaa,5,0.1,10);
+	quadtet->addElement(bbb,5,0.1,10);
+	*/
 	//ginte = new GPUIntegrator(tet,&rows);
 	inte = new Integrator(quadtet,&rows);
 	//conjugate gradient test

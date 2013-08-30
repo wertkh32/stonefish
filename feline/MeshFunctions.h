@@ -27,7 +27,7 @@ void MeshFunctions::makeQuadTetSheet(QuadTetMesh** mesh)
 	Node* list = (Node*)malloc(sizeof(Node) * (C + (C*C-C)/2));
 
 	int edgemap[C][C] = {0};
-	
+
 	for(int k=0; k<2;k++)
 		for(int i=0;i<n;i++)
 			for(int j=0;j<m;j++)	
@@ -52,11 +52,12 @@ void MeshFunctions::makeQuadTetSheet(QuadTetMesh** mesh)
 				for(int a=0;a<4;a++)
 					for(int b=a+1;b<4;b++)
 					{
-						if(edgemap[tets[k][a]][tets[k][b]] == 0)
+						int s = tets[k][a], t = tets[k][b];
+						if(edgemap[s][t] == 0)
 						{
-							int s = tets[k][a], t = tets[k][b];
 							
-							list[iter] = Node((list[s].pos + list[t].pos) * 0.5,vector3<float>(),vector3<float>(0,0,0));
+							
+							list[iter] = Node((list[s].pos + list[t].pos) * 0.5,vector3<float>(),vector3<float>());
 							edgemap[s][t] = iter;
 							edgemap[t][s] = iter;
 							iter++;

@@ -399,7 +399,7 @@ void ConjugateGradientSolver::solveWithConstraints(float* x, float* b, bool* all
 		}
 
 	}
-	printf("[%d]",it); 
+	//printf("[%d]",it); 
 
 	//for(int i=0;i<n;i++)
 	//	printf("%f ",x[i]);

@@ -37,8 +37,8 @@ void QuadTetElement::renderCurveLine(int node1, int node2, int node3)
 
  
         glBegin(GL_LINE_STRIP);
-        for (int i = 0; i <= 30; i++) {
-            glEvalCoord1f((float) i / (float) 30.0);
+        for (int i = 0; i <= 10; i++) {
+            glEvalCoord1f((float) i / (float) 10.0);
         }
        glEnd();
 }
@@ -165,7 +165,8 @@ QuadTetElement::computeB(float s[4], GenMatrix<float, 6, 30>* B, float* Jdet)
 						   {dNdX[2][0], 0, dNdX[0][0], dNdX[2][1], 0, dNdX[0][1], dNdX[2][2], 0, dNdX[0][2], dNdX[2][3], 0, dNdX[0][3], dNdX[2][4], 0, dNdX[0][4], dNdX[2][5], 0, dNdX[0][5], dNdX[2][6], 0, dNdX[0][6], dNdX[2][7], 0, dNdX[0][7], dNdX[2][8], 0, dNdX[0][8], dNdX[2][9], 0, dNdX[0][9]} };
 
 		*B = GenMatrix<float,6,30>(b);
-		*Jdet = J.determinant();
+		*Jdet = fabs(J.determinant());
+		printf("det: %f\n",*Jdet);
 }
 
 void 
