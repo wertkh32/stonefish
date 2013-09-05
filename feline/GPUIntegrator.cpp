@@ -43,7 +43,7 @@ GPUIntegrator::assembleGPUElements()
 		float x0[12];
 		float f0[12] = {0};
 
-		GenMatrix<float,12,12>& stiff = *(mesh->elements[i]->getStiffnessMat());
+		GenMatrix<float,12,12>& stiff = (mesh->elements[i]->getStiffnessMat());
 		//for(int a=0;a<12;a++)
 		//	for(int b=0;b<12;b++)
 		//		gpuElements[bid].unwarpK[a][b][tid] = stiff(a,b);

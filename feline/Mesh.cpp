@@ -39,7 +39,7 @@ Mesh::assembleGlobalStiffness()
 
 	for(int i=0;i<elements.size();i++)
 	{
-		GenMatrix<float,12,12>* stiffe = elements[i]->getStiffnessMat();
+		GenMatrix<float,12,12>* stiffe = &(elements[i]->getStiffnessMat());
 
 		for(int a=0;a<4;a++)
 			for(int b=0;b<4;b++)

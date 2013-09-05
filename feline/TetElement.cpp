@@ -18,6 +18,8 @@ TetElement::TetElement(Node* n1, Node* n2, Node* n3, Node* n4, float _E, float _
 
 	mass = density * undeformVolume;
 	nodalMass = mass / 4.0;
+
+	nodemass[0] = nodemass[1] = nodemass[2] = nodemass[3] = nodalMass;
 }
 
 void TetElement::preCompute()

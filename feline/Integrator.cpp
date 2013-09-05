@@ -1,7 +1,7 @@
 ﻿#include "Integrator.h"
 
 
-Integrator::Integrator(QuadTetMesh* _mesh, ConstrainedRows* r)
+Integrator::Integrator(MESH* _mesh, ConstrainedRows* r)
 {
 	rowSet = r;
 	mesh = _mesh;
@@ -60,34 +60,7 @@ Integrator::Integrator(QuadTetMesh* _mesh, ConstrainedRows* r)
 	RKRT = (float**)malloc(sizeof(float*) * n * 3);
 	for(int i=0;i<n * 3;i++)
 	RKRT[i] = (float*)malloc(sizeof(float) * n * 3);
-	/*
-	matmap = (bool**)malloc(sizeof(float*) * n);
-	for(int i=0;i<n;i++)
-	{
-		matmap[i] = (bool*)malloc(sizeof(float) * n);
-		for(int j=0;j<n;j++)
-		{
-			matmap[i][j] = false;
-		}
-	}
-	
-	for(int i=0;i<mesh->elements.size();i++)
-	{
-		for(int a=0;a<4;a++)
-			for(int b=0;b<4;b++)
-				matmap[mesh->nodeIndices[i][a]][mesh->nodeIndices[i][b]] = true;
-	}
-	*/
-	/*
-	for(int i=0;i<n;i++,printf("\n"))
-		for(int j=0;j<n;j++)
-		{
-			if(matmap[i][j])
-				printf("1 ");
-			else
-				printf("0 ");
-		}
-	*/
+
 	solver.initSolver(n*3,A);
 	assembleX0();
 	//mass lumping
@@ -162,7 +135,7 @@ Integrator::mulRK(float* in, float* out)
 
 	for(int i=0;i<mesh->elements.size();i++)
 		{
-			QuadTetElement& ele = *(mesh->elements[i]);
+			ELEMENT& ele = *(mesh->elements[i]);
 			GenMatrix<float,NUM_NODES_PER_ELE * 3,NUM_NODES_PER_ELE * 3>& A = ele.getStiffnessMat();
 			Matrix3d& R = ele.getRotation();
 
@@ -210,7 +183,7 @@ Integrator::mulRKRT(float* in, float* out)
 {
 		for(int i=0;i<mesh->elements.size();i++)
 		{
-			QuadTetElement& ele = *(mesh->elements[i]);
+			ELEMENT& ele = *(mesh->elements[i]);
 			GenMatrix<float,NUM_NODES_PER_ELE * 3,NUM_NODES_PER_ELE * 3>& A = (ele.getStiffnessMat());
 			Matrix3d& R = ele.getRotation();
 

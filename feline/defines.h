@@ -13,3 +13,20 @@
 
 #define ALPHA 0.3
 #define BETA 0.1
+
+#define _LINEAR_TET_
+
+#ifdef _QUAD_TET_
+#define MESH	QuadTetMesh
+#define ELEMENT QuadTetElement
+#define NUM_NODES_PER_ELE 10
+#endif
+
+#ifdef _LINEAR_TET_
+#define MESH	Mesh
+#define ELEMENT TetElement
+#define NUM_NODES_PER_ELE 4
+#endif
+
+//#define ELEMENT TetElement
+//#define NUM_NODES_PER_ELE 4

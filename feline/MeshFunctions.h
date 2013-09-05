@@ -1,6 +1,7 @@
 #pragma once
 #include "Mesh.h"
 #include "QuadTetMesh.h"
+#define C ((N+1) * (M+1) * 2)
 
 class MeshFunctions
 {
@@ -12,12 +13,12 @@ static void makeCube(Mesh** mesh, int n, int m, int d);
 
 
 template<int N, int M>
-static void makeQuadTetSheet(QuadTetMesh** mesh);
+static void makeQuadTetSheet(MESH** mesh, int edgemap[C][C]);
 };
 
-#define C ((N+1) * (M+1) * 2)
+
 template<int N, int M>
-void MeshFunctions::makeQuadTetSheet(QuadTetMesh** mesh)
+void MeshFunctions::makeQuadTetSheet(MESH** mesh, int edgemap[C][C])
 {
 	int n = N + 1;
 	int m = M + 1;
@@ -26,7 +27,7 @@ void MeshFunctions::makeQuadTetSheet(QuadTetMesh** mesh)
 
 	Node* list = (Node*)malloc(sizeof(Node) * (C + (C*C-C)/2));
 
-	int edgemap[C][C] = {0};
+	//int edgemap[C][C] = {0};
 
 	for(int k=0; k<2;k++)
 		for(int i=0;i<n;i++)
@@ -65,7 +66,7 @@ void MeshFunctions::makeQuadTetSheet(QuadTetMesh** mesh)
 					}
 		}
 
-	*mesh = new QuadTetMesh(list, iter);
+	*mesh = new MESH(list, iter);
 
 	for(int i=0;i<n-1;i++)
 		for(int j=0;j<m-1;j++)
@@ -88,7 +89,7 @@ void MeshFunctions::makeQuadTetSheet(QuadTetMesh** mesh)
 				tets[a][8] = edgemap[tets[a][3]][tets[a][1]];
 				tets[a][9] = edgemap[tets[a][3]][tets[a][2]];
 
-				(*mesh)->addElement(tets[a], 50,0.1,10);
+				(*mesh)->addElement(tets[a], 100,0.1,10);
 			}
 		}
 }

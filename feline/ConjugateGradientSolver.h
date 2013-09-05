@@ -9,8 +9,6 @@
 #define MAX_ITER 20
 #define EPSILON 0.01
 
-#define NUM_NODES_PER_ELE 10
-
 
 //use pure arrays
 class ConjugateGradientSolver
@@ -46,9 +44,9 @@ class ConjugateGradientSolver
 	}
 
 
-void sysMulMatFree(float* in, float* out, bool* allowed, QuadTetMesh* mesh)
+void sysMulMatFree(float* in, float* out, bool* allowed, MESH* mesh)
 {	
-	static const float alpha = 0.1, beta = 0.3;
+	static const float alpha = 0.1, beta = 0.5;
 	static const float coeffK = (1.0/FPS) * beta + (1.0/FPS) * (1.0/FPS), coeffM = 1 + (1.0/FPS) * alpha;
 
 	for(int i=0;i<n;i++)
@@ -62,7 +60,7 @@ void sysMulMatFree(float* in, float* out, bool* allowed, QuadTetMesh* mesh)
 		
 	for(int i=0;i<mesh->elements.size();i++)
 		{
-			QuadTetElement& ele = *(mesh->elements[i]);
+			ELEMENT& ele = *(mesh->elements[i]);
 			GenMatrix<float,NUM_NODES_PER_ELE * 3,NUM_NODES_PER_ELE * 3>& A = ele.getStiffnessMat();
 			Matrix3d& R = ele.getRotation();
 
@@ -130,7 +128,7 @@ public:
 	void solve(float* x, float* b);
 	void solveWithConstraints(float* x, float* b, bool* allowed);
 	void solveWithConstraints(float* x, float* b, bool* allowed, bool** matmap);
-	void solveWithConstraints(float* x, float* b, bool* allowed, QuadTetMesh* mesh);
+	void solveWithConstraints(float* x, float* b, bool* allowed, MESH* mesh);
 
 	float dot(float* a, float* b, int k)
 	{

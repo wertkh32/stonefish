@@ -82,7 +82,7 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="QuadTetMesh.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>QuadTetStuff</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -162,7 +162,7 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="QuadTetMesh.h">
-      <Filter>Header Files</Filter>
+      <Filter>QuadTetStuff</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

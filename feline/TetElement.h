@@ -25,6 +25,7 @@ public:
 
 	float undeformVolume;
 	float mass, nodalMass;
+	float nodemass[4];
 	float E, v; // E is Young's Modulus, v is Poisson's Ratio
 	float density;
 	void preCompute();
@@ -52,7 +53,7 @@ public:
 	//computeundeformstiffnessmat B^T * c * B where B = LN
 	//computestiffnessmat dfe/dx |x = x*
 
-	GenMatrix<float,12,12>* getStiffnessMat(){return &undeformStiffnessMat;}
+	GenMatrix<float,12,12>& getStiffnessMat(){return undeformStiffnessMat;}
 	GenMatrix<float,12,12>* getMassMat(){return &massMat;}
 	void computeRKRTandRK();
 	void getRKRTandRK(GenMatrix<float,12,12>*& RK, GenMatrix<float,12,12>*& RKRT);
