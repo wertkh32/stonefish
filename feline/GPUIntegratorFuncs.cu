@@ -167,10 +167,13 @@ void makeFU(float f0[12][BLOCK_SIZE], float R[3][3], float out[12])
 	for(int i=0;i<12;i++)
 		x[i] = f0[i][ltid];
 
+	#pragma unroll 4
 	for(int i=0;i<4;i++)
+		#pragma unroll 3
 		for(int j=0;j<3;j++)
 		{
 			out[i*3 + j] = 0;
+			#pragma unroll 3
 			for(int k=0;k<3;k++)
 			out[i*3+j] += R[j][k] * x[i*3 + k];
 		}		
@@ -184,7 +187,9 @@ void mulK(float x[12], float B[3][3][BLOCK_SIZE], float c1[BLOCK_SIZE], float c2
 	float temp2[6];
 	float b[4][3];
 
+	#pragma unroll 3
 	for(int i=0;i<3;i++)
+		#pragma unroll 3
 		for(int j=0;j<3;j++)
 			b[i][j] = B[i][j][ltid];
 	
@@ -233,19 +238,25 @@ void makeRKRT(float B[3][3][BLOCK_SIZE], float c1[BLOCK_SIZE], float c2[BLOCK_SI
 {
 	float temp[12];
 
+	#pragma unroll 4
 	for(int i=0;i<4;i++)
+		#pragma unroll 3
 		for(int j=0;j<3;j++)
 		{
 			temp[i*3 + j] = 0;
+			#pragma unroll 3
 			for(int k=0;k<3;k++)
 			temp[i*3+j] += R[k][j] * xt[i*3 + k]; //RT first
 		}
 
 	mulK(temp, B,c1,c2);
 
+	#pragma unroll 4
 	for(int i=0;i<4;i++)
+		#pragma unroll 3
 		for(int j=0;j<3;j++)
 		{
+			#pragma unroll 3
 			for(int k=0;k<3;k++)
 			b[i*3+j] -= R[j][k] * temp[i*3 + k];
 		}
@@ -275,15 +286,20 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 		nodes[i * 3 + 2] = x[index * 3 + 2];
 	}
 
+	#pragma unroll 3
 	for(int i=0;i<3;i++)
+		#pragma unroll 3
 		for(int j=0;j<3;j++)
 			R[i][j] = t_solvedata->R[i][j][ltid];
 	
 	//rotate by x by RT first
+	#pragma unroll 4
 	for(int i=0;i<4;i++)
+		#pragma unroll 3
 		for(int j=0;j<3;j++)
 		{
 			temp[i*3 + j] = 0;
+			#pragma unroll 3
 			for(int k=0;k<3;k++)
 			temp[i*3+j] += R[k][j] * nodes[i*3 + k];
 		}
@@ -291,10 +307,13 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x)
 	mulK(temp, t_ele->B, t_ele->c1, t_ele->c2);
 
 	// rotate by R
+	#pragma unroll 4
 	for(int i=0;i<4;i++)
+		#pragma unroll 3
 		for(int j=0;j<3;j++)
 		{
 			float temp3 = 0;
+			#pragma unroll 3
 			for(int k=0;k<3;k++)
 				temp3 += R[j][k] * temp[i*3 + k];
 			temp3 *= COEFFK;
@@ -363,11 +382,15 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 			nodes[i * 3 + 2] = xt[index[i] * 3 + 2];
 		}
 
+		#pragma unroll 3
 		for(int i=0;i<3;i++)
+			#pragma unroll 3
 			for(int j=0;j<3;j++)
 				D[i][j] = t_ele->undefShapeMatInv[i][j][ltid];
 
+		#pragma unroll 3
 		for(int i=0;i<3;i++)
+			#pragma unroll 3
 			for(int j=0;j<3;j++)
 					R[i][j] = (nodes[i] - nodes[9 + i]) * D[0][j] + 
 							  (nodes[3 + i] - nodes[9 + i]) * D[1][j] + 
@@ -375,7 +398,9 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 
 		gpuComputePolarDecomposition(R);
 	
+		#pragma unroll 3
 		for(int i=0;i<3;i++)
+			#pragma unroll 3
 			for(int j=0;j<3;j++)
 				t_solvedata->R[i][j][ltid] =  R[i][j];
 
@@ -419,6 +444,7 @@ void gatherB(GPUNode* nodes, mulData* solverData, float* b, float* mass, float* 
 		cache[grouptid][groupid][0] = 0;
 		cache[grouptid][groupid][1] = 0;
 		cache[grouptid][groupid][2] = 0;
+
 
 		for(int i=0;i<n;i++)
 		{

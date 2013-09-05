@@ -1,11 +1,11 @@
 #pragma once
 #define TOLERANCE 0.01
 
-__host__
 __device__ 
 float oneNorm(const float A[3][3])
 {
   float norm = 0.0;
+  #pragma unroll 3
   for (int i=0; i<3; i++) 
   {
     float columnAbsSum = fabsf(A[0][i]) + fabsf(A[1][i]) + fabsf(A[2][i]);
@@ -15,11 +15,11 @@ float oneNorm(const float A[3][3])
   return norm;
 }
 
-__host__
 __device__
 float infNorm(const float A[3][3])
 {
   float norm = 0.0;
+  #pragma unroll 3
   for (int i=0; i<3; i++) 
   {
     float rowSum = fabsf(A[i][0]) + fabsf(A[i][1]) + fabsf(A[i][2]);
@@ -30,7 +30,6 @@ float infNorm(const float A[3][3])
 }
 
 // cross product: c = a x b
-__host__
 __device__
 void crossProduct(const float* a, const float* b, float* c)
 {
@@ -41,7 +40,6 @@ void crossProduct(const float* a, const float* b, float* c)
 
 // Input: M (3x3 mtx)
 // Output: Q (3x3 rotation mtx), S (3x3 symmetric mtx)
-__host__
 __device__
 void gpuComputePolarDecomposition(float Mk[3][3])
 {
@@ -82,7 +80,9 @@ void gpuComputePolarDecomposition(float Mk[3][3])
     float g1 = gamma * 0.5;
     float g2 = 0.5 / (gamma * det);
 
+	#pragma unroll 3
     for(int i=0; i<3; i++)
+		#pragma unroll 3
 		for(int j=0; j<3; j++)
 		{
 			Ek[i][j] = Mk[i][j];
