@@ -8,7 +8,7 @@
 #include "perfmon.h"
 
 //extern void CGSolverGPU(float* A, float* x, float* b, int n);
-#define DIM 79
+#define DIM 80
 int edgemap[(DIM+1) * (DIM+1) * 2][(DIM+1) * (DIM+1) * 2] = {0};
 
 /* GLUT callback Handlers */

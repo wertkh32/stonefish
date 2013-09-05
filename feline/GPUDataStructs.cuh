@@ -1,6 +1,6 @@
 #pragma once
 
-#define BLOCK_SIZE 128				//element block size
+#define BLOCK_SIZE 64				//element block size
 //#define THREAD_BLOCK_SIZE 64		//actual number of threads
 //#define ELE_PER_THREAD 2
 #define DOT_BLOCK_SIZE 512			//dot product block size
