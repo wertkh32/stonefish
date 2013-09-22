@@ -6,7 +6,7 @@
 #define INF 10000000
 
 #define MAX_ELEMENTS 100000
-#define MAX_NODES 20000
+#define MAX_NODES 30000
 #define FPS 30
 #define DT (1.0/FPS)
 #define GRAVITY 9.81
@@ -14,7 +14,12 @@
 #define ALPHA 0.3
 #define BETA 0.1
 
-#define _LINEAR_TET_
+//#define _LINEAR_TET_
+#define _QUAD_TET_
+//#define _GPU_
+#define _CPU_
+//#define _GAUSSIAN_QUADRATURE_
+#define _BERSTEIN_POLY_
 
 #ifdef _QUAD_TET_
 #define MESH	QuadTetMesh
@@ -26,6 +31,14 @@
 #define MESH	Mesh
 #define ELEMENT TetElement
 #define NUM_NODES_PER_ELE 4
+#endif
+
+#ifdef _GPU_
+#define INTEGRATOR GPUIntegrator
+#endif
+
+#ifdef _CPU_
+#define INTEGRATOR Integrator
 #endif
 
 //#define ELEMENT TetElement

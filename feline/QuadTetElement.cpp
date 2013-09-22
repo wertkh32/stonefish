@@ -90,9 +90,10 @@ void QuadTetElement::precompute()
 void QuadTetElement::computeLumpedMasses()
 {
 	//from characteristic polynomial
+	//volume calculations can be done with that other way with the 4x4 matrix but im too lazy to standardize
 	volume = fabs(Matrix3d(x[0][0] - x[3][0], x[1][0] - x[3][0], x[2][0] - x[3][0],
 	        			   x[0][1] - x[3][1], x[1][1] - x[3][1], x[2][1] - x[3][1],
-						   x[0][2] - x[3][2], x[1][2] - x[3][2], x[2][2] - x[3][2]).determinant());
+						   x[0][2] - x[3][2], x[1][2] - x[3][2], x[2][2] - x[3][2]).determinant()) * (1.0/6.0);
 
 	mass = volume * density;
 
@@ -125,18 +126,34 @@ QuadTetElement::computeB(float s[4], GenMatrix<float, 6, 30>* B, float* Jdet)
 	// Jx4 Jy4 Jz4
 
 
+	/*
 	Matrix4d J = Matrix4d(0.25, 0.25, 0.25, 0.25,
 						  x[0][0] * (s[0] - 0.25) + x[4][0] * s[1] + x[6][0] * s[2] + x[7][0] * s[3],   x[4][0] * s[0] + x[1][0] * (s[1] - 0.25) + x[5][0] * s[2] + x[8][0] * s[3],   x[6][0] * s[0] + x[5][0] * s[1] + x[2][0] * (s[2] - 0.25) + x[9][0] * s[3],   x[7][0] * s[0] + x[8][0] * s[1] + x[9][0] * s[2] + x[3][0] * (s[3] - 0.25),
 						  x[0][1] * (s[0] - 0.25) + x[4][1] * s[1] + x[6][1] * s[2] + x[7][1] * s[3],   x[4][1] * s[0] + x[1][1] * (s[1] - 0.25) + x[5][1] * s[2] + x[8][1] * s[3],   x[6][1] * s[0] + x[5][1] * s[1] + x[2][1] * (s[2] - 0.25) + x[9][1] * s[3],   x[7][1] * s[0] + x[8][1] * s[1] + x[9][1] * s[2] + x[3][1] * (s[3] - 0.25),
 						  x[0][2] * (s[0] - 0.25) + x[4][2] * s[1] + x[6][2] * s[2] + x[7][2] * s[3],   x[4][2] * s[0] + x[1][2] * (s[1] - 0.25) + x[5][2] * s[2] + x[8][2] * s[3],   x[6][2] * s[0] + x[5][2] * s[1] + x[2][2] * (s[2] - 0.25) + x[9][2] * s[3],   x[7][2] * s[0] + x[8][2] * s[1] + x[9][2] * s[2] + x[3][2] * (s[3] - 0.25)) * 4;
 	
 	Matrix4d Jinv = J.inverse();
+	*/
+
+	//since we are only determining deformation close to the original configuration
+	//normal tet barycentric coords should suffice as the directional derivatives
+	Matrix4d J =	Matrix4d
+		( 1.0, 1.0, 1.0, 1.0,
+		nodes[0]->pos.x, nodes[1]->pos.x, nodes[2]->pos.x, nodes[3]->pos.x,
+		nodes[0]->pos.y, nodes[1]->pos.y, nodes[2]->pos.y, nodes[3]->pos.y,
+		nodes[0]->pos.z, nodes[1]->pos.z, nodes[2]->pos.z, nodes[3]->pos.z);
+
+	Matrix4d Jinv =	J.inverse();
 
 	//PT
 	float P[3][4] = { {Jinv(0,1), Jinv(1,1), Jinv(2,1), Jinv(3,1)},
 					  {Jinv(0,2), Jinv(1,2), Jinv(2,2), Jinv(3,2)},
 					  {Jinv(0,3), Jinv(1,3), Jinv(2,3), Jinv(3,3)} };
 
+	//for(int i=0;i<4;i++,putchar('\n'))
+	//	for(int j=0;j<3;j++)
+	//		printf("%f ",P[j][i]);
+	//system("pause");
 
 	float dN[4][10] = { {4 * s[0] - 1, 0, 0, 0, 4 * s[1], 0, 4 * s[2], 4 * s[3], 0, 0},
 
@@ -169,10 +186,113 @@ QuadTetElement::computeB(float s[4], GenMatrix<float, 6, 30>* B, float* Jdet)
 		printf("det: %f\n",*Jdet);
 }
 
+float fact(int n)
+{
+	int r = 1;
+	while(n) r *= (n--);
+	return r;
+}
+
+#define FF(i,m) (fact((i)+(m))/(fact(i)*fact(m)))
+
+float Gcoeff(int I[4], int J[4])
+{
+	if(I[0]==-1 || J[0] ==-1) return 0;
+	return (FF(I[0],J[0]) * FF(I[1],J[1]) * FF(I[2],J[2]) * FF(I[3],J[3]))/2.0;
+}
+
+#ifdef _BERSTEIN_POLY_
 void 
 QuadTetElement::computeStiffness()
 {
-	//TO ADD: 4 point Gaussian Quadrature
+	static int indices[40][4] =    {{1,0,0,0},{-1},{-1},{-1},
+									{-1},{0,1,0,0},{-1},{-1},
+									{-1},{-1},{0,0,1,0},{-1},
+									{-1},{-1},{-1},{0,0,0,1},
+									{0,1,0,0},{1,0,0,0},{-1},{-1},
+									{-1},{0,0,1,0},{0,1,0,0},{-1},
+									{0,0,1,0},{-1},{1,0,0,0},{-1},
+									{0,0,0,1},{-1},{-1},{1,0,0,0},
+									{-1},{0,0,0,1},{-1},{0,1,0,0},
+									{-1},{-1},{0,0,0,1},{0,0,1,0}};
+
+	float G[40][40] = {0};
+
+	for(int i=0;i<40;i++)
+		for(int j=0;j<40;j++)
+			G[i][j] = Gcoeff(indices[i],indices[j]);
+
+	//for(int i=0;i<40;i++,putchar('\n'))
+	//	for(int j=0;j<40;j++)
+	//		printf("%f ",G[i][j]);
+	//system("pause");
+
+	//bernstein beizer tetrahedrals
+	float c1 = (E*(1-v))/((1.0-2.0*v)*(1.0+v)),
+		c2 = (E*v)/((1.0-2.0*v)*(1.0+v)),
+		c3 = (c1 - c2)/2.0;
+
+	Matrix4d inv =	Matrix4d
+		( 1.0, 1.0, 1.0, 1.0,
+		nodes[0]->pos.x, nodes[1]->pos.x, nodes[2]->pos.x, nodes[3]->pos.x,
+		nodes[0]->pos.y, nodes[1]->pos.y, nodes[2]->pos.y, nodes[3]->pos.y,
+		nodes[0]->pos.z, nodes[1]->pos.z, nodes[2]->pos.z, nodes[3]->pos.z).inverse();
+
+	//for(int i=0;i<4;i++,putchar('\n'))
+	//	for(int j=0;j<4;j++)
+	//		printf("%f ",inv(i,j));
+	//system("pause");
+
+	GenMatrix<float,4,3> dldx;
+	for(int i=0;i<4;i++)
+		for(int j=0;j<3;j++)
+			dldx(i,j) = inv(i,j+1);
+
+	for(int i=0;i<10;i++)
+		for(int j=0;j<10;j++)
+		{
+			Matrix3d K3x3;
+			for(int a=0;a<3;a++)
+				for(int b=0;b<3;b++)
+				{
+					K3x3(a,b) = 0;
+					for(int k=0;k<4;k++)
+						for(int l=0;l<4;l++)
+							K3x3(a,b) += dldx(k,a) * dldx(l,b) * G[i*4 + k][j*4+l] * c2;
+
+					for(int k=0;k<4;k++)
+						for(int l=0;l<4;l++)
+							K3x3(a,b) += dldx(k,b) * dldx(l,a) * G[i*4 + k][j*4+l] * c3;
+				}
+
+
+
+			for(int a=0;a<3;a++)
+				for(int b=0;b<3;b++)
+					for(int k=0;k<4;k++)
+						for(int l=0;l<4;l++)
+							K3x3(a,a) += dldx(k,b) * dldx(l,b) * c3 * G[i*4 + k][j*4+l];
+
+			K3x3 = K3x3 * (2.0/5.0) * volume;
+
+			for(int a=0;a<3;a++)
+				for(int b=0;b<3;b++)
+					K(i * 3 + a, j * 3 + b) = K3x3(a,b);
+		}
+
+	//for(int i=0;i<30;i++,putchar('\n'))
+	//	for(int j=0;j<30;j++)
+	//		printf("%f ",K(i,j));
+	//system("pause");
+}
+#endif
+
+
+#ifdef _GAUSSIAN_QUADRATURE_
+void 
+QuadTetElement::computeStiffness()
+{
+	//4 point Gaussian Quadrature
 	//material constants
 	float c1 = (E*(1-v))/((1.0-2.0*v)*(1.0+v)),
 		c2 = (E*v)/((1.0-2.0*v)*(1.0+v)),
@@ -215,6 +335,7 @@ QuadTetElement::computeStiffness()
 
 	K = K * (1.0/6.0);
 }
+#endif
 
 QuadTetElement::~QuadTetElement(void)
 {

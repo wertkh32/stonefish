@@ -46,6 +46,10 @@ void TetElement::preComputeUndeformedStiffnessMat()
 		nodes[0]->pos.y, nodes[1]->pos.y, nodes[2]->pos.y, nodes[3]->pos.y,
 		nodes[0]->pos.z, nodes[1]->pos.z, nodes[2]->pos.z, nodes[3]->pos.z).inverse();
 
+	for(int i=0;i<4;i++,putchar('\n'))
+		for(int j=0;j<4;j++)
+			printf("%f ",inv(i,j));
+	system("pause");
 
 	//strain matrix B = LN = dN/dx
 	//checked correct.
@@ -58,6 +62,12 @@ void TetElement::preComputeUndeformedStiffnessMat()
 		{ 0, inv(0,3), inv(0,2), 0, inv(1,3), inv(1,2), 0, inv(2,3), inv(2,2), 0, inv(3,3), inv(3,2) },
 		{ inv(0,3), 0, inv(0,1), inv(1,3), 0, inv(1,1), inv(2,3), 0, inv(2,1), inv(3,3), 0, inv(3,1) }
 	};
+
+
+	for(int i=0;i<6;i++,putchar('\n'))
+		for(int j=0;j<12;j++)
+			printf("%f ",strainMatrix[i][j]);
+	system("pause");
 
 	strainMat = GenMatrix<float,6,12>(strainMatrix);
 	strainMat.scalarMul(1/(2 * undeformVolume));

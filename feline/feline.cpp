@@ -8,12 +8,12 @@
 #include "perfmon.h"
 
 //extern void CGSolverGPU(float* A, float* x, float* b, int n);
-#define DIM 80
+//#define DIM 100 50k
+#define DIM 4
 int edgemap[(DIM+1) * (DIM+1) * 2][(DIM+1) * (DIM+1) * 2] = {0};
 
 /* GLUT callback Handlers */
-//static Integrator* inte;
-static GPUIntegrator *inte;
+static INTEGRATOR *inte;
 static Mesh* tet;
 static MESH* quadtet;
 static int iter = 10;
@@ -49,8 +49,8 @@ static float rot = 0.0;
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(-40 + tx,-1 + ty,-140 + tz);
-	//glTranslatef(-5,-3,-15);
+    //glTranslatef(-40 + tx,-1 + ty,-140 + tz);
+	glTranslatef(-5,-3,-15);
 	glRotatef(30,1,0,0);
     
 	perfmon p;
@@ -74,30 +74,45 @@ static float rot = 0.0;
 	
 	if(iter>=10)
 	{
+		#ifdef _LINEAR_TET_
+			
+			for(int i=start;i<end;i++)
+				quadtet->nodes[i]->force = vector3<float>();
 		
-		for(int i=start;i<end;i++)
-		quadtet->nodes[i]->force = vector3<float>();
-		//for(int i=start;i<end-1;i++)
-		//quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>();
+			for(int i=start2;i<end2;i++)
+				quadtet->nodes[i]->force = vector3<float>();
+		#endif
 
-		for(int i=start2;i<end2;i++)
-		quadtet->nodes[i]->force = vector3<float>();
-		//for(int i=start2;i<end2-1;i++)
-		//quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>();
+		#ifdef _QUAD_TET_
+
+			for(int i=start;i<end-1;i++)
+				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>();
+
+			for(int i=start2;i<end2-1;i++)
+				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>();
+		#endif
 
 	}
 	else
 	{
-		
-		for(int i=start;i<end;i++)
-		quadtet->nodes[i]->force = vector3<float>(0,10,0);
-		//for(int i=start;i<end-1;i++)
-		//quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(10,10,0);
 
-		for(int i=start2;i<end2;i++)
-		quadtet->nodes[i]->force = vector3<float>(0,10,0);
-		//for(int i=start2;i<end2-1;i++)
-		//quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(10,10,0);
+		#ifdef _LINEAR_TET_
+			
+			for(int i=start;i<end;i++)
+				quadtet->nodes[i]->force = vector3<float>(0,10,0);
+		
+			for(int i=start2;i<end2;i++)
+				quadtet->nodes[i]->force = vector3<float>(0,10,0);
+		#endif
+
+		#ifdef _QUAD_TET_
+
+			for(int i=start;i<end-1;i++)
+				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(20,20,0);
+
+			for(int i=start2;i<end2-1;i++)
+				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(20,20,0);
+		#endif
 	
 	}
 	
@@ -118,10 +133,11 @@ key(unsigned char key, int x, int y)
     {
         case 27 : 
         case 'q':
-			inte->~GPUIntegrator();
+			inte->~INTEGRATOR();
             //inte->~Integrator();
 			exit(0);
             break;
+
 		case 'w':
 			tz += 1;
 			break;
@@ -257,14 +273,22 @@ main(int argc, char *argv[])
 
 	//sheet//
 	
-	//MeshFunctions::makeQuadTetSheet<DIM,DIM>(&quadtet,edgemap);
-	MeshFunctions::makeSheet(&quadtet,DIM,DIM);
+	#ifdef _QUAD_TET_
+		MeshFunctions::makeQuadTetSheet<DIM,DIM>(&quadtet,edgemap);
+	#endif
+	
+	#ifdef _LINEAR_TET_
+		MeshFunctions::makeSheet(&quadtet,DIM,DIM);	
+	#endif
 	
 	for(int i=0;i<DIM+1;i++)
 		rows.add(i);
 
-	//for(int i=0;i<DIM;i++)
-	//	rows.add(edgemap[i][i+1]);
+	#ifdef _QUAD_TET_
+	for(int i=0;i<DIM;i++)
+		rows.add(edgemap[i][i+1]);
+	#endif
+	
 	//MESH();
 	//sheet//
 	//quad tet ele stiffness test
@@ -300,7 +324,7 @@ main(int argc, char *argv[])
 	*/
 	//ginte = new GPUIntegrator(tet,&rows);
 	
-	inte = new GPUIntegrator(quadtet,&rows);
+	inte = new INTEGRATOR(quadtet,&rows);
 	
 	//conjugate gradient test
 	// works

@@ -63,10 +63,11 @@ vector3<float> Matrix3d::operator*(const vector3<float>& vv){
 
 inline
 Matrix3d Matrix3d::operator*(float k){
+	float m[3][3] = {0};
 	for(int i=0;i<3;i++)
 		for(int j=0;j<3;j++)
-				mat[i][j] *= k;
-	return Matrix3d(mat);
+				m[i][j] = mat[i][j] * k;
+	return Matrix3d(m);
 }
 
 inline

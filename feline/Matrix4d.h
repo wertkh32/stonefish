@@ -54,10 +54,11 @@ Matrix4d Matrix4d::operator*(Matrix4d& mm){
 
 inline
 Matrix4d Matrix4d::operator*(float k){
+	float m[4][4] = {0};
 	for(int i=0;i<4;i++)
 		for(int j=0;j<4;j++)
-				mat[i][j] *= k;
-	return Matrix4d(mat);
+				m[i][j] = mat[i][j] * k;
+	return Matrix4d(m);
 }
 
 inline
