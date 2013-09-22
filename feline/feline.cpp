@@ -74,14 +74,14 @@ static float rot = 0.0;
 	
 	if(iter>=10)
 	{
-		#ifdef _LINEAR_TET_
+		//#ifdef _LINEAR_TET_
 			
 			for(int i=start;i<end;i++)
 				quadtet->nodes[i]->force = vector3<float>();
 		
 			for(int i=start2;i<end2;i++)
 				quadtet->nodes[i]->force = vector3<float>();
-		#endif
+		//#endif
 
 		#ifdef _QUAD_TET_
 
@@ -90,28 +90,44 @@ static float rot = 0.0;
 
 			for(int i=start2;i<end2-1;i++)
 				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>();
+
+			for(int i=start;i<end;i++)
+				for(int j=start2;j<end2;j++)
+					quadtet->nodes[edgemap[i][j]]->force = vector3<float>();
+
+			for(int i=start;i<end-1;i++)
+				for(int j=start2+1;j<end2;j++)
+					quadtet->nodes[edgemap[i][j]]->force = vector3<float>();
 		#endif
 
 	}
 	else
 	{
 
-		#ifdef _LINEAR_TET_
+		//#ifdef _LINEAR_TET_
 			
 			for(int i=start;i<end;i++)
-				quadtet->nodes[i]->force = vector3<float>(0,10,0);
+				quadtet->nodes[i]->force = vector3<float>(10,10,0);
 		
 			for(int i=start2;i<end2;i++)
-				quadtet->nodes[i]->force = vector3<float>(0,10,0);
-		#endif
+				quadtet->nodes[i]->force = vector3<float>(10,10,0);
+		//#endif
 
 		#ifdef _QUAD_TET_
 
 			for(int i=start;i<end-1;i++)
-				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(20,20,0);
+				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(10,10,0);
 
 			for(int i=start2;i<end2-1;i++)
-				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(20,20,0);
+				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(10,10,0);
+
+			for(int i=start;i<end;i++)
+				for(int j=start2;j<end2;j++)
+					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(10,10,0);
+
+			for(int i=start;i<end-1;i++)
+				for(int j=start2+1;j<end2;j++)
+					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(10,10,0);
 		#endif
 	
 	}

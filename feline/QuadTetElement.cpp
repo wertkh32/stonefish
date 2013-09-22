@@ -224,7 +224,7 @@ QuadTetElement::computeStiffness()
 
 	//for(int i=0;i<40;i++,putchar('\n'))
 	//	for(int j=0;j<40;j++)
-	//		printf("%f ",G[i][j]);
+	//		printf("%.1f  ",G[i][j]);
 	//system("pause");
 
 	//bernstein beizer tetrahedrals
@@ -258,13 +258,12 @@ QuadTetElement::computeStiffness()
 					K3x3(a,b) = 0;
 					for(int k=0;k<4;k++)
 						for(int l=0;l<4;l++)
-							K3x3(a,b) += dldx(k,a) * dldx(l,b) * G[i*4 + k][j*4+l] * c2;
+							K3x3(a,b) += (dldx(k,a) * dldx(l,b) * c2 + dldx(k,b) * dldx(l,a) * c3) * G[i*4 + k][j*4+l];
 
-					for(int k=0;k<4;k++)
-						for(int l=0;l<4;l++)
-							K3x3(a,b) += dldx(k,b) * dldx(l,a) * G[i*4 + k][j*4+l] * c3;
+					//for(int k=0;k<4;k++)
+						//for(int l=0;l<4;l++)
+							// K3x3(a,b) += dldx(k,b) * dldx(l,a) * G[i*4 + k][j*4+l] * c3;
 				}
-
 
 
 			for(int a=0;a<3;a++)
