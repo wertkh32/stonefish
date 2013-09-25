@@ -32,11 +32,10 @@ struct GPUElement
 {
 	int nodeindex[4][BLOCK_SIZE];
 	//float unwarpK[12][12][BLOCK_SIZE];
-	float B[3][3][BLOCK_SIZE]; //({1,2,3},{b,c,d}), ({4},{b,c,d}) = SUM(-({1,2,3},{b,c,d}))
+	float B[3][3][BLOCK_SIZE]; //undefShapeMatInv ({1,2,3},{b,c,d}), ({4},{b,c,d}) = SUM(-({1,2,3},{b,c,d}))
 	float c1[BLOCK_SIZE], c2[BLOCK_SIZE];
 	
 	float f0[12][BLOCK_SIZE];
-	float undefShapeMatInv[3][3][BLOCK_SIZE];
 	float nodalmass[BLOCK_SIZE];
 };
 

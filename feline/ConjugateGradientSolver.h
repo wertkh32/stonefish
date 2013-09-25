@@ -46,7 +46,7 @@ class ConjugateGradientSolver
 
 void sysMulMatFree(float* in, float* out, bool* allowed, MESH* mesh)
 {	
-	static const float alpha = 0.1, beta = 0.5;
+	static const float alpha = 0.4, beta = 0.5;
 	static const float coeffK = (1.0/FPS) * beta + (1.0/FPS) * (1.0/FPS), coeffM = 1 + (1.0/FPS) * alpha;
 
 	for(int i=0;i<n;i++)

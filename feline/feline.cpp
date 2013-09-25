@@ -49,8 +49,8 @@ static float rot = 0.0;
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    //glTranslatef(-40 + tx,-1 + ty,-140 + tz);
-	glTranslatef(-5,-3,-15);
+    glTranslatef(-40 + tx,-1 + ty,-140 + tz);
+	//glTranslatef(-5 + tx,-3 + ty,-15 + tz);
 	glRotatef(30,1,0,0);
     
 	perfmon p;

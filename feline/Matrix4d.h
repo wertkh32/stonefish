@@ -20,6 +20,13 @@ public:
 	inline Matrix4d operator-(Matrix4d&);
 	float& operator()(int i,int j){return mat[i][j];}
 
+	void print()
+	{
+		for(int i=0;i<4;i++,putchar('\n'))
+			for(int j=0;j<4;j++)
+				printf("%f ",mat[i][j]);
+	}
+
 	Matrix4d inverse();
 
 	~Matrix4d(void);

@@ -29,6 +29,7 @@ void TetElement::preCompute()
 		nodes[0]->pos.y - nodes[3]->pos.y,nodes[1]->pos.y - nodes[3]->pos.y,nodes[2]->pos.y - nodes[3]->pos.y,
 		nodes[0]->pos.z - nodes[3]->pos.z,nodes[1]->pos.z - nodes[3]->pos.z,nodes[2]->pos.z - nodes[3]->pos.z);
 	undeformShapeMatInv = undeformShapeMat.inverse();
+	//undeformShapeMatInv.print();
 	//undeformShapeMatInvT = undeformShapeMatInv.transpose();
 	undeformVolume = (1.0/6.0) * fabs(undeformShapeMat.determinant());
 
@@ -46,10 +47,13 @@ void TetElement::preComputeUndeformedStiffnessMat()
 		nodes[0]->pos.y, nodes[1]->pos.y, nodes[2]->pos.y, nodes[3]->pos.y,
 		nodes[0]->pos.z, nodes[1]->pos.z, nodes[2]->pos.z, nodes[3]->pos.z).inverse();
 
-	for(int i=0;i<4;i++,putchar('\n'))
-		for(int j=0;j<4;j++)
-			printf("%f ",inv(i,j));
-	system("pause");
+	//inv.print();
+	//system("pause");
+
+	//for(int i=0;i<4;i++,putchar('\n'))
+	//	for(int j=0;j<4;j++)
+	//		printf("%f ",inv(i,j));
+	//system("pause");
 
 	//strain matrix B = LN = dN/dx
 	//checked correct.
@@ -64,10 +68,10 @@ void TetElement::preComputeUndeformedStiffnessMat()
 	};
 
 
-	for(int i=0;i<6;i++,putchar('\n'))
-		for(int j=0;j<12;j++)
-			printf("%f ",strainMatrix[i][j]);
-	system("pause");
+	//for(int i=0;i<6;i++,putchar('\n'))
+	//	for(int j=0;j<12;j++)
+	//		printf("%f ",strainMatrix[i][j]);
+	//system("pause");
 
 	strainMat = GenMatrix<float,6,12>(strainMatrix);
 	strainMat.scalarMul(1/(2 * undeformVolume));

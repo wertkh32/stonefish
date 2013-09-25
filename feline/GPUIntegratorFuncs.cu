@@ -386,7 +386,7 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 		for(int i=0;i<3;i++)
 			#pragma unroll 3
 			for(int j=0;j<3;j++)
-				D[i][j] = t_ele->undefShapeMatInv[i][j][ltid];
+				D[i][j] = t_ele->B[i][j][ltid];
 
 		#pragma unroll 3
 		for(int i=0;i<3;i++)
