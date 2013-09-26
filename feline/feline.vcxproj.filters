@@ -22,9 +22,6 @@
     <Filter Include="QuadTetStuff">
       <UniqueIdentifier>{9173220d-8034-43d3-8ab7-29540ff28815}</UniqueIdentifier>
     </Filter>
-    <Filter Include="GPUStuff\QuadTet">
-      <UniqueIdentifier>{ae8dd250-e0d6-492b-aa7e-e88e1d7d8c88}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="ReadMe.txt" />
