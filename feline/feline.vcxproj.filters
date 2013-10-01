@@ -175,5 +175,8 @@
     <CudaCompile Include="GPUPolarDecompose.cu">
       <Filter>GPUStuff</Filter>
     </CudaCompile>
+    <CudaCompile Include="GPUQuadIntegratorFuncs .cu">
+      <Filter>GPUStuff</Filter>
+    </CudaCompile>
   </ItemGroup>
 </Project>

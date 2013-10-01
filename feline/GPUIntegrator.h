@@ -1,5 +1,6 @@
 #pragma once
 #include "Mesh.h"
+#include "QuadTetMesh.h"
 #include "ConstrainedRows.h"
 #include "GPUDataStructs.cuh"
 #include "GPUIntegratorFuncs.cuh"
@@ -7,7 +8,7 @@
 
 class GPUIntegrator
 {
-	Mesh* mesh;
+	MESH* mesh;
 	int numnodes, numelements;
 
 	GPUElement* gpuElements;
@@ -20,7 +21,7 @@ class GPUIntegrator
 	char*	 allowed;
 
 public:
-	GPUIntegrator(Mesh* _mesh, ConstrainedRows* r=0);
+	GPUIntegrator(MESH* _mesh, ConstrainedRows* r=0);
 	
 	void assembleGPUElements();
 	void assembleGPUNodes();

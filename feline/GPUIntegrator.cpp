@@ -1,7 +1,7 @@
 #include "GPUIntegrator.h"
 
 
-GPUIntegrator::GPUIntegrator(Mesh* _mesh, ConstrainedRows* r)
+GPUIntegrator::GPUIntegrator(MESH* _mesh, ConstrainedRows* r)
 {
 	mesh = _mesh;
 	numnodes = mesh->getNoOfNodes();
@@ -40,13 +40,11 @@ GPUIntegrator::assembleGPUElements()
 		int tid = i % BLOCK_SIZE;
 		int bid = i / BLOCK_SIZE;
 
-		float x0[12];
-		float f0[12] = {0};
+		float x0[(NUM_NODES_PER_ELE * 3)];
+		float f0[(NUM_NODES_PER_ELE * 3)] = {0};
 
-		GenMatrix<float,12,12>& stiff = (mesh->elements[i]->getStiffnessMat());
-		//for(int a=0;a<12;a++)
-		//	for(int b=0;b<12;b++)
-		//		gpuElements[bid].unwarpK[a][b][tid] = stiff(a,b);
+		GenMatrix<float,(NUM_NODES_PER_ELE * 3),(NUM_NODES_PER_ELE * 3)>& stiff = (mesh->elements[i]->getStiffnessMat());
+
 		for(int a=0;a<3;a++)
 			for(int b=0;b<3;b++)
 				gpuElements[bid].B[a][b][tid] = mesh->elements[i]->B[a][b];
@@ -54,25 +52,25 @@ GPUIntegrator::assembleGPUElements()
 		gpuElements[bid].c1[tid] = mesh->elements[i]->con1;
 		gpuElements[bid].c2[tid] = mesh->elements[i]->con2;
 
-		for(int a=0;a<4;a++)
+		for(int a=0;a<NUM_NODES_PER_ELE;a++)
 		{
 			x0[a*3] = mesh->elements[i]->nodes[a]->pos.x;
 			x0[a*3 + 1] = mesh->elements[i]->nodes[a]->pos.y;
 			x0[a*3 + 2] = mesh->elements[i]->nodes[a]->pos.z;
 		}
 
-		for(int a=0;a<12;a++)
-			for(int b=0;b<12;b++)
+		for(int a=0;a<(NUM_NODES_PER_ELE * 3);a++)
+			for(int b=0;b<(NUM_NODES_PER_ELE * 3);b++)
 			{
 				f0[a] += stiff(a,b) * x0[b];
 			}
 
-		for(int a=0;a<12;a++)
+		for(int a=0;a<(NUM_NODES_PER_ELE * 3);a++)
 		{
 			gpuElements[bid].f0[a][tid] = f0[a];
 		}
 
-		for(int a=0;a<4;a++)
+		for(int a=0;a<NUM_NODES_PER_ELE;a++)
 		{
 			gpuElements[bid].nodeindex[a][tid] = mesh->nodeIndices[i][a];
 		}
@@ -107,7 +105,7 @@ GPUIntegrator::assembleGPUNodes()
 
 		for(int a=0;a<numelements;a++)
 		{
-			for(int b=0;b<4;b++)
+			for(int b=0;b<NUM_NODES_PER_ELE;b++)
 			{
 				if(mesh->nodeIndices[a][b] == i)
 				{
@@ -132,7 +130,7 @@ GPUIntegrator::assembleLumpedMass()
 	for(int i=0;i<mesh->elements.size();i++)
 	{
 		float elenodemass = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume()) /4;
-		for(int j=0;j<4;j++)
+		for(int j=0;j<NUM_NODES_PER_ELE;j++)
 		{
 			mass[mesh->nodeIndices[i][j] * 3] += elenodemass;
 			mass[mesh->nodeIndices[i][j] * 3 + 1] += elenodemass;

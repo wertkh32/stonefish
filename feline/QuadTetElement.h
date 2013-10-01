@@ -13,6 +13,8 @@ public:
 	float volume;
 	float mass;
 	float nodemass[10];
+	float B[4][3];
+	float con1, con2;
 	float E, v, density, dt;
 	GenMatrix<float, 30, 30> K;
 	Matrix3d undeformShapeMatInv, R;
@@ -26,6 +28,9 @@ public:
 	void precompute();
 	void computeLumpedMasses();
 	Matrix3d computeDeformationMat();
+	float getDensity() {return density;}
+	float getVolume() {return volume;}
+	Matrix3d getUndeformShapeMatInv() {return undeformShapeMatInv;}
 
 	void computeB(float s[4], GenMatrix<float, 6, 30>* B, float* Jdet);
 	void computeStiffness();
