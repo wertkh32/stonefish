@@ -1,4 +1,5 @@
 #pragma once
+#include "defines.h"
 
 #define BLOCK_SIZE 64				//element block size
 //#define THREAD_BLOCK_SIZE 64		//actual number of threads
@@ -19,8 +20,8 @@ struct mulData
 {
 	//float system[12][12][BLOCK_SIZE];
 	float R[3][3][BLOCK_SIZE];
-	float product[12][BLOCK_SIZE];
-	float b[12][BLOCK_SIZE];
+	float product[NUM_NODES_PER_ELE * 3][BLOCK_SIZE];
+	float b[NUM_NODES_PER_ELE * 3][BLOCK_SIZE];
 };
 
 struct CGVars
@@ -30,13 +31,13 @@ struct CGVars
 
 struct GPUElement
 {
-	int nodeindex[4][BLOCK_SIZE];
+	int nodeindex[NUM_NODES_PER_ELE][BLOCK_SIZE];
 	//float unwarpK[12][12][BLOCK_SIZE];
 	float B[3][3][BLOCK_SIZE]; //undefShapeMatInv ({1,2,3},{b,c,d}), ({4},{b,c,d}) = SUM(-({1,2,3},{b,c,d}))
 	float c1[BLOCK_SIZE], c2[BLOCK_SIZE];
 	
-	float f0[12][BLOCK_SIZE];
-	float nodalmass[BLOCK_SIZE];
+	float f0[NUM_NODES_PER_ELE * 3][BLOCK_SIZE];
+	//float nodalmass[BLOCK_SIZE];
 };
 
 

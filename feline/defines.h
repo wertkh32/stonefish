@@ -11,13 +11,13 @@
 #define DT (1.0/FPS)
 #define GRAVITY 9.81
 
-#define ALPHA 0.3
-#define BETA 0.1
+//#define ALPHA 0.3
+//#define BETA 0.1
 
 //#define _LINEAR_TET_
 #define _QUAD_TET_
-//#define _GPU_
-#define _CPU_
+#define _GPU_
+//#define _CPU_
 //#define _GAUSSIAN_QUADRATURE_
 #define _BERSTEIN_POLY_
 

@@ -72,12 +72,13 @@ gpuInitVars(int numele, int numnodes)
 	HANDLE_ERROR( cudaMalloc(&gpuptrQ, numnodes * 3 * sizeof(float)) );
 	HANDLE_ERROR( cudaMalloc(&gpuptrVars, sizeof(CGVars)) );
 
-	float coeffK = dt * BETA + dt * dt, coeffM = 1 + dt * ALPHA;
-	float dt = 1.0/FPS;
+	float ddt = 1.0/FPS;
+	float coeffK = ddt * BETA + ddt * ddt, coeffM = 1 + ddt * ALPHA;
+	
 
 	HANDLE_ERROR( cudaMemcpyToSymbol("COEFFK", &coeffK, sizeof(float)) );
 	HANDLE_ERROR( cudaMemcpyToSymbol("COEFFM", &coeffM, sizeof(float)) );
-	HANDLE_ERROR( cudaMemcpyToSymbol("dt", &dt, sizeof(float)) );
+	HANDLE_ERROR( cudaMemcpyToSymbol("dt", &ddt, sizeof(float)) );
 
 		cudaDeviceSynchronize();
 		cudaError_t error = cudaGetLastError();

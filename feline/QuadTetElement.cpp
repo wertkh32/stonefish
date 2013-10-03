@@ -207,6 +207,7 @@ float Gcoeff(int I[4], int J[4])
 void 
 QuadTetElement::computeStiffness()
 {
+
 	static int indices[40][4] =    {{1,0,0,0},{-1},{-1},{-1},
 									{-1},{0,1,0,0},{-1},{-1},
 									{-1},{-1},{0,0,1,0},{-1},
@@ -255,6 +256,12 @@ QuadTetElement::computeStiffness()
 		for(int j=0;j<3;j++)
 			b[i][j] = inv(i,j+1);
 
+	for(int i=0;i<4;i++)
+		for(int j=0;j<3;j++)
+			B[i][j] = inv(i,j+1);
+
+	con1 = c1 * (2.0/5.0) * volume;
+	con2 = c2 * (2.0/5.0) * volume;
 	/*
 	#define D(a,b,c,d) (f(c,a) * f(d,b) * c2 + f(c,b) * f(d,a) * c3)
 	#define DD(c,d) ((f(c,0) * f(d,0) + f(c,1) * f(d,1) + f(c,2) * f(d,2)) * c3)

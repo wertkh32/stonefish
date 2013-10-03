@@ -49,8 +49,8 @@ static float rot = 0.0;
 	glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     glPushMatrix();
     glColor3f(1.0,0,0);
-    glTranslatef(-40 + tx,-1 + ty,-140 + tz);
-	//glTranslatef(-5 + tx,-3 + ty,-15 + tz);
+    //glTranslatef(-40 + tx,-1 + ty,-140 + tz);
+	glTranslatef(-5 + tx,-3 + ty,-15 + tz);
 	glRotatef(30,1,0,0);
     
 	perfmon p;
@@ -107,27 +107,27 @@ static float rot = 0.0;
 		//#ifdef _LINEAR_TET_
 			
 			for(int i=start;i<end;i++)
-				quadtet->nodes[i]->force = vector3<float>(10,10,0);
+				quadtet->nodes[i]->force = vector3<float>(0,10,0);
 		
 			for(int i=start2;i<end2;i++)
-				quadtet->nodes[i]->force = vector3<float>(10,10,0);
+				quadtet->nodes[i]->force = vector3<float>(0,10,0);
 		//#endif
 
 		#ifdef _QUAD_TET_
 
 			for(int i=start;i<end-1;i++)
-				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(10,10,0);
+				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(0,10,0);
 
 			for(int i=start2;i<end2-1;i++)
-				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(10,10,0);
+				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(0,10,0);
 
 			for(int i=start;i<end;i++)
 				for(int j=start2;j<end2;j++)
-					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(10,10,0);
+					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(0,10,0);
 
 			for(int i=start;i<end-1;i++)
 				for(int j=start2+1;j<end2;j++)
-					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(10,10,0);
+					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(0,10,0);
 		#endif
 	
 	}

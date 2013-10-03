@@ -75,7 +75,7 @@ GPUIntegrator::assembleGPUElements()
 			gpuElements[bid].nodeindex[a][tid] = mesh->nodeIndices[i][a];
 		}
 
-		Matrix3d& inv = mesh->elements[i]->getUndeformShapeMatInv();
+		//Matrix3d& inv = mesh->elements[i]->getUndeformShapeMatInv();
 
 		/*
 		for(int a=0;a<3;a++)
@@ -85,7 +85,7 @@ GPUIntegrator::assembleGPUElements()
 			}
 		*/
 
-		gpuElements[bid].nodalmass[tid] = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume())/4.0;
+		//gpuElements[bid].nodalmass[tid] = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume())/4.0;
 
 	}
 }
@@ -129,12 +129,12 @@ GPUIntegrator::assembleLumpedMass()
 
 	for(int i=0;i<mesh->elements.size();i++)
 	{
-		float elenodemass = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume()) /4;
+		//float elenodemass = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume()) /10.0;
 		for(int j=0;j<NUM_NODES_PER_ELE;j++)
 		{
-			mass[mesh->nodeIndices[i][j] * 3] += elenodemass;
-			mass[mesh->nodeIndices[i][j] * 3 + 1] += elenodemass;
-			mass[mesh->nodeIndices[i][j] * 3 + 2] += elenodemass;
+			mass[mesh->nodeIndices[i][j] * 3] += mesh->elements[i]->nodemass[j];
+			mass[mesh->nodeIndices[i][j] * 3 + 1] += mesh->elements[i]->nodemass[j];
+			mass[mesh->nodeIndices[i][j] * 3 + 2] += mesh->elements[i]->nodemass[j];
 		}
 	}
 }
