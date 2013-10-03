@@ -18,7 +18,6 @@
 
 struct mulData
 {
-	//float system[12][12][BLOCK_SIZE];
 	float R[3][3][BLOCK_SIZE];
 	float product[NUM_NODES_PER_ELE * 3][BLOCK_SIZE];
 	float b[NUM_NODES_PER_ELE * 3][BLOCK_SIZE];
@@ -33,6 +32,9 @@ struct GPUElement
 {
 	int nodeindex[NUM_NODES_PER_ELE][BLOCK_SIZE];
 	//float unwarpK[12][12][BLOCK_SIZE];
+	#ifdef _QUAD_TET_
+	float system[30][30][BLOCK_SIZE];
+	#endif
 	float B[3][3][BLOCK_SIZE]; //undefShapeMatInv ({1,2,3},{b,c,d}), ({4},{b,c,d}) = SUM(-({1,2,3},{b,c,d}))
 	float c1[BLOCK_SIZE], c2[BLOCK_SIZE];
 	
