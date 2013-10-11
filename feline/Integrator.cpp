@@ -53,13 +53,13 @@ Integrator::Integrator(MESH* _mesh, ConstrainedRows* r)
 			A[i][j] = 0.0;
 	}
 	*/
-	RK = (float**)malloc(sizeof(float*) * n * 3);
-	for(int i=0;i<n * 3;i++)
-		RK[i] = (float*)malloc(sizeof(float) * n * 3);
+	//RK = (float**)malloc(sizeof(float*) * n * 3);
+	//for(int i=0;i<n * 3;i++)
+	//	RK[i] = (float*)malloc(sizeof(float) * n * 3);
 
-	RKRT = (float**)malloc(sizeof(float*) * n * 3);
-	for(int i=0;i<n * 3;i++)
-	RKRT[i] = (float*)malloc(sizeof(float) * n * 3);
+	//RKRT = (float**)malloc(sizeof(float*) * n * 3);
+	//for(int i=0;i<n * 3;i++)
+	//RKRT[i] = (float*)malloc(sizeof(float) * n * 3);
 
 	solver.initSolver(n*3,A);
 	assembleX0();

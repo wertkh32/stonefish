@@ -19,7 +19,7 @@ QuadTetElement::QuadTetElement(Node* nodess[10],
 			x[i][1] = nodes[i]->pos.y;
 			x[i][2] = nodes[i]->pos.z;
 
-			printf("%f %f %f\n",x[i][0],x[i][1],x[i][2]);
+			//printf("%f %f %f\n",x[i][0],x[i][1],x[i][2]);
 		}
 
 		precompute();
@@ -37,8 +37,8 @@ void QuadTetElement::renderCurveLine(int node1, int node2, int node3)
 
  
         glBegin(GL_LINE_STRIP);
-        for (int i = 0; i <= 10; i++) {
-            glEvalCoord1f((float) i / (float) 10.0);
+        for (int i = 0; i <= 5; i++) {
+            glEvalCoord1f((float) i / (float) 5.0);
         }
        glEnd();
 }
@@ -304,15 +304,15 @@ QuadTetElement::computeStiffness()
 
 	//large code generator
 /*
-	printf("{\n");
-	for(int i=0;i<30;i++,printf("\b\b\b\b\b\b\b},\n"))
+	printf("\n");
+	for(int i=0;i<30;i++,printf("\b\b\b\b\b\b\b\n"))
 	{
-		printf("{ ");
+		//printf("temp[%d] = ", i);
 		for(int j=0;j<30;j++)
 		{
 			int a = i%3;
 			int b = j%3;
-			printf("(");
+			printf("temp[%d] += (", i%3);
 					for(int k=0;k<4;k++)
 						for(int l=0;l<4;l++)
 							if(G[(i/3)*4 + k][(j/3)*4+l] > 0.0001)
@@ -325,10 +325,10 @@ QuadTetElement::computeStiffness()
 									printf("+ ((b[%d][0] * b[%d][0] + b[%d][1] * b[%d][1] + b[%d][2] * b[%d][2]) * c3)",k,l,k,l,k,l);
 								printf(" ) * %.1f + ", G[(i/3)*4 + k][(j/3)*4+l]);
 							}
-			printf("\b\b),      ");
+			printf("\b\b) * x[%d];\n      ",j);
 		}
 	}
-	printf("}");
+	printf("");
 	system("pause");
 */
 /*	Original code

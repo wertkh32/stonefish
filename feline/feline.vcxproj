@@ -65,7 +65,7 @@
       <Keep>true</Keep>
       <FastMath>true</FastMath>
       <Optimization>Od</Optimization>
-      <MaxRegCount>0</MaxRegCount>
+      <MaxRegCount>60</MaxRegCount>
       <PtxAsOptionV>true</PtxAsOptionV>
       <GPUDebugInfo>false</GPUDebugInfo>
       <AdditionalCompilerOptions>
