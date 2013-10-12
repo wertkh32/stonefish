@@ -89,7 +89,7 @@ void MeshFunctions::makeQuadTetSheet(MESH** mesh, int edgemap[C][C])
 				tets[a][8] = edgemap[tets[a][3]][tets[a][1]];
 				tets[a][9] = edgemap[tets[a][3]][tets[a][2]];
 
-				(*mesh)->addElement(tets[a], 100,0.1,10);
+				(*mesh)->addElement(tets[a], 50,0.1,10);
 			}
 		}
 }

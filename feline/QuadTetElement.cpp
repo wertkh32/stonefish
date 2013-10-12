@@ -25,21 +25,34 @@ QuadTetElement::QuadTetElement(Node* nodess[10],
 		precompute();
 }
 
+float beizer(float p0, float p1, float p2, float t)
+{
+	//printf("%f\n",t);
+	//system("pause");
+	return (1.0-t) * (1.0-t) * p0 + 2 * (1.0-t) * t * p1 + t * t * p2;
+}
+
 void QuadTetElement::renderCurveLine(int node1, int node2, int node3)
 {
 		float coords[9] = {nodes[node1]->pos_t.x,nodes[node1]->pos_t.y,nodes[node1]->pos_t.z,
 							  nodes[node2]->pos_t.x,nodes[node2]->pos_t.y,nodes[node2]->pos_t.z,
 							  nodes[node3]->pos_t.x,nodes[node3]->pos_t.y,nodes[node3]->pos_t.z};
 
-		glMap1f(GL_MAP1_VERTEX_3,0.0,1.0,3,3,coords);
+		//glMap1f(GL_MAP1_VERTEX_3,0.0,1.0,3,3,coords);
 
-		 glEnable(GL_MAP1_VERTEX_3);
+		 //glEnable(GL_MAP1_VERTEX_3);
 
  
         glBegin(GL_LINE_STRIP);
         for (int i = 0; i <= 5; i++) {
-            glEvalCoord1f((float) i / (float) 5.0);
-        }
+            glVertex3f(beizer(coords[0],coords[3],coords[6],i/5.0),
+						beizer(coords[1],coords[4],coords[7],i/5.0),
+						beizer(coords[2],coords[5],coords[8],i/5.0));
+        
+		}
+		//glVertex3fv(coords);
+		//glVertex3fv(coords + 3);
+		//glVertex3fv(coords + 6);
        glEnd();
 }
 

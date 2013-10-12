@@ -200,14 +200,16 @@ void makeRKRT(float system[30][30][BLOCK_SIZE], float R[3][3], float xt[30], flo
 			temp[i*3+j] += R[k][j] * xt[i*3 + k]; //RT first
 		}
 
-	//mulK(temp,xt, B,c1,c2);
 	#pragma unroll 30
 	for(int i=0;i<30;i++)
-	{
 		xt[i] = 0;
+	
+	#pragma unroll 30
+	for(int j=0;j<30;j++)
+	{
 		#pragma unroll 30
-		for(int j=0;j<30;j++)
-		xt[i] += system[i][j][threadIdx.x] * temp[j];
+		for(int i=0;i<30;i++)
+		xt[i] += system[j][i][threadIdx.x] * temp[j];
 	}		
 
 	#pragma unroll 10
@@ -273,19 +275,16 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 			temp[j] += R[k][j][ltid] * temp2[k];
 		}
 
-		//interleave second batch here//////////////////////
-		index = t_ele->nodeindex[etid+THREADS_PER_ELE][ltid];
-
-		temp2[0] = x[index * 3];
-		temp2[1] = x[index * 3 + 1];
-		temp2[2] = x[index * 3 + 2];
-		////////////////////////////////////////////
-
 		nodes[etid * 3][ltid] = temp[0];
 		nodes[etid * 3 + 1][ltid] = temp[1];
 		nodes[etid * 3 + 2][ltid] = temp[2];
 
 		//START OF SECOND BATCH//////////////////////////
+		index = t_ele->nodeindex[etid+THREADS_PER_ELE][ltid];
+
+		temp2[0] = x[index * 3];
+		temp2[1] = x[index * 3 + 1];
+		temp2[2] = x[index * 3 + 2];
 
 		#pragma unroll 3
 		for(int j=0;j<3;j++)
@@ -313,12 +312,12 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 		temp[1] = 0;	
 		temp[2] = 0;
 		
-		#pragma unroll 5
+		#pragma unroll 6
 		for(int j=0;j<30;j++)
 		{
 			#pragma unroll 3
 			for(int i=0;i<3;i++)
-				temp[i] += t_ele->system[etid * 3 + i][j][ltid] * nodes[j][ltid];
+				temp[i] += t_ele->system[j][etid * 3 + i][ltid] * nodes[j][ltid];
 		}
 
 		#pragma unroll 3
@@ -337,12 +336,12 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 		temp[1] = 0;	
 		temp[2] = 0;
 		
-		#pragma unroll 5
+		#pragma unroll 6
 		for(int j=0;j<30;j++)
 		{
 			#pragma unroll 3
 			for(int i=0;i<3;i++)
-				temp[i] += t_ele->system[(etid+THREADS_PER_ELE) * 3 + i][j][ltid] * nodes[j][ltid];
+				temp[i] += t_ele->system[j][(etid+THREADS_PER_ELE) * 3 + i][ltid] * nodes[j][ltid];
 		}
 
 		#pragma unroll 3
@@ -448,7 +447,7 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, int numele
 
 		#pragma unroll 30
 		for(int i=0;i<30;i++)
-			t_solvedata->b[i][ltid] = b[i] * dt;// + nodalmass * vt[index[(i/3)] * 3 + (i%3)];
+			t_solvedata->b[i][ltid] = b[i] * dt;
 
 	}
 }
