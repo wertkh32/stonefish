@@ -305,28 +305,31 @@ QuadTetElement::computeStiffness()
 	//large code generator
 /*
 	printf("\n");
-	for(int i=0;i<30;i++,printf("\b\b\b\b\b\b\b\n"))
+	for(int i=0;i<30;i++)
 	{
 		//printf("temp[%d] = ", i);
 		for(int j=0;j<30;j++)
 		{
 			int a = i%3;
 			int b = j%3;
-			printf("temp[%d] += (", i%3);
+			//printf("temp[%d] += ", i%3);
 					for(int k=0;k<4;k++)
 						for(int l=0;l<4;l++)
 							if(G[(i/3)*4 + k][(j/3)*4+l] > 0.0001)
 							{
 								//(f(k,a) * f(l,b) * c2 + f(k,b) * f(l,a) * c3)
-								printf("( ");
-								printf("(b[%d][%d] * b[%d][%d] * c2 + b[%d][%d] * b[%d][%d] * c3)",k,a,l,b,k,b,l,a);
+								//printf(" ");
+								printf("temp[%d] += (muls[%d][%d][%d][%d] * c2 + muls[%d][%d][%d][%d] * c3) * %.1f * nodes[%d][ltid];\n",i%3,k,a,l,b,k,b,l,a,G[(i/3)*4 + k][(j/3)*4+l],j);
 								//((f(c,0) * f(d,0) + f(c,1) * f(d,1) + f(c,2) * f(d,2)) * c3)
 								if(a == b)
-									printf("+ ((b[%d][0] * b[%d][0] + b[%d][1] * b[%d][1] + b[%d][2] * b[%d][2]) * c3)",k,l,k,l,k,l);
-								printf(" ) * %.1f + ", G[(i/3)*4 + k][(j/3)*4+l]);
+									printf("temp[%d] += ((muls[%d][0][%d][0] + muls[%d][1][%d][1] + muls[%d][2][%d][2]) * c3) * %.1f * nodes[%d][ltid];\n",i%3,k,l,k,l,k,l,G[(i/3)*4 + k][(j/3)*4+l],j);
+								//printf(" ) * %.1f + ", G[(i/3)*4 + k][(j/3)*4+l]);
 							}
-			printf("\b\b) * x[%d];\n      ",j);
+			//printf("\b\b) * nodes[%d][ltid];\n      ",j);
 		}
+
+		if(i%3 == 2)
+			system("pause");
 	}
 	printf("");
 	system("pause");

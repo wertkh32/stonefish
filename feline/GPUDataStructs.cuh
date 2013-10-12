@@ -1,7 +1,7 @@
 #pragma once
 #include "defines.h"
 
-#define BLOCK_SIZE 32				//element block size
+#define BLOCK_SIZE 64				//element block size
 #define DOT_BLOCK_SIZE 512			//dot product block size
 
 #define ELEMENTS_PER_THREAD 16
@@ -11,7 +11,7 @@
 
 #define VECTOR_BLOCK_SIZE 512
 
-#define THREADS_PER_ELE 10
+#define THREADS_PER_ELE 5
 #define THREADS_PER_BLOCK (BLOCK_SIZE * THREADS_PER_ELE)
 
 

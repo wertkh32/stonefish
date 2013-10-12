@@ -65,7 +65,7 @@
       <Keep>true</Keep>
       <FastMath>true</FastMath>
       <Optimization>Od</Optimization>
-      <MaxRegCount>60</MaxRegCount>
+      <MaxRegCount>0</MaxRegCount>
       <PtxAsOptionV>true</PtxAsOptionV>
       <GPUDebugInfo>false</GPUDebugInfo>
       <AdditionalCompilerOptions>
@@ -95,6 +95,7 @@
     <CudaCompile>
       <FastMath>false</FastMath>
       <Optimization>Od</Optimization>
+      <CodeGeneration>compute_11,sm_11</CodeGeneration>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>

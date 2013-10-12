@@ -65,9 +65,11 @@ GPUIntegrator::assembleGPUElements()
 				f0[a] += stiff(a,b) * x0[b];
 			}
 
+		#ifdef _QUAD_TET_
 		for(int a=0;a<(NUM_NODES_PER_ELE * 3);a++)
 			for(int b=0;b<(NUM_NODES_PER_ELE * 3);b++)
 				gpuElements[bid].system[a][b][tid] = stiff(a,b);
+		#endif
 
 		for(int a=0;a<(NUM_NODES_PER_ELE * 3);a++)
 		{

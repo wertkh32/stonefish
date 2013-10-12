@@ -362,7 +362,7 @@ void dot(float*a, float*b, float* out, int n)
 //step 1
 //precompute
 __global__
-void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt, float* extforces, int numelements)
+void precompute(GPUElement* elements, mulData* solverData, float* xt, int numelements)
 {
 	int tid = threadIdx.x + blockIdx.x * BLOCK_SIZE;
 	int bid = blockIdx.x;
@@ -412,13 +412,16 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 	
 		makeRKRT(t_ele->B,t_ele->c1,t_ele->c2, R, nodes, b);
 
+		
+		
+		/*
 		#pragma unroll 4
 		for(int i=0;i<4;i++)
 		{
 			b[i * 3] += extforces[index[i] * 3];
 			b[i * 3 + 1] += extforces[index[i] * 3 + 1];
 			b[i * 3 + 2] += extforces[index[i] * 3 + 2];
-		}
+		}*/
 
 		//float nodalmass = t_ele->nodalmass[ltid];
 
@@ -432,7 +435,7 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, float* vt,
 //step 2
 //precompute
 __global__
-void gatherB(GPUNode* nodes, mulData* solverData, float* b, float* mass, float* vt, char* allowed,int numnodes)
+void gatherB(GPUNode* nodes, mulData* solverData, float* b, float* mass, float* vt, float* extforces, char* allowed,int numnodes)
 {
 	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
 	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
@@ -468,9 +471,9 @@ void gatherB(GPUNode* nodes, mulData* solverData, float* b, float* mass, float* 
 	{
 		if(grouptid == 0)
 		{
-			b[nodeno * 3]     = cache[0][groupid][0] + cache[1][groupid][0] + mass[nodeno * 3] * vt[nodeno * 3];
-			b[nodeno * 3 + 1] = cache[0][groupid][1] + cache[1][groupid][1] + mass[nodeno * 3 + 1] * vt[nodeno * 3 + 1];
-			b[nodeno * 3 + 2] = cache[0][groupid][2] + cache[1][groupid][2] + mass[nodeno * 3 + 2] * vt[nodeno * 3 + 2];
+			b[nodeno * 3]     = cache[0][groupid][0] + cache[1][groupid][0] + mass[nodeno * 3] * vt[nodeno * 3] + extforces[nodeno * 3] * dt;
+			b[nodeno * 3 + 1] = cache[0][groupid][1] + cache[1][groupid][1] + mass[nodeno * 3 + 1] * vt[nodeno * 3 + 1] + extforces[nodeno * 3 + 1] * dt;
+			b[nodeno * 3 + 2] = cache[0][groupid][2] + cache[1][groupid][2] + mass[nodeno * 3 + 2] * vt[nodeno * 3 + 2] + extforces[nodeno * 3 + 2] * dt;
 
 			char bitsy = allowed[nodeno];
 			if(bitsy & 1)
@@ -678,18 +681,28 @@ makeXRandD(CGVars* vars, float *x, float* r, float* d, float* q, int numnodes)
 	{
 		float alpha = vars->alpha;
 		float beta = vars->beta;
+		float d1,d2,d3;
+		float r1,r2,r3;
 
-		x[tid * 3] = x[tid * 3] + alpha * d[tid * 3];
-		x[tid * 3 + 1] = x[tid * 3 + 1] + alpha * d[tid * 3 + 1];
-		x[tid * 3 + 2] = x[tid * 3 + 2] + alpha * d[tid * 3 + 2];
+		d1 = d[tid * 3];
+		d2 =  d[tid * 3 + 1];
+		d3 = d[tid * 3 + 2];
 
-		r[tid * 3] = r[tid * 3] - alpha * q[tid * 3];
-		r[tid * 3 + 1] = r[tid * 3 + 1] - alpha * q[tid * 3 + 1];
-		r[tid * 3 + 2] = r[tid * 3 + 2] - alpha * q[tid * 3 + 2];
+		x[tid * 3] = x[tid * 3] + alpha * d1;
+		x[tid * 3 + 1] = x[tid * 3 + 1] + alpha * d2;
+		x[tid * 3 + 2] = x[tid * 3 + 2] + alpha * d3;
 
-		d[tid * 3] = r[tid * 3] + beta * d[tid * 3];
-		d[tid * 3 + 1] = r[tid * 3 + 1] + beta * d[tid * 3 + 1];
-		d[tid * 3 + 2] = r[tid * 3 + 2] + beta * d[tid * 3 + 2];
+		r1 = r[tid * 3] - alpha * q[tid * 3];
+		r2 = r[tid * 3 + 1] - alpha * q[tid * 3 + 1];
+		r3 = r[tid * 3 + 2] - alpha * q[tid * 3 + 2];
+
+		d[tid * 3] = r1 + beta * d1;
+		d[tid * 3 + 1] = r2 + beta * d2;
+		d[tid * 3 + 2] = r3 + beta * d3;
+
+		r[tid * 3] = r1;
+		r[tid * 3 + 1] = r2;
+		r[tid * 3 + 2] = r3;
 	}
 } 
 
@@ -720,7 +733,7 @@ gpuTimeStep(int numelements, int numnodes)
 
 	printf("Started\n");
 	
-	precompute<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptr_xt, gpuptr_vt, gpuptr_extforces, numelements);
+	precompute<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptr_xt, numelements);
 	
 	cudaDeviceSynchronize();
 	error = cudaGetLastError();
@@ -733,7 +746,7 @@ gpuTimeStep(int numelements, int numnodes)
 	}
 
 
-	gatherB<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_b, gpuptr_mass, gpuptr_vt, gpuptr_allowed, numnodes);
+	gatherB<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_b, gpuptr_mass, gpuptr_vt, gpuptr_extforces, gpuptr_allowed, numnodes);
 
 	cudaDeviceSynchronize();
 	error = cudaGetLastError();

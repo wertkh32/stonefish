@@ -183,20 +183,6 @@ void makeFU(float f0[30][BLOCK_SIZE], float R[3][3], float out[30])
 		}		
 }
 
-
-__device__
-void mulK(float temp[3], float x[30], float b[4][3], float con1, float con2)
-{
-	int etid = threadIdx.x / BLOCK_SIZE;
-	float con3 = (con1 - con2)/2.0;
-	/*
-	switch(etid)
-	{
-
-	}*/
-
-}
-
 //xt will be malnipulated and used as a temp array. do not further malnipulate xt
 __device__
 void makeRKRT(float system[30][30][BLOCK_SIZE], float R[3][3], float xt[30], float b[30])
@@ -249,7 +235,6 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 
 	__shared__ float nodes[30][BLOCK_SIZE]; 
 	__shared__ float R[3][3][BLOCK_SIZE];
-	__shared__ float B[4][3][BLOCK_SIZE];
 
 	float temp[3];
 
@@ -262,16 +247,6 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 				#pragma unroll 3
 				for(int j=0;j<3;j++)
 					R[i][j][ltid] = t_solvedata->R[i][j][ltid];
-
-			#pragma unroll 3
-			for(int i=0;i<3;i++)
-				#pragma unroll 3
-				for(int j=0;j<3;j++)
-					B[i][j][ltid] = t_ele->B[i][j][ltid];
-
-			B[3][0][ltid] = -B[0][0][ltid] -B[1][0][ltid] -B[2][0][ltid];
-			B[3][1][ltid] = -B[0][1][ltid] -B[1][1][ltid] -B[2][1][ltid];
-			B[3][2][ltid] = -B[0][2][ltid] -B[1][2][ltid] -B[2][2][ltid];
 		}
 	}
 
@@ -279,6 +254,8 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 
 	if(tid < numelements)
 	{
+
+		//first batch
 		//rotate by x by RT first
 		int index = t_ele->nodeindex[etid][ltid];
 
@@ -296,27 +273,53 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 			temp[j] += R[k][j][ltid] * temp2[k];
 		}
 
+		//interleave second batch here//////////////////////
+		index = t_ele->nodeindex[etid+THREADS_PER_ELE][ltid];
+
+		temp2[0] = x[index * 3];
+		temp2[1] = x[index * 3 + 1];
+		temp2[2] = x[index * 3 + 2];
+		////////////////////////////////////////////
+
 		nodes[etid * 3][ltid] = temp[0];
 		nodes[etid * 3 + 1][ltid] = temp[1];
 		nodes[etid * 3 + 2][ltid] = temp[2];
+
+		//START OF SECOND BATCH//////////////////////////
+
+		#pragma unroll 3
+		for(int j=0;j<3;j++)
+		{
+			temp[j] = 0;
+			#pragma unroll 3
+			for(int k=0;k<3;k++)
+			temp[j] += R[k][j][ltid] * temp2[k];
+		}
+
+		nodes[(etid+THREADS_PER_ELE) * 3][ltid] = temp[0];
+		nodes[(etid+THREADS_PER_ELE) * 3 + 1][ltid] = temp[1];
+		nodes[(etid+THREADS_PER_ELE) * 3 + 2][ltid] = temp[2];
+
+		////////////////////////////////////////////////////////////		
 	}
 
 	__syncthreads();
 
 	if(tid < numelements)
 	{
+
+		///FIRST BATCH///////////////////////////////
 		temp[0] = 0;
 		temp[1] = 0;	
 		temp[2] = 0;
-
-		#pragma unroll 30
+		
+		#pragma unroll 5
 		for(int j=0;j<30;j++)
 		{
 			#pragma unroll 3
 			for(int i=0;i<3;i++)
 				temp[i] += t_ele->system[etid * 3 + i][j][ltid] * nodes[j][ltid];
-		}		
-
+		}
 
 		#pragma unroll 3
 		for(int j=0;j<3;j++)
@@ -325,10 +328,35 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 			#pragma unroll 3
 			for(int k=0;k<3;k++)
 				temp3 += R[j][k][ltid] * temp[k];
-			temp3 *= COEFFK;
-			//temp3 += nodalmass * nodes[i*3 + j];
-			t_solvedata->product[etid*3 + j][ltid] = temp3;
+
+			t_solvedata->product[etid*3 + j][ltid] = temp3 * COEFFK;
 		}
+
+		//SECOND BATCH///////////////////////////////////////////////
+		temp[0] = 0;
+		temp[1] = 0;	
+		temp[2] = 0;
+		
+		#pragma unroll 5
+		for(int j=0;j<30;j++)
+		{
+			#pragma unroll 3
+			for(int i=0;i<3;i++)
+				temp[i] += t_ele->system[(etid+THREADS_PER_ELE) * 3 + i][j][ltid] * nodes[j][ltid];
+		}
+
+		#pragma unroll 3
+		for(int j=0;j<3;j++)
+		{
+			float temp3 = 0;
+			#pragma unroll 3
+			for(int k=0;k<3;k++)
+				temp3 += R[j][k][ltid] * temp[k];
+
+			t_solvedata->product[(etid+THREADS_PER_ELE)*3 + j][ltid] = temp3 * COEFFK;
+		}
+
+
 	}
 }
 
@@ -664,18 +692,28 @@ makeXRandD(CGVars* vars, float *x, float* r, float* d, float* q, int numnodes)
 	{
 		float alpha = vars->alpha;
 		float beta = vars->beta;
+		float d1,d2,d3;
+		float r1,r2,r3;
 
-		x[tid * 3] = x[tid * 3] + alpha * d[tid * 3];
-		x[tid * 3 + 1] = x[tid * 3 + 1] + alpha * d[tid * 3 + 1];
-		x[tid * 3 + 2] = x[tid * 3 + 2] + alpha * d[tid * 3 + 2];
+		d1 = d[tid * 3];
+		d2 =  d[tid * 3 + 1];
+		d3 = d[tid * 3 + 2];
 
-		r[tid * 3] = r[tid * 3] - alpha * q[tid * 3];
-		r[tid * 3 + 1] = r[tid * 3 + 1] - alpha * q[tid * 3 + 1];
-		r[tid * 3 + 2] = r[tid * 3 + 2] - alpha * q[tid * 3 + 2];
+		x[tid * 3] = x[tid * 3] + alpha * d1;
+		x[tid * 3 + 1] = x[tid * 3 + 1] + alpha * d2;
+		x[tid * 3 + 2] = x[tid * 3 + 2] + alpha * d3;
 
-		d[tid * 3] = r[tid * 3] + beta * d[tid * 3];
-		d[tid * 3 + 1] = r[tid * 3 + 1] + beta * d[tid * 3 + 1];
-		d[tid * 3 + 2] = r[tid * 3 + 2] + beta * d[tid * 3 + 2];
+		r1 = r[tid * 3] - alpha * q[tid * 3];
+		r2 = r[tid * 3 + 1] - alpha * q[tid * 3 + 1];
+		r3 = r[tid * 3 + 2] - alpha * q[tid * 3 + 2];
+
+		d[tid * 3] = r1 + beta * d1;
+		d[tid * 3 + 1] = r2 + beta * d2;
+		d[tid * 3 + 2] = r3 + beta * d3;
+
+		r[tid * 3] = r1;
+		r[tid * 3 + 1] = r2;
+		r[tid * 3 + 2] = r3;
 	}
 } 
 

@@ -9,7 +9,7 @@
 
 //extern void CGSolverGPU(float* A, float* x, float* b, int n);
 //#define DIM 100 50k
-#define DIM 20
+#define DIM 40
 int edgemap[(DIM+1) * (DIM+1) * 2][(DIM+1) * (DIM+1) * 2] = {0};
 
 /* GLUT callback Handlers */
@@ -106,27 +106,27 @@ static float rot = 0.0;
 		//#ifdef _LINEAR_TET_
 			
 			for(int i=start;i<end;i++)
-				quadtet->nodes[i]->force = vector3<float>(10,10,0);
+				quadtet->nodes[i]->force = vector3<float>(0,20,0);
 		
 			for(int i=start2;i<end2;i++)
-				quadtet->nodes[i]->force = vector3<float>(10,10,0);
+				quadtet->nodes[i]->force = vector3<float>(0,20,0);
 		//#endif
 
 		#ifdef _QUAD_TET_
 
 			for(int i=start;i<end-1;i++)
-				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(10,10,0);
+				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(0,20,0);
 
 			for(int i=start2;i<end2-1;i++)
-				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(10,10,0);
+				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(0,20,0);
 
 			for(int i=start;i<end;i++)
 				for(int j=start2;j<end2;j++)
-					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(10,10,0);
+					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(0,20,0);
 
 			for(int i=start;i<end-1;i++)
 				for(int j=start2+1;j<end2;j++)
-					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(10,10,0);
+					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(0,20,0);
 		#endif
 	
 	}
