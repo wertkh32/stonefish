@@ -162,69 +162,6 @@ gpuDestroyVars()
 }
 
 __device__
-void makeFU(float f0[30][BLOCK_SIZE], float R[3][3], float out[30])
-{
-	int ltid = threadIdx.x;
-	float x[30];
-
-	#pragma unroll 30
-	for(int i=0;i<30;i++)
-		x[i] = f0[i][ltid];
-
-	#pragma unroll 10
-	for(int i=0;i<10;i++)
-		#pragma unroll 3
-		for(int j=0;j<3;j++)
-		{
-			out[i*3 + j] = 0;
-			#pragma unroll 3
-			for(int k=0;k<3;k++)
-			out[i*3+j] += R[j][k] * x[i*3 + k];
-		}		
-}
-
-//xt will be malnipulated and used as a temp array. do not further malnipulate xt
-__device__
-void makeRKRT(float system[30][30][BLOCK_SIZE], float R[3][3], float xt[30], float b[30])
-{
-	float temp[30];
-
-	#pragma unroll 10
-	for(int i=0;i<10;i++)
-		#pragma unroll 3
-		for(int j=0;j<3;j++)
-		{
-			temp[i*3 + j] = 0;
-			#pragma unroll 3
-			for(int k=0;k<3;k++)
-			temp[i*3+j] += R[k][j] * xt[i*3 + k]; //RT first
-		}
-
-	#pragma unroll 30
-	for(int i=0;i<30;i++)
-		xt[i] = 0;
-	
-	#pragma unroll 30
-	for(int j=0;j<30;j++)
-	{
-		#pragma unroll 30
-		for(int i=0;i<30;i++)
-		xt[i] += system[j][i][threadIdx.x] * temp[j];
-	}		
-
-	#pragma unroll 10
-	for(int i=0;i<10;i++)
-		#pragma unroll 3
-		for(int j=0;j<3;j++)
-		{
-			#pragma unroll 3
-			for(int k=0;k<3;k++)
-			b[i*3+j] -= R[j][k] * xt[i*3 + k];
-		}
-
-}
-
-__device__
 void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numelements, int numnodes)
 {
 	int bid = blockIdx.x;
@@ -469,7 +406,8 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, int numele
 	}
 }
 
-
+//step 1.5
+//precompute
 __global__
 void
 makeRKRT(GPUElement* elements, mulData* solverData, float* x, int numelements, int numnodes)
@@ -909,3 +847,72 @@ gpuTimeStep(int numelements, int numnodes)
 
 
 #endif
+
+
+/* EXTRAS
+
+
+__device__
+void makeFU(float f0[30][BLOCK_SIZE], float R[3][3], float out[30])
+{
+	int ltid = threadIdx.x;
+	float x[30];
+
+	#pragma unroll 30
+	for(int i=0;i<30;i++)
+		x[i] = f0[i][ltid];
+
+	#pragma unroll 10
+	for(int i=0;i<10;i++)
+		#pragma unroll 3
+		for(int j=0;j<3;j++)
+		{
+			out[i*3 + j] = 0;
+			#pragma unroll 3
+			for(int k=0;k<3;k++)
+			out[i*3+j] += R[j][k] * x[i*3 + k];
+		}		
+}
+
+//xt will be malnipulated and used as a temp array. do not further malnipulate xt
+__device__
+void makeRKRT(float system[30][30][BLOCK_SIZE], float R[3][3], float xt[30], float b[30])
+{
+	float temp[30];
+
+	#pragma unroll 10
+	for(int i=0;i<10;i++)
+		#pragma unroll 3
+		for(int j=0;j<3;j++)
+		{
+			temp[i*3 + j] = 0;
+			#pragma unroll 3
+			for(int k=0;k<3;k++)
+			temp[i*3+j] += R[k][j] * xt[i*3 + k]; //RT first
+		}
+
+	#pragma unroll 30
+	for(int i=0;i<30;i++)
+		xt[i] = 0;
+	
+	#pragma unroll 30
+	for(int j=0;j<30;j++)
+	{
+		#pragma unroll 30
+		for(int i=0;i<30;i++)
+		xt[i] += system[j][i][threadIdx.x] * temp[j];
+	}		
+
+	#pragma unroll 10
+	for(int i=0;i<10;i++)
+		#pragma unroll 3
+		for(int j=0;j<3;j++)
+		{
+			#pragma unroll 3
+			for(int k=0;k<3;k++)
+			b[i*3+j] -= R[j][k] * xt[i*3 + k];
+		}
+
+}
+
+*/

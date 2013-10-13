@@ -11,6 +11,8 @@
 #define DT (1.0/FPS)
 #define GRAVITY 9.81
 
+#define MEM_ALIGN 16
+
 //#define ALPHA 0.3
 //#define BETA 0.1
 
