@@ -10,6 +10,7 @@ class GPUIntegrator
 {
 	MESH* mesh;
 	int numnodes, numelements;
+	int aligned_numnodes;
 
 	GPUElement* gpuElements;
 	GPUNode*   gpuNodes;
