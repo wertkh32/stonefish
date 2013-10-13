@@ -138,9 +138,9 @@ GPUIntegrator::assembleLumpedMass()
 		//float elenodemass = (mesh->elements[i]->getDensity() * mesh->elements[i]->getVolume()) /10.0;
 		for(int j=0;j<NUM_NODES_PER_ELE;j++)
 		{
-			mass[mesh->nodeIndices[i][j] * 3] += mesh->elements[i]->nodemass[j];
-			mass[mesh->nodeIndices[i][j] * 3 + 1] += mesh->elements[i]->nodemass[j];
-			mass[mesh->nodeIndices[i][j] * 3 + 2] += mesh->elements[i]->nodemass[j];
+			mass[mesh->nodeIndices[i][j]] += mesh->elements[i]->nodemass[j];
+			mass[mesh->nodeIndices[i][j] + numnodes] += mesh->elements[i]->nodemass[j];
+			mass[mesh->nodeIndices[i][j] + numnodes * 2] += mesh->elements[i]->nodemass[j];
 		}
 	}
 }
@@ -149,9 +149,9 @@ void GPUIntegrator::assembleXt()
 {
 	for(int i=0;i<numnodes;i++)
 	{
-		xt[i * 3] = mesh->nodes[i]->pos_t.x;
-		xt[i * 3 + 1] = mesh->nodes[i]->pos_t.y;
-		xt[i * 3 + 2] = mesh->nodes[i]->pos_t.z;	
+		xt[i] = mesh->nodes[i]->pos_t.x;
+		xt[i + numnodes] = mesh->nodes[i]->pos_t.y;
+		xt[i + numnodes * 2] = mesh->nodes[i]->pos_t.z;	
 	}
 }
 
@@ -159,9 +159,9 @@ void GPUIntegrator::assembleVt()
 {
 	for(int i=0;i<numnodes;i++)
 	{	
-		vt[i * 3] = mesh->nodes[i]->vec_t.x;
-		vt[i * 3 + 1] = mesh->nodes[i]->vec_t.y;
-		vt[i * 3 + 2] = mesh->nodes[i]->vec_t.z;
+		vt[i] = mesh->nodes[i]->vec_t.x;
+		vt[i + numnodes] = mesh->nodes[i]->vec_t.y;
+		vt[i + numnodes * 2] = mesh->nodes[i]->vec_t.z;
 	}
 }
 
@@ -169,9 +169,9 @@ void GPUIntegrator::assembleExtForce()
 {
 	for(int i=0;i<numnodes;i++)
 	{
-		extforces[i * 3] = mesh->nodes[i]->force.x;
-		extforces[i * 3 + 1] = mesh->nodes[i]->force.y;
-		extforces[i * 3 + 2] = mesh->nodes[i]->force.z;
+		extforces[i] = mesh->nodes[i]->force.x;
+		extforces[i + numnodes] = mesh->nodes[i]->force.y;
+		extforces[i + numnodes * 2] = mesh->nodes[i]->force.z;
 	}
 }
 
@@ -209,9 +209,9 @@ GPUIntegrator::updatePositions()
 
 	for(int i=0;i<numnodes;i++)
 	{
-		mesh->nodes[i]->pos_t.x = xt[i * 3];
-		mesh->nodes[i]->pos_t.y = xt[i * 3 + 1];
-		mesh->nodes[i]->pos_t.z = xt[i * 3 + 2];
+		mesh->nodes[i]->pos_t.x = xt[i];
+		mesh->nodes[i]->pos_t.y = xt[i + numnodes];
+		mesh->nodes[i]->pos_t.z = xt[i + numnodes * 2];
 	}
 }
 

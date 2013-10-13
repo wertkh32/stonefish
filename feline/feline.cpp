@@ -9,7 +9,7 @@
 
 //extern void CGSolverGPU(float* A, float* x, float* b, int n);
 //#define DIM 100 50k
-#define DIM 40
+#define DIM 50
 int edgemap[(DIM+1) * (DIM+1) * 2][(DIM+1) * (DIM+1) * 2] = {0};
 
 /* GLUT callback Handlers */
