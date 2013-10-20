@@ -31,6 +31,7 @@ public:
 	float getDensity() {return density;}
 	float getVolume() {return volume;}
 	Matrix3d getUndeformShapeMatInv() {return undeformShapeMatInv;}
+	Matrix3d computeDeformShapeMat();
 
 	void computeB(float s[4], GenMatrix<float, 6, 30>* B, float* Jdet);
 	void computeStiffness();

@@ -43,7 +43,12 @@ Model::interpolateVerts()
 	for(int i=0;i<verts.size();i++)
 	{
 		if(barys[i].element_no == -1) continue;
+		#ifdef _LINEAR_TET_
 		verts[i].coords = (mesh->elements[barys[i].element_no]->computeDeformShapeMat() * barys[i].barycoords) + mesh->elements[barys[i].element_no]->getNodes()[3]->pos_t;
+		#endif
+		#ifdef _QUAD_TET_
+		
+		#endif
 	}
 }
 

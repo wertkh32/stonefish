@@ -123,6 +123,15 @@ Matrix3d QuadTetElement::computeDeformationMat()
 	return deformShapeMat * undeformShapeMatInv;
 }
 
+Matrix3d QuadTetElement::computeDeformShapeMat()
+{
+	Matrix3d deformShapeMat
+		(nodes[0]->pos_t.x - nodes[3]->pos_t.x,nodes[1]->pos_t.x - nodes[3]->pos_t.x,nodes[2]->pos_t.x - nodes[3]->pos_t.x,
+		nodes[0]->pos_t.y - nodes[3]->pos_t.y,nodes[1]->pos_t.y - nodes[3]->pos_t.y,nodes[2]->pos_t.y - nodes[3]->pos_t.y,
+		nodes[0]->pos_t.z - nodes[3]->pos_t.z,nodes[1]->pos_t.z - nodes[3]->pos_t.z,nodes[2]->pos_t.z - nodes[3]->pos_t.z);
+	return deformShapeMat;
+}
+
 void QuadTetElement::computeRotation()
 {
 	Matrix3d F,S;
@@ -434,6 +443,25 @@ QuadTetElement::computeStiffness()
 		c3 = (c1 - c2)/2.0;
 	//printf("%f %f %f\n",c1,c2,c3);
 
+	//for GPU
+		Matrix4d J =	Matrix4d
+			( 1.0, 1.0, 1.0, 1.0,
+			nodes[0]->pos.x, nodes[1]->pos.x, nodes[2]->pos.x, nodes[3]->pos.x,
+			nodes[0]->pos.y, nodes[1]->pos.y, nodes[2]->pos.y, nodes[3]->pos.y,
+			nodes[0]->pos.z, nodes[1]->pos.z, nodes[2]->pos.z, nodes[3]->pos.z);
+
+		Matrix4d Jinv =	J.inverse();
+
+		for(int i=0;i<4;i++)
+			for(int j=0;j<3;j++)
+				B[i][j] = Jinv(i,j+1);
+
+		float Jdet = fabs(J.determinant());
+
+		con1 = c1 * 0.25 * (1.0/0.6) * Jdet;
+		con2 = c2 * 0.25 * (1.0/0.6) * Jdet;
+	//////////////
+
 	float C[6][6] =
 	{
 		{ c1, c2, c2, 0, 0, 0 },
@@ -465,10 +493,10 @@ QuadTetElement::computeStiffness()
 		float det;
 
 		computeB(S[i],&B, &det);
-		K = K + (B.transpose() * E * B * (det * weight));
+		K = K + (B.transpose() * E * B) * (1.0/6.0) * Jdet * 0.25;// * (det * weight));
 	}
 
-	K = K * (1.0/6.0);
+	//K = K * (1.0/6.0) * Jdet * 0.25;
 }
 #endif
 

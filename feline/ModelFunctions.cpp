@@ -120,3 +120,8 @@ void ModelFunctions::rodFunc(vertArray* v,	edgeArray* e,	faceArray* f)
 		f->push(f1);
 	}
 }
+
+void ModelFunctions::sheetFunc(vertArray* v, edgeArray* e, faceArray* f)
+{
+
+}

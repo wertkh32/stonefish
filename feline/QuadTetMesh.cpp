@@ -17,6 +17,8 @@ QuadTetMesh::QuadTetMesh(Node node_list[], int n)
 	#endif
 
 	numnodes = nodes.size();
+	//printf("%d",numnodes);
+	//system("pause");
 
 	dt = 1.0/FPS;
 }

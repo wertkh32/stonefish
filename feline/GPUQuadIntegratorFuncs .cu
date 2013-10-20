@@ -10,13 +10,13 @@
 
 //#define BLOCK_SIZE 512
 
-#define ALPHA 0.4
-#define BETA 0.5
+#define ALPHA 0.1
+#define BETA 0.1
 
 #define MAX_ITER 20
 #define EPSIL 0.05
 
-__constant__ float COEFFK, COEFFM, dt;
+__constant__ float COEFFK, COEFFM, dt, S[16];
 
 GPUElement* gpuptrElements;
 GPUNode*   gpuptrNodes;
@@ -75,10 +75,18 @@ gpuInitVars(int numele, int numnodes)
 	float ddt = 1.0/FPS;
 	float coeffK = ddt * BETA + ddt * ddt, coeffM = 1 + ddt * ALPHA;
 	
+	float a = ((5.0 + 3.0 * sqrt(5.0))/20.) * 4.0;
+	float b = ((5.0 - sqrt(5.0))/20.) * 4.0;
+
+	float _S[16] = { a,b,b,b,
+					  b,a,b,b,
+					  b,b,a,b,
+					  b,b,b,a };
 
 	HANDLE_ERROR( cudaMemcpyToSymbol("COEFFK", &coeffK, sizeof(float)) );
 	HANDLE_ERROR( cudaMemcpyToSymbol("COEFFM", &coeffM, sizeof(float)) );
 	HANDLE_ERROR( cudaMemcpyToSymbol("dt", &ddt, sizeof(float)) );
+	HANDLE_ERROR( cudaMemcpyToSymbol("S", _S, sizeof(float) * 16) );
 
 		cudaDeviceSynchronize();
 		cudaError_t error = cudaGetLastError();
@@ -161,6 +169,7 @@ gpuDestroyVars()
 	cudaFree(gpuptrVars);
 }
 
+#ifdef _BERSTEIN_POLY_
 __device__
 void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numelements, int numnodes)
 {
@@ -248,7 +257,7 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 		temp[0] = 0;
 		temp[1] = 0;	
 		temp[2] = 0;
-		
+		//symmetric so exploit
 		#pragma unroll 6
 		for(int j=0;j<30;j++)
 		{
@@ -295,6 +304,300 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 
 	}
 }
+#endif
+
+
+
+#ifdef _GAUSSIAN_QUADRATURE_
+
+__device__
+void mulK(float x[30], float b[4][3][BLOCK_SIZE], float c1[BLOCK_SIZE], float c2[BLOCK_SIZE])
+{
+	int ltid = threadIdx.x % BLOCK_SIZE;
+	int etid = threadIdx.x / BLOCK_SIZE;
+	float temp[6];
+	float temp2[6];
+
+	float con1 = c1[ltid];
+	float con2 = c2[ltid];
+	float con3 = (con1 - con2)/2.0;
+
+	float* s = &S[etid * 4];
+
+	float dndx[3][10] = { {
+						   (s[0]-1) * b[0][0][ltid],
+						   (s[1]-1) * b[1][0][ltid],
+						   (s[2]-1) * b[2][0][ltid],
+						   (s[3]-1) * b[3][0][ltid],
+						   (b[1][0][ltid] * s[0] +  b[0][0][ltid] * s[1]),
+						   (b[2][0][ltid] * s[1] +  b[1][0][ltid] * s[2]),
+						   (b[0][0][ltid] * s[2] +  b[2][0][ltid] * s[0]),
+						   (b[3][0][ltid] * s[0] +  b[0][0][ltid] * s[3]),
+						   (b[3][0][ltid] * s[1] +  b[1][0][ltid] * s[3]),
+						   (b[3][0][ltid] * s[2] +  b[2][0][ltid] * s[3])
+						   },
+
+						  {
+						   (s[0]-1) * b[0][1][ltid],
+						   (s[1]-1) * b[1][1][ltid],
+						   (s[2]-1) * b[2][1][ltid],
+						   (s[3]-1) * b[3][1][ltid],
+						   (b[1][1][ltid] * s[0] +  b[0][1][ltid] * s[1]),
+						   (b[2][1][ltid] * s[1] +  b[1][1][ltid] * s[2]),
+						   (b[0][1][ltid] * s[2] +  b[2][1][ltid] * s[0]),
+						   (b[3][1][ltid] * s[0] +  b[0][1][ltid] * s[3]),
+						   (b[3][1][ltid] * s[1] +  b[1][1][ltid] * s[3]),
+						   (b[3][1][ltid] * s[2] +  b[2][1][ltid] * s[3])
+						  },
+
+						  {
+						   (s[0]-1) * b[0][2][ltid],
+						   (s[1]-1) * b[1][2][ltid],
+						   (s[2]-1) * b[2][2][ltid],
+						   (s[3]-1) * b[3][2][ltid],
+						   (b[1][2][ltid] * s[0] +  b[0][2][ltid] * s[1]),
+						   (b[2][2][ltid] * s[1] +  b[1][2][ltid] * s[2]),
+						   (b[0][2][ltid] * s[2] +  b[2][2][ltid] * s[0]),
+						   (b[3][2][ltid] * s[0] +  b[0][2][ltid] * s[3]),
+						   (b[3][2][ltid] * s[1] +  b[1][2][ltid] * s[3]),
+						   (b[3][2][ltid] * s[2] +  b[2][2][ltid] * s[3])
+						  }
+					};
+
+	temp[0] = 0;
+	temp[1] = 0;
+	temp[2] = 0;
+
+	#pragma unroll 3
+	for(int i=0;i<3;i++)
+		#pragma unroll 10
+		for(int j=0;j<10;j++)
+			temp[i] += dndx[i][j] * x[j * 3 + i];
+
+	temp[3] = 0;
+	temp[4] = 0;
+	temp[5] = 0;
+
+	#pragma unroll 10
+	for(int j=0;j<10;j++)
+	{
+		temp[3] += dndx[1][j] * x[j * 3] + dndx[0][j] * x[j * 3 + 1];
+	}
+
+	#pragma unroll 10
+	for(int j=0;j<10;j++)
+	{
+		temp[4] += dndx[2][j] * x[j * 3 + 1] + dndx[1][j] * x[j * 3 + 2];
+	}
+
+	#pragma unroll 10
+	for(int j=0;j<10;j++)
+	{
+		temp[5] += dndx[2][j] * x[j * 3] + dndx[0][j] * x[j * 3 + 2];
+	}
+
+	temp2[0] = temp[0] * con1 + temp[1] * con2 + temp[2] * con2;
+	temp2[1] = temp[0] * con2 + temp[1] * con1 + temp[2] * con2;
+	temp2[2] = temp[0] * con2 + temp[1] * con2 + temp[2] * con1;
+	temp2[3] = temp[3] * con3;
+	temp2[4] = temp[4] * con3;
+	temp2[5] = temp[5] * con3;
+
+	#pragma unroll 10
+	for(int i=0;i<10;i++)
+	{
+		x[i * 3] =     dndx[0][i] * temp2[0] + dndx[1][i] * temp2[3] + dndx[2][i] * temp2[5];
+		x[i * 3 + 1] = dndx[1][i] * temp2[1] + dndx[0][i] * temp2[3] + dndx[2][i] * temp2[4];
+		x[i * 3 + 2] = dndx[2][i] * temp2[2] + dndx[1][i] * temp2[4] + dndx[0][i] * temp2[5];
+	}
+
+}
+
+__device__
+void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numelements, int numnodes)
+{
+	int bid = blockIdx.x;
+	int ltid = threadIdx.x % BLOCK_SIZE;
+	int etid = threadIdx.x / BLOCK_SIZE;
+	int tid = ltid + blockIdx.x * BLOCK_SIZE;
+	
+	GPUElement* t_ele = &(elements[bid]);
+	mulData* t_solvedata = &(solverData[bid]);
+
+	__shared__ float nodes[30][BLOCK_SIZE]; 
+	__shared__ float R[3][3][BLOCK_SIZE];
+	__shared__ float B[4][3][BLOCK_SIZE];
+
+	float temp[3];
+	float out[30];
+
+	if(tid < numelements)
+	{
+		if(etid == 0)
+		{
+			#pragma unroll 3
+			for(int i=0;i<3;i++)
+				#pragma unroll 3
+				for(int j=0;j<3;j++)
+					R[i][j][ltid] = t_solvedata->R[i][j][ltid];
+
+			#pragma unroll 3
+			for(int i=0;i<3;i++)
+				#pragma unroll 3
+				for(int j=0;j<3;j++)
+					B[i][j][ltid] = t_ele->B[i][j][ltid];
+
+			B[3][0][ltid] = -B[0][0][ltid]-B[1][0][ltid]-B[2][0][ltid];
+			B[3][1][ltid] = -B[0][1][ltid]-B[1][1][ltid]-B[2][1][ltid];
+			B[3][2][ltid] = -B[0][2][ltid]-B[1][2][ltid]-B[2][2][ltid];
+		}
+	}
+
+	__syncthreads();
+
+	if(tid < numelements)
+	{
+
+		//first batch
+		//rotate by x by RT first
+		int index = t_ele->nodeindex[etid][ltid];
+
+		float temp2[3];
+		temp2[0] = x[index];
+		temp2[1] = x[index + numnodes];
+		temp2[2] = x[index + numnodes * 2];
+
+		#pragma unroll 3
+		for(int j=0;j<3;j++)
+		{
+			temp[j] = 0;
+			#pragma unroll 3
+			for(int k=0;k<3;k++)
+			temp[j] += R[k][j][ltid] * temp2[k];
+		}
+
+		nodes[etid * 3][ltid] = temp[0];
+		nodes[etid * 3 + 1][ltid] = temp[1];
+		nodes[etid * 3 + 2][ltid] = temp[2];
+
+		//START OF SECOND BATCH//////////////////////////
+		index = t_ele->nodeindex[etid+THREADS_PER_ELE][ltid];
+
+		temp2[0] = x[index];
+		temp2[1] = x[index + numnodes];
+		temp2[2] = x[index + numnodes * 2];
+
+		#pragma unroll 3
+		for(int j=0;j<3;j++)
+		{
+			temp[j] = 0;
+			#pragma unroll 3
+			for(int k=0;k<3;k++)
+			temp[j] += R[k][j][ltid] * temp2[k];
+		}
+
+		nodes[(etid+THREADS_PER_ELE) * 3][ltid] = temp[0];
+		nodes[(etid+THREADS_PER_ELE) * 3 + 1][ltid] = temp[1];
+		nodes[(etid+THREADS_PER_ELE) * 3 + 2][ltid] = temp[2];
+
+		////////////////////////////////////////////////////////////
+		
+		if(etid < 2)
+		{
+			index = t_ele->nodeindex[etid+THREADS_PER_ELE * 2][ltid];
+
+			temp2[0] = x[index];
+			temp2[1] = x[index + numnodes];
+			temp2[2] = x[index + numnodes * 2];
+
+			#pragma unroll 3
+			for(int j=0;j<3;j++)
+			{
+				temp[j] = 0;
+				#pragma unroll 3
+				for(int k=0;k<3;k++)
+				temp[j] += R[k][j][ltid] * temp2[k];
+			}
+
+			nodes[(etid+THREADS_PER_ELE * 2) * 3][ltid] = temp[0];
+			nodes[(etid+THREADS_PER_ELE * 2) * 3 + 1][ltid] = temp[1];
+			nodes[(etid+THREADS_PER_ELE * 2) * 3 + 2][ltid] = temp[2];
+		}		
+	}
+
+	__syncthreads();
+
+	if(tid < numelements)
+	{
+		#pragma unroll 30
+		for(int i=0;i<30;i++)
+			out[i] = nodes[i][ltid];
+
+		mulK(out, B, t_ele->c1, t_ele->c2);
+
+		#pragma unroll 10
+		for(int i=0;i<10;i++)
+		{
+			temp[0] = 0;
+			temp[1] = 0;
+			temp[2] = 0;
+
+			#pragma unroll 3
+			for(int j=0;j<3;j++)
+				#pragma unroll 3
+				for(int k=0;k<3;k++)
+					temp[j] += R[j][k][ltid] * out[i * 3 + k];
+
+			out[i * 3] = temp[0];
+			out[i * 3 + 1] = temp[1];
+			out[i * 3 + 2] = temp[2];
+		}
+
+
+		if(etid == 0)
+			#pragma unroll 30
+			for(int i=0;i<30;i++)
+				nodes[i][ltid] = out[i];
+	}
+
+	__syncthreads();
+
+	if(tid < numelements && etid == 1)
+		#pragma unroll 30
+		for(int i=0;i<30;i++)
+			nodes[i][ltid] += out[i];
+	
+	__syncthreads();
+
+	if(tid < numelements && etid == 2)
+		#pragma unroll 30
+		for(int i=0;i<30;i++)
+			nodes[i][ltid] += out[i];
+	
+	__syncthreads();
+	
+	if(tid < numelements && etid == 3)
+		#pragma unroll 30
+		for(int i=0;i<30;i++)
+			nodes[i][ltid] += out[i];
+		
+	__syncthreads();
+
+
+	if(tid < numelements && etid == 0)
+		#pragma unroll 30
+		for(int i=0;i<30;i++)
+			t_solvedata->product[i][ltid] = nodes[i][ltid];
+
+}
+
+
+#endif
+
+
+
+
+
 
 __device__
 void dot(float*a, float*b, float* out, int n) 

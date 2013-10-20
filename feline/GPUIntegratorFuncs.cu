@@ -10,7 +10,7 @@
 
 //#define BLOCK_SIZE 512
 
-#define ALPHA 0.3
+#define ALPHA 0.1
 #define BETA 0.1
 
 #define MAX_ITER 20

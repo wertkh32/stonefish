@@ -25,7 +25,11 @@ void MeshFunctions::makeQuadTetSheet(MESH** mesh, int edgemap[C][C])
 
 	int numcorners = n * m * 2;
 
-	Node* list = (Node*)malloc(sizeof(Node) * (C + (C*C-C)/2));
+	int c = (N+1) * (M+1) * 2;
+
+	printf("%d\n", c * 10);
+
+	Node* list = (Node*)malloc(sizeof(Node) * c * 10);
 
 	//int edgemap[C][C] = {0};
 

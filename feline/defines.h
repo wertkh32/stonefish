@@ -20,8 +20,8 @@
 #define _QUAD_TET_
 #define _GPU_
 //#define _CPU_
-//#define _GAUSSIAN_QUADRATURE_
-#define _BERSTEIN_POLY_
+#define _GAUSSIAN_QUADRATURE_
+//#define _BERSTEIN_POLY_
 
 #ifdef _QUAD_TET_
 #define MESH	QuadTetMesh
