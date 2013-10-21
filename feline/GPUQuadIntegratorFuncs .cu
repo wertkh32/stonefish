@@ -34,6 +34,9 @@ float* gpuptrD;
 float* gpuptrQ;
 CGVars* gpuptrVars;
 
+//for debug
+float* debugbuf;
+
 static void HandleError( cudaError_t err,
                          const char *file,
                          int line ) {
@@ -71,6 +74,9 @@ gpuInitVars(int numele, int numnodes)
 	HANDLE_ERROR( cudaMalloc(&gpuptrD, numnodes * 3 * sizeof(float)) );
 	HANDLE_ERROR( cudaMalloc(&gpuptrQ, numnodes * 3 * sizeof(float)) );
 	HANDLE_ERROR( cudaMalloc(&gpuptrVars, sizeof(CGVars)) );
+
+	debugbuf = (float*)malloc(numnodes * 3 * sizeof(float));
+
 
 	float ddt = 1.0/FPS;
 	float coeffK = ddt * BETA + ddt * ddt, coeffM = 1 + ddt * ALPHA;
@@ -124,6 +130,17 @@ gpuUploadVars(GPUElement* gpuElements, GPUNode* gpuNodes,float* xt,
 			//exit(-1);
 			system("pause");
 		}
+}
+
+__host__
+void inspectGPUBuffer(float* gpubuf,int numnodes)
+{
+	cudaMemcpy(debugbuf, gpubuf, numnodes * 3 * sizeof(float), cudaMemcpyDeviceToHost);
+
+	for(int i=0;i<numnodes * 3;i++)
+		printf("%f ",debugbuf[i]);
+	printf("\n");
+	system("pause");
 }
 
 __host__
@@ -368,11 +385,12 @@ void mulK(float x[30], float b[4][3][BLOCK_SIZE], float c1[BLOCK_SIZE], float c2
 	temp[1] = 0;
 	temp[2] = 0;
 
-	#pragma unroll 3
-	for(int i=0;i<3;i++)
-		#pragma unroll 10
-		for(int j=0;j<10;j++)
-			temp[i] += dndx[i][j] * x[j * 3 + i];
+	
+	#pragma unroll 10
+	for(int j=0;j<10;j++)
+		#pragma unroll 3
+		for(int i=0;i<3;i++)
+		temp[i] += dndx[i][j] * x[j * 3 + i];
 
 	temp[3] = 0;
 	temp[4] = 0;
@@ -587,7 +605,7 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 	if(tid < numelements && etid == 0)
 		#pragma unroll 30
 		for(int i=0;i<30;i++)
-			t_solvedata->product[i][ltid] = nodes[i][ltid];
+			t_solvedata->product[i][ltid] = nodes[i][ltid] / 10.0;
 
 }
 
@@ -1044,6 +1062,8 @@ gpuTimeStep(int numelements, int numnodes)
 		printf("CUDA error: %s\n", cudaGetErrorString(error));
 		//exit(-1);
 	}
+
+	//inspectGPUBuffer(gpuptr_b,numnodes);
 
 	initAx<<<num_blocks_ele, THREADS_PER_BLOCK>>>(gpuptrElements, gpuptrMulData, gpuptr_vt, numelements, numnodes);
 
