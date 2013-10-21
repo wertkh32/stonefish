@@ -458,8 +458,8 @@ QuadTetElement::computeStiffness()
 
 		float Jdet = fabs(J.determinant());
 
-		con1 = c1 * 0.25 * (1.0/0.6) * Jdet;
-		con2 = c2 * 0.25 * (1.0/0.6) * Jdet;
+		con1 = c1 * 0.25 * (1.0/6.0) * Jdet;
+		con2 = c2 * 0.25 * (1.0/6.0) * Jdet;
 	//////////////
 
 	float C[6][6] =

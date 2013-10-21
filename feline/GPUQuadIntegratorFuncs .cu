@@ -341,45 +341,41 @@ void mulK(float x[30], float b[4][3][BLOCK_SIZE], float c1[BLOCK_SIZE], float c2
 
 	float* s = &S[etid * 4];
 
-	float dndx[3][10] = { {
-						   (s[0]-1) * b[0][0][ltid],
-						   (s[1]-1) * b[1][0][ltid],
-						   (s[2]-1) * b[2][0][ltid],
-						   (s[3]-1) * b[3][0][ltid],
-						   (b[1][0][ltid] * s[0] +  b[0][0][ltid] * s[1]),
-						   (b[2][0][ltid] * s[1] +  b[1][0][ltid] * s[2]),
-						   (b[0][0][ltid] * s[2] +  b[2][0][ltid] * s[0]),
-						   (b[3][0][ltid] * s[0] +  b[0][0][ltid] * s[3]),
-						   (b[3][0][ltid] * s[1] +  b[1][0][ltid] * s[3]),
-						   (b[3][0][ltid] * s[2] +  b[2][0][ltid] * s[3])
-						   },
+	float dndx[3][10];
+					
+	dndx[0][0] = (s[0]-1.0) * b[0][0][ltid];
+	dndx[0][1] = (s[1]-1.0) * b[1][0][ltid];
+	dndx[0][2] = (s[2]-1.0) * b[2][0][ltid];
+	dndx[0][3] = (s[3]-1.0) * b[3][0][ltid];
+	dndx[0][4] = (b[1][0][ltid] * s[0] +  b[0][0][ltid] * s[1]);
+	dndx[0][5] = (b[2][0][ltid] * s[1] +  b[1][0][ltid] * s[2]);
+	dndx[0][6] = (b[0][0][ltid] * s[2] +  b[2][0][ltid] * s[0]);
+	dndx[0][7] = (b[3][0][ltid] * s[0] +  b[0][0][ltid] * s[3]);
+	dndx[0][8] = (b[3][0][ltid] * s[1] +  b[1][0][ltid] * s[3]);
+	dndx[0][9] = (b[3][0][ltid] * s[2] +  b[2][0][ltid] * s[3]);
+	
+	dndx[1][0] = (s[0]-1.0) * b[0][1][ltid];
+	dndx[1][1] = (s[1]-1.0) * b[1][1][ltid];
+	dndx[1][2] = (s[2]-1.0) * b[2][1][ltid];
+	dndx[1][3] = (s[3]-1.0) * b[3][1][ltid];
+	dndx[1][4] = (b[1][1][ltid] * s[0] +  b[0][1][ltid] * s[1]);
+	dndx[1][5] = (b[2][1][ltid] * s[1] +  b[1][1][ltid] * s[2]);
+	dndx[1][6] = (b[0][1][ltid] * s[2] +  b[2][1][ltid] * s[0]);
+	dndx[1][7] = (b[3][1][ltid] * s[0] +  b[0][1][ltid] * s[3]);
+	dndx[1][8] = (b[3][1][ltid] * s[1] +  b[1][1][ltid] * s[3]);
+	dndx[1][9] = (b[3][1][ltid] * s[2] +  b[2][1][ltid] * s[3]);
+	
+	dndx[2][0] = (s[0]-1.0) * b[0][2][ltid];
+	dndx[2][1] = (s[1]-1.0) * b[1][2][ltid];
+	dndx[2][2] = (s[2]-1.0) * b[2][2][ltid];
+	dndx[2][3] = (s[3]-1.0) * b[3][2][ltid];
+	dndx[2][4] = (b[1][2][ltid] * s[0] +  b[0][2][ltid] * s[1]);
+	dndx[2][5] = (b[2][2][ltid] * s[1] +  b[1][2][ltid] * s[2]);
+	dndx[2][6] = (b[0][2][ltid] * s[2] +  b[2][2][ltid] * s[0]);
+	dndx[2][7] = (b[3][2][ltid] * s[0] +  b[0][2][ltid] * s[3]);
+	dndx[2][8] = (b[3][2][ltid] * s[1] +  b[1][2][ltid] * s[3]);
+	dndx[2][9] = (b[3][2][ltid] * s[2] +  b[2][2][ltid] * s[3]);					   
 
-						  {
-						   (s[0]-1) * b[0][1][ltid],
-						   (s[1]-1) * b[1][1][ltid],
-						   (s[2]-1) * b[2][1][ltid],
-						   (s[3]-1) * b[3][1][ltid],
-						   (b[1][1][ltid] * s[0] +  b[0][1][ltid] * s[1]),
-						   (b[2][1][ltid] * s[1] +  b[1][1][ltid] * s[2]),
-						   (b[0][1][ltid] * s[2] +  b[2][1][ltid] * s[0]),
-						   (b[3][1][ltid] * s[0] +  b[0][1][ltid] * s[3]),
-						   (b[3][1][ltid] * s[1] +  b[1][1][ltid] * s[3]),
-						   (b[3][1][ltid] * s[2] +  b[2][1][ltid] * s[3])
-						  },
-
-						  {
-						   (s[0]-1) * b[0][2][ltid],
-						   (s[1]-1) * b[1][2][ltid],
-						   (s[2]-1) * b[2][2][ltid],
-						   (s[3]-1) * b[3][2][ltid],
-						   (b[1][2][ltid] * s[0] +  b[0][2][ltid] * s[1]),
-						   (b[2][2][ltid] * s[1] +  b[1][2][ltid] * s[2]),
-						   (b[0][2][ltid] * s[2] +  b[2][2][ltid] * s[0]),
-						   (b[3][2][ltid] * s[0] +  b[0][2][ltid] * s[3]),
-						   (b[3][2][ltid] * s[1] +  b[1][2][ltid] * s[3]),
-						   (b[3][2][ltid] * s[2] +  b[2][2][ltid] * s[3])
-						  }
-					};
 
 	temp[0] = 0;
 	temp[1] = 0;
@@ -400,17 +396,7 @@ void mulK(float x[30], float b[4][3][BLOCK_SIZE], float c1[BLOCK_SIZE], float c2
 	for(int j=0;j<10;j++)
 	{
 		temp[3] += dndx[1][j] * x[j * 3] + dndx[0][j] * x[j * 3 + 1];
-	}
-
-	#pragma unroll 10
-	for(int j=0;j<10;j++)
-	{
 		temp[4] += dndx[2][j] * x[j * 3 + 1] + dndx[1][j] * x[j * 3 + 2];
-	}
-
-	#pragma unroll 10
-	for(int j=0;j<10;j++)
-	{
 		temp[5] += dndx[2][j] * x[j * 3] + dndx[0][j] * x[j * 3 + 2];
 	}
 
@@ -605,7 +591,7 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 	if(tid < numelements && etid == 0)
 		#pragma unroll 30
 		for(int i=0;i<30;i++)
-			t_solvedata->product[i][ltid] = nodes[i][ltid] / 10.0;
+			t_solvedata->product[i][ltid] = nodes[i][ltid];
 
 }
 
