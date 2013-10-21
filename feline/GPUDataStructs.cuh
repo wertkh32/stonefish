@@ -1,7 +1,13 @@
 #pragma once
 #include "defines.h"
 
-#define BLOCK_SIZE 32				//element block size
+#ifdef  _GAUSSIAN_QUADRATURE_
+	#define BLOCK_SIZE 32				//element block size
+#else
+	#define BLOCK_SIZE 64
+#endif
+
+
 #define DOT_BLOCK_SIZE 512			//dot product block size
 
 #define ELEMENTS_PER_THREAD 16
@@ -11,18 +17,15 @@
 
 #define VECTOR_BLOCK_SIZE 512
 
-#ifdef _BERSTEIN_POLY_
+#if defined(_BERSTEIN_POLY_)
 
-#define THREADS_PER_ELE 5
-#define THREADS_PER_BLOCK (BLOCK_SIZE * THREADS_PER_ELE)
+	#define THREADS_PER_ELE 5
+	#define THREADS_PER_BLOCK (BLOCK_SIZE * THREADS_PER_ELE)
 
-#endif
+#elif defined(_GAUSSIAN_QUADRATURE_)
 
-
-#ifdef  _GAUSSIAN_QUADRATURE_
-
-#define THREADS_PER_ELE 4
-#define THREADS_PER_BLOCK (BLOCK_SIZE * THREADS_PER_ELE)
+	#define THREADS_PER_ELE 4
+	#define THREADS_PER_BLOCK (BLOCK_SIZE * THREADS_PER_ELE)
 
 #endif
 
@@ -46,12 +49,8 @@ struct GPUElement
 {
 	int nodeindex[NUM_NODES_PER_ELE][BLOCK_SIZE];
 	
-	#ifdef _QUAD_TET_
-
-		#ifdef _BERSTEIN_POLY_
+	#if defined(_QUAD_TET_) && defined(_BERSTEIN_POLY_)
 			float system[30][30][BLOCK_SIZE];
-		#endif
-	
 	#endif
 
 	float B[3][3][BLOCK_SIZE]; //undefShapeMatInv ({1,2,3},{b,c,d}), ({4},{b,c,d}) = SUM(-({1,2,3},{b,c,d}))

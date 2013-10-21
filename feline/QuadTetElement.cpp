@@ -205,7 +205,7 @@ QuadTetElement::computeB(float s[4], GenMatrix<float, 6, 30>* B, float* Jdet)
 
 		*B = GenMatrix<float,6,30>(b);
 		*Jdet = fabs(J.determinant());
-		printf("det: %f\n",*Jdet);
+		//printf("det: %f\n",*Jdet);
 }
 
 float fact(int n)

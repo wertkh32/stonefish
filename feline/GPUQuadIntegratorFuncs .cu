@@ -10,8 +10,8 @@
 
 //#define BLOCK_SIZE 512
 
-#define ALPHA 0.1
-#define BETA 0.1
+#define ALPHA 0.2
+#define BETA 0.2
 
 #define MAX_ITER 20
 #define EPSIL 0.05
@@ -539,24 +539,6 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 
 		mulK(out, B, t_ele->c1, t_ele->c2);
 
-		#pragma unroll 10
-		for(int i=0;i<10;i++)
-		{
-			temp[0] = 0;
-			temp[1] = 0;
-			temp[2] = 0;
-
-			#pragma unroll 3
-			for(int j=0;j<3;j++)
-				#pragma unroll 3
-				for(int k=0;k<3;k++)
-					temp[j] += R[j][k][ltid] * out[i * 3 + k];
-
-			out[i * 3] = temp[0];
-			out[i * 3 + 1] = temp[1];
-			out[i * 3 + 2] = temp[2];
-		}
-
 
 		if(etid == 0)
 			#pragma unroll 30
@@ -588,10 +570,46 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 	__syncthreads();
 
 
-	if(tid < numelements && etid == 0)
-		#pragma unroll 30
-		for(int i=0;i<30;i++)
-			t_solvedata->product[i][ltid] = nodes[i][ltid];
+	if(tid < numelements)
+	{
+		#pragma unroll 3
+		for(int j=0;j<3;j++)
+		{
+			float temp3 = 0;
+			#pragma unroll 3
+			for(int k=0;k<3;k++)
+				temp3 += R[j][k][ltid] * nodes[(etid)*3 + k][ltid];
+
+			t_solvedata->product[(etid)*3 + j][ltid] = temp3;
+		}
+
+		#pragma unroll 3
+		for(int j=0;j<3;j++)
+		{
+			float temp3 = 0;
+			#pragma unroll 3
+			for(int k=0;k<3;k++)
+				temp3 += R[j][k][ltid] * nodes[(etid+THREADS_PER_ELE)*3 + k][ltid];
+
+			t_solvedata->product[(etid+THREADS_PER_ELE)*3 + j][ltid] = temp3;
+		}
+
+		if(etid <2)
+		{
+			#pragma unroll 3
+			for(int j=0;j<3;j++)
+			{
+				float temp3 = 0;
+				#pragma unroll 3
+				for(int k=0;k<3;k++)
+					temp3 += R[j][k][ltid] * nodes[(etid+THREADS_PER_ELE*2)*3 + k][ltid];
+
+				t_solvedata->product[(etid+THREADS_PER_ELE*2)*3 + j][ltid] = temp3;
+			}
+		}
+
+
+	}
 
 }
 
