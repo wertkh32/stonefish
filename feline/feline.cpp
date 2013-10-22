@@ -9,7 +9,7 @@
 
 //extern void CGSolverGPU(float* A, float* x, float* b, int n);
 //#define DIM 100 50k
-#define DIM 50
+#define DIM 5
 int edgemap[(DIM+1) * (DIM+1) * 2][(DIM+1) * (DIM+1) * 2] = {0};
 
 /* GLUT callback Handlers */
@@ -61,8 +61,8 @@ static float rot = 0.0;
 
 	for(int i=0;i<quadtet->getNoOfElements();i++)
 		quadtet->elements[i]->renderElement();
-
-	
+	mod->interpolateVerts();
+	mod->render();
 	//for(int i=0;i<tet->getNoOfElements();i++)
 	//	tet->elements[i]->renderElement();
 	//}
@@ -260,7 +260,7 @@ main(int argc, char *argv[])
     glutKeyboardFunc(key);
     glutTimerFunc(1000./FPS, timer, FPS);
 
-	//mod = new Model(ModelFunctions::rodFunc,makerod);
+	//mod = new Model(ModelFunctions::rodFunc,MeshFunctions::makeQuadTetSheet);
 	//mod = new Model(ModelFunctions::sphereFunc,makebox);
 
 	ConstrainedRows rows;
@@ -290,6 +290,7 @@ main(int argc, char *argv[])
 	
 	#ifdef _QUAD_TET_
 		MeshFunctions::makeQuadTetSheet<DIM,DIM>(&quadtet,edgemap);
+		mod = new Model(ModelFunctions::rodFunc,quadtet);
 	#endif
 	
 	#ifdef _LINEAR_TET_

@@ -2,6 +2,7 @@
 
 #include "includes.h"
 #include "Mesh.h"
+#include "QuadTetMesh.h"
 #include "QuickArray.h"
 
 #define MAX_GEO 3000
@@ -53,17 +54,19 @@ typedef QuickArray<bary,MAX_GEO> baryArray;
 
 class Model
 {
+	float fact(int n);
 public:
 	vertArray verts;
 	edgeArray edges;
 	faceArray faces;
 	baryArray barys;
 
-	Mesh* mesh;
+	MESH* mesh;
 
 	void computeBarycentricCoords();
 
-	Model(void (*Modelfunc)(vertArray*,	edgeArray*,	faceArray*), void (*Meshfunc)(Mesh**));
+	Model(void (*Modelfunc)(vertArray*,	edgeArray*,	faceArray*), void (*Meshfunc)(MESH**));
+	Model(void (*Modelfunc)(vertArray*,	edgeArray*,	faceArray*), MESH* mesh);
 	void interpolateVerts();
 	void render();
 	~Model(void);

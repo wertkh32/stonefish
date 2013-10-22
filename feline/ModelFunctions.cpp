@@ -97,10 +97,10 @@ void ModelFunctions::rodFunc(vertArray* v,	edgeArray* e,	faceArray* f)
 			vector3<float> norm = vector3<float>(0,0.5 + r * cos(angle),0.5 + r * sin(angle));
 			vector3<float> next_norm = vector3<float>(0,0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
 
-			vector3<float> v1 = vector3<float>(EPS + quad_len * i,0.5 + r * cos(angle),0.5 + r * sin(angle));
-			vector3<float> v2 = vector3<float>(EPS + quad_len * i,0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
-			vector3<float> v3 = vector3<float>(EPS + quad_len * (i+1),0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
-			vector3<float> v4 = vector3<float>(EPS + quad_len * (i+1),0.5 + r * cos(angle),0.5 + r * sin(angle));
+			vector3<float> v1 = vector3<float>(quad_len * i,0.5 + r * cos(angle),0.5 + r * sin(angle));
+			vector3<float> v2 = vector3<float>(quad_len * i,0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
+			vector3<float> v3 = vector3<float>(quad_len * (i+1),0.5 + r * cos(next_angle),0.5 + r * sin(next_angle));
+			vector3<float> v4 = vector3<float>(quad_len * (i+1),0.5 + r * cos(angle),0.5 + r * sin(angle));
 
 			vertex vv1 = {v1,norm};
 			vertex vv2 = {v2,next_norm};
