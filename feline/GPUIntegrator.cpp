@@ -21,7 +21,7 @@ GPUIntegrator::GPUIntegrator(MESH* _mesh, ConstrainedRows* r)
 
 	for(int i=0;i<numnodes;i++)
 		allowed[i] = 0;
-
+	
 	for(int i=0;i<r->list.size();i++)
 	{
 		printf("BOOOOOO %d | %d\n",r->list[i] / 3, r->list[i] % 3);
@@ -122,6 +122,13 @@ GPUIntegrator::assembleGPUNodes()
 					gpuNodes[bid].elementindex[gpuNodes[bid].n[t][tid]][1][t][tid] = b;
 					n++;
 					(gpuNodes[bid].n[t][tid])++;
+					
+					if(gpuNodes[bid].n[t][tid] > ELEMENTS_PER_THREAD)
+					{
+						printf("%d",gpuNodes[bid].n[t][tid]);
+						system("pause");
+					}
+					
 					break;
 				}
 			}

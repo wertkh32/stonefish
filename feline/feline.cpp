@@ -9,7 +9,7 @@
 
 //extern void CGSolverGPU(float* A, float* x, float* b, int n);
 //#define DIM 100 50k
-#define DIM 5
+#define DIM 20
 int edgemap[(DIM+1) * (DIM+1) * 2][(DIM+1) * (DIM+1) * 2] = {0};
 
 /* GLUT callback Handlers */
@@ -61,11 +61,12 @@ static float rot = 0.0;
 
 	for(int i=0;i<quadtet->getNoOfElements();i++)
 		quadtet->elements[i]->renderElement();
-	mod->interpolateVerts();
-	mod->render();
+	//mod->interpolateVerts();
+	//mod->render();
 	//for(int i=0;i<tet->getNoOfElements();i++)
 	//	tet->elements[i]->renderElement();
 	//}
+	
 	int end = (DIM+1) * (DIM+1);
 	int start = end - (DIM+1) - 1;
 	int end2 = end * 2;
@@ -106,10 +107,10 @@ static float rot = 0.0;
 		//#ifdef _LINEAR_TET_
 			
 			for(int i=start;i<end;i++)
-				quadtet->nodes[i]->force = vector3<float>(0,10,0);
+				quadtet->nodes[i]->force = vector3<float>(100,100,0);
 		
 			for(int i=start2;i<end2;i++)
-				quadtet->nodes[i]->force = vector3<float>(0,10,0);
+				quadtet->nodes[i]->force = vector3<float>(100,100,0);
 		//#endif
 
 		#ifdef _QUAD_TET_
@@ -245,6 +246,54 @@ void makerod(Mesh** m)
 	MeshFunctions::makeLever(m, 5);
 }
 
+Mesh* loadMesh(char* nodefile, char* tetfile)
+{
+	FILE* nodef = fopen(nodefile,"r");
+	FILE* tetf = fopen(tetfile,"r");
+
+	int numnodes;
+
+	fscanf(nodef,"%d %*d %*d %*d",&numnodes);
+
+	Node* list = (Node*)malloc(numnodes * sizeof(Node));
+
+	for(int i=0;i<numnodes;i++)
+	{
+		double x,y,z;
+		fscanf(nodef,"%*d %lf %lf %lf",&x, &y, &z);
+		list[i] = Node(vector3<float>(x,y,z),vector3<float>(),vector3<float>());
+	}
+
+	Mesh* mesh = new Mesh(list,numnodes);
+
+	int numele;
+	fscanf(tetf,"%d %*d %*d",&numele);
+
+	for(int i=0;i<numele;i++)
+	{
+		int node[4];
+		fscanf(tetf,"%*d %d %d %d %d",node,node+1,node+2,node+3);
+		node[0]--;
+		node[1]--;
+		node[2]--;
+		node[3]--;
+		for(int j=0;j<4;j++)
+			if(node[j] >= numnodes)
+			{
+				printf("ele %d, node: %d",i,node[j]);
+				system("pause");
+			}
+
+		mesh->addElement(node,0.01,0.1,1);
+	}
+
+	fclose(nodef);
+	fclose(tetf);
+
+	return mesh;
+}
+
+
 int 
 main(int argc, char *argv[])
 {
@@ -265,36 +314,36 @@ main(int argc, char *argv[])
 
 	ConstrainedRows rows;
 
-	//rows.add(0);
-	//rows.add(1);
-	//rows.add(4);
-	//rows.add(5);
+	rows.add(0);
+	rows.add(1);
+	rows.add(4);
+	rows.add(5);
 
-	//rows.add(0);
-	//rows.add(1);
-	//rows.add(2);
-	//rows.add(3);
-	//rows.add(16);
-	//rows.add(17);
-	//rows.add(18);
-	//rows.add(19);
+	rows.add(0);
+	rows.add(1);
+	rows.add(2);
+	rows.add(3);
+	rows.add(16);
+	rows.add(17);
+	rows.add(18);
+	rows.add(19);
 
-	//rows.add(20);
-	//rows.add(21);
-	//rows.add(22);
-	//rows.add(23);
+	rows.add(20);
+	rows.add(21);
+	rows.add(22);
+	rows.add(23);
 	
 	//tet = mod->mesh;
 
 	//sheet//
-	
+	/*
 	#ifdef _QUAD_TET_
 		MeshFunctions::makeQuadTetSheet<DIM,DIM>(&quadtet,edgemap);
 		mod = new Model(ModelFunctions::rodFunc,quadtet);
 	#endif
 	
 	#ifdef _LINEAR_TET_
-		MeshFunctions::makeSheet(&quadtet,DIM,DIM);	
+		MeshFunctions::makeCube(&quadtet,DIM,DIM,4);	
 		mod = new Model(ModelFunctions::rodFunc,quadtet);
 	#endif
 	
@@ -311,7 +360,7 @@ main(int argc, char *argv[])
 	for(int i=(DIM+1) * (DIM+1);i<(DIM+1) * (DIM+1) + DIM;i++)
 		rows.add(edgemap[i][i+1]);
 	#endif
-	
+	*/
 	//MESH();
 	//sheet//
 	//quad tet ele stiffness test
@@ -347,6 +396,10 @@ main(int argc, char *argv[])
 	*/
 	//ginte = new GPUIntegrator(tet,&rows);
 	
+	quadtet = loadMesh("C:\\Users\\wertkh32\\Desktop\\feline2\\nodes.txt","C:\\Users\\wertkh32\\Desktop\\feline2\\tets.txt");
+
+	//quadtet = loadMesh("C:\\Users\\wertkh32\\Desktop\\simicon\\Character\\Michelin\\michelin07.1.node","C:\\Users\\wertkh32\\Desktop\\simicon\\Character\\Michelin\\michelin07.1.ele");
+
 	inte = new INTEGRATOR(quadtet,&rows);
 	
 	//conjugate gradient test

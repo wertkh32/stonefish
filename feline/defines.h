@@ -5,7 +5,7 @@
 #define TO_RAD(a) ((a)*(M_PI/180.))
 #define INF 10000000
 
-#define MAX_ELEMENTS 100000
+#define MAX_ELEMENTS 200000
 #define MAX_NODES 1000000
 #define FPS 30
 #define DT (1.0/FPS)
@@ -19,12 +19,12 @@
 #define _GPU_
 //#define _CPU_
 
-//#define _LINEAR_TET_
+#define _LINEAR_TET_
 
 //#define _RAW_
 //#define _COROTATIONAL_
 
-#define _QUAD_TET_
+//#define _QUAD_TET_
 
 //#define _GAUSSIAN_QUADRATURE_
 #define _BERSTEIN_POLY_

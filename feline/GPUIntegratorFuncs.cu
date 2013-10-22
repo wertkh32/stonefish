@@ -10,11 +10,11 @@
 
 //#define BLOCK_SIZE 512
 
-#define ALPHA 0.1
-#define BETA 0.1
+#define ALPHA 0.01
+#define BETA 0.01
 
-#define MAX_ITER 20
-#define EPSIL 0.01
+#define MAX_ITER 25
+#define EPSIL 0.5
 
 __constant__ float COEFFK, COEFFM, dt;
 
@@ -33,6 +33,8 @@ float* gpuptrR;
 float* gpuptrD;
 float* gpuptrQ;
 CGVars* gpuptrVars;
+
+float* debugbuf;
 
 static void HandleError( cudaError_t err,
                          const char *file,
@@ -71,6 +73,8 @@ gpuInitVars(int numele, int numnodes)
 	HANDLE_ERROR( cudaMalloc(&gpuptrD, numnodes * 3 * sizeof(float)) );
 	HANDLE_ERROR( cudaMalloc(&gpuptrQ, numnodes * 3 * sizeof(float)) );
 	HANDLE_ERROR( cudaMalloc(&gpuptrVars, sizeof(CGVars)) );
+
+	debugbuf = (float*)malloc(numnodes * 3 * sizeof(float));
 
 	float ddt = 1.0/FPS;
 	float coeffK = ddt * BETA + ddt * ddt, coeffM = 1 + ddt * ALPHA;
@@ -123,6 +127,17 @@ void
 gpuDownloadVars(float* xt, int numnodes)
 {
 	cudaMemcpy(xt, gpuptr_xt, numnodes * 3 * sizeof(float), cudaMemcpyDeviceToHost);
+}
+
+__host__
+void inspectGPUBuffer(float* gpubuf,int numnodes)
+{
+	cudaMemcpy(debugbuf, gpubuf, numnodes * 3 * sizeof(float), cudaMemcpyDeviceToHost);
+
+	for(int i=0;i<numnodes * 3;i++)
+		printf("%f ",debugbuf[i]);
+	printf("\n");
+	system("pause");
 }
 
 __host__
