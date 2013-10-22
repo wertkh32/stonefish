@@ -295,6 +295,7 @@ main(int argc, char *argv[])
 	
 	#ifdef _LINEAR_TET_
 		MeshFunctions::makeSheet(&quadtet,DIM,DIM);	
+		mod = new Model(ModelFunctions::rodFunc,quadtet);
 	#endif
 	
 	for(int i=0;i<DIM+1;i++)

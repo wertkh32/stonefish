@@ -5,7 +5,7 @@
 #include "QuadTetMesh.h"
 #include "QuickArray.h"
 
-#define MAX_GEO 3000
+#define MAX_GEO 30000
 //assume all faces are triangles.
 //each vertex incident with 3 other vertices.
 //just vertices and faces for now
@@ -67,6 +67,7 @@ public:
 
 	Model(void (*Modelfunc)(vertArray*,	edgeArray*,	faceArray*), void (*Meshfunc)(MESH**));
 	Model(void (*Modelfunc)(vertArray*,	edgeArray*,	faceArray*), MESH* mesh);
+	Model(char* filename, MESH* mesh);
 	void interpolateVerts();
 	void render();
 	~Model(void);

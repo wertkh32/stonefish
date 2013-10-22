@@ -10,10 +10,46 @@ Model::Model(void (*Modelfunc)(vertArray*,	edgeArray*,	faceArray*), void (*Meshf
 }
 
 Model::Model(void (*Modelfunc)(vertArray*,	edgeArray*,	faceArray*), MESH* _mesh)
+	:verts(),faces(),edges()
 {
 	Modelfunc(&verts, &edges, &faces);
 	mesh = _mesh;
 	computeBarycentricCoords();
+}
+
+Model::Model(char* filename, MESH* _mesh)
+	:verts(),faces(),edges()
+{
+	FILE*f=fopen(filename,"r");
+    vector3<float> v;
+	int i=0;
+    while(fscanf(f,"%f %f %f",&v.x, &v.y, &v.z)!=EOF)
+	{
+		
+		if(i>0 && i%4 ==0)
+		{
+			face f;
+			f.type = QUAD;
+			f.vindex[3] = i-1;
+			f.vindex[2] = i-2;
+			f.vindex[1] = i-3;
+			f.vindex[0] = i-4;
+			faces.push(f);
+
+			vector3<float> norm = (verts[i-3].coords - verts[i-4].coords).cross(verts[i-1].coords - verts[i-4].coords);
+			verts[i-4].norm = norm;
+			verts[i-3].norm = norm;
+			verts[i-2].norm = norm;
+			verts[i-1].norm = norm;
+		}
+		vertex vv;
+		vv.coords = v;
+		verts.push(vv);	
+		i++;
+	}   
+      fclose(f);
+	  mesh = _mesh;
+	  computeBarycentricCoords();
 }
 
 void
