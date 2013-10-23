@@ -73,7 +73,7 @@ void TetElement::preComputeUndeformedStiffnessMat()
 	//		printf("%f ",strainMatrix[i][j]);
 	//system("pause");
 
-	strainMat = GenMatrix<float,6,12>(strainMatrix);
+	GenMatrix<float,6,12> strainMat = GenMatrix<float,6,12>(strainMatrix);
 	strainMat.scalarMul(1/(2 * undeformVolume));
 
 	//material constants
@@ -92,7 +92,7 @@ void TetElement::preComputeUndeformedStiffnessMat()
 		{0, 0, 0, 0, 0, c3 }
 	};
 
-	matConstantsMat = GenMatrix<float,6,6>(C);
+	GenMatrix<float,6,6> matConstantsMat = GenMatrix<float,6,6>(C);
 
 	undeformStiffnessMat = strainMat.transpose() * matConstantsMat * strainMat;
 	undeformStiffnessMat.scalarMul(undeformVolume);

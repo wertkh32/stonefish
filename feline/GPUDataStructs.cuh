@@ -10,7 +10,7 @@
 
 #define DOT_BLOCK_SIZE 512			//dot product block size
 
-#define ELEMENTS_PER_THREAD 256
+#define ELEMENTS_PER_THREAD 16
 #define NODE_THREADS 2
 #define NODE_BLOCK_SIZE 128			//node block size
 #define GATHER_THREAD_NO 256
@@ -55,7 +55,11 @@ struct GPUElement
 
 	float B[3][3][BLOCK_SIZE]; //undefShapeMatInv ({1,2,3},{b,c,d}), ({4},{b,c,d}) = SUM(-({1,2,3},{b,c,d}))
 	float c1[BLOCK_SIZE], c2[BLOCK_SIZE];
-	
+
+	#ifdef _LINEAR_TET_
+	float diag[4][3][3][BLOCK_SIZE];
+	#endif
+
 	float f0[NUM_NODES_PER_ELE * 3][BLOCK_SIZE];
 
 };

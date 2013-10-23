@@ -18,8 +18,8 @@ public:
 			 R;
 
 
-	GenMatrix<float,6,12> strainMat;
-	GenMatrix<float,6,6> matConstantsMat;
+	//GenMatrix<float,6,12> strainMat;
+	//GenMatrix<float,6,6> matConstantsMat;
 	GenMatrix<float,12,12> undeformStiffnessMat,
 						   massMat, RK, RKRT, A;
 
