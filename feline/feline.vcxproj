@@ -62,7 +62,7 @@
       <TargetMachine>MachineX86</TargetMachine>
     </Link>
     <CudaCompile>
-      <CodeGeneration>compute_13,sm_13</CodeGeneration>
+      <CodeGeneration>compute_11,sm_11</CodeGeneration>
       <Keep>true</Keep>
       <FastMath>true</FastMath>
       <Optimization>Od</Optimization>

@@ -107,10 +107,10 @@ static float rot = 0.0;
 		//#ifdef _LINEAR_TET_
 			
 			for(int i=start;i<end;i++)
-				quadtet->nodes[i]->force = vector3<float>(0,100,0);
+				quadtet->nodes[i]->force = vector3<float>(100,100,0);
 		
 			for(int i=start2;i<end2;i++)
-				quadtet->nodes[i]->force = vector3<float>(0,100,0);
+				quadtet->nodes[i]->force = vector3<float>(100,100,0);
 		//#endif
 
 		#ifdef _QUAD_TET_
@@ -284,7 +284,7 @@ Mesh* loadMesh(char* nodefile, char* tetfile)
 				system("pause");
 			}
 
-		mesh->addElement(node,0.01,0.45,1);
+		mesh->addElement(node,0.01,0.45,0.1);
 	}
 
 	fclose(nodef);
@@ -313,7 +313,7 @@ main(int argc, char *argv[])
 	//mod = new Model(ModelFunctions::sphereFunc,makebox);
 
 	ConstrainedRows rows;
-	/*
+	
 	rows.add(0);
 	rows.add(1);
 	rows.add(4);
@@ -332,7 +332,7 @@ main(int argc, char *argv[])
 	rows.add(21);
 	rows.add(22);
 	rows.add(23);
-	*/
+	
 	//tet = mod->mesh;
 
 	//sheet//
@@ -396,9 +396,9 @@ main(int argc, char *argv[])
 	*/
 	//ginte = new GPUIntegrator(tet,&rows);
 	
-	//quadtet = loadMesh("C:\\Users\\user\\Desktop\\stonefish-master\\smalldragon_nodes.txt","C:\\Users\\user\\Desktop\\stonefish-master\\smalldragon_tets.txt");
+	//quadtet = loadMesh("C:\\Users\\wertkh32\\Desktop\\felineforever\\smalldragon_nodes.txt","C:\\Users\\wertkh32\\Desktop\\felineforever\\smalldragon_tets.txt");
 
-	//quadtet = loadMesh("C:\\Users\\user\\Desktop\\toliveistodie\\Character\\Michelin\\michelin07.1.node","C:\\Users\\user\\Desktop\\toliveistodie\\Character\\Michelin\\michelin07.1.ele");
+	//quadtet = loadMesh("michelin07.1.node","michelin07.1.ele");
 
 	inte = new INTEGRATOR(quadtet,&rows);
 	

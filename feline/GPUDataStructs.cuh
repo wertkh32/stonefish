@@ -10,7 +10,7 @@
 
 #define DOT_BLOCK_SIZE 512			//dot product block size
 
-#define ELEMENTS_PER_THREAD 16
+#define ELEMENTS_PER_THREAD 64
 #define NODE_THREADS 2
 #define NODE_BLOCK_SIZE 128			//node block size
 #define GATHER_THREAD_NO 256
