@@ -15,6 +15,8 @@
 #define NODE_BLOCK_SIZE 128			//node block size
 #define GATHER_THREAD_NO 256
 
+#define SHARED_MEM_OFFSET 0
+
 #define VECTOR_BLOCK_SIZE 512
 
 #if defined(_BERSTEIN_POLY_)

@@ -14,7 +14,7 @@
 #define BETA 0.1
 
 #define MAX_ITER 20
-#define EPSIL 0.5
+#define EPSIL 0.05
 
 __constant__ float COEFFK, COEFFM, dt;
 

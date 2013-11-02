@@ -107,10 +107,10 @@ static float rot = 0.0;
 		//#ifdef _LINEAR_TET_
 			
 			for(int i=start;i<end;i++)
-				quadtet->nodes[i]->force = vector3<float>(100,100,0);
+				quadtet->nodes[i]->force = vector3<float>(10,100,0);
 		
 			for(int i=start2;i<end2;i++)
-				quadtet->nodes[i]->force = vector3<float>(100,100,0);
+				quadtet->nodes[i]->force = vector3<float>(10,100,0);
 		//#endif
 
 		#ifdef _QUAD_TET_

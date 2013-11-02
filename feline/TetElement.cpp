@@ -74,7 +74,7 @@ void TetElement::preComputeUndeformedStiffnessMat()
 	//system("pause");
 
 	GenMatrix<float,6,12> strainMat = GenMatrix<float,6,12>(strainMatrix);
-	strainMat.scalarMul(1/(2 * undeformVolume));
+	//strainMat.scalarMul(1/(2 * undeformVolume));
 
 	//material constants
 	float c1 = (E*(1-v))/((1.0-2.0*v)*(1.0+v)),
@@ -101,8 +101,8 @@ void TetElement::preComputeUndeformedStiffnessMat()
 		for(int j=0;j<3;j++)
 			B[i][j] = inv(i,j+1);
 
-	con1 = c1 * undeformVolume * (1.0/(2.0 * undeformVolume)) * (1.0/(2.0 * undeformVolume));
-	con2 = c2 * undeformVolume * (1.0/(2.0 * undeformVolume)) * (1.0/(2.0 * undeformVolume));
+	con1 = c1 * undeformVolume;// * (1.0/(2.0 * undeformVolume)) * (1.0/(2.0 * undeformVolume));
+	con2 = c2 * undeformVolume;// * (1.0/(2.0 * undeformVolume)) * (1.0/(2.0 * undeformVolume));
 	/*
 	printf("start");
 	for(int i=0;i<12;i++,printf("\n"))

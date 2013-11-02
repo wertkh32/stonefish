@@ -493,7 +493,7 @@ QuadTetElement::computeStiffness()
 		float det;
 
 		computeB(S[i],&B, &det);
-		K = K + (B.transpose() * E * B) * (1.0/6.0) * Jdet * 0.25;// * (det * weight));
+		K = K + (B.transpose() * E * B) * (1.0/6.0) * Jdet * 0.25;// * (det * weight)), (1.0/6.0) * Jdet is volume;
 	}
 
 	//K = K * (1.0/6.0) * Jdet * 0.25;
