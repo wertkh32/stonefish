@@ -9,7 +9,7 @@
 
 //extern void CGSolverGPU(float* A, float* x, float* b, int n);
 //#define DIM 100 50k
-#define DIM 100
+#define DIM 5
 int edgemap[(DIM+1) * (DIM+1) * 2][(DIM+1) * (DIM+1) * 2] = {0};
 
 /* GLUT callback Handlers */
@@ -107,10 +107,10 @@ static float rot = 0.0;
 		//#ifdef _LINEAR_TET_
 			
 			for(int i=start;i<end;i++)
-				quadtet->nodes[i]->force = vector3<float>(10,100,0);
+				quadtet->nodes[i]->force = vector3<float>(0.001,0.001,0);
 		
 			for(int i=start2;i<end2;i++)
-				quadtet->nodes[i]->force = vector3<float>(10,100,0);
+				quadtet->nodes[i]->force = vector3<float>(0.001,0.001,0);
 		//#endif
 
 		#ifdef _QUAD_TET_
@@ -284,7 +284,7 @@ Mesh* loadMesh(char* nodefile, char* tetfile)
 				system("pause");
 			}
 
-		mesh->addElement(node,0.01,0.45,0.1);
+		mesh->addElement(node,1,0.001,0.1);
 	}
 
 	fclose(nodef);
@@ -336,7 +336,7 @@ main(int argc, char *argv[])
 	//tet = mod->mesh;
 
 	//sheet//
-	
+	/*
 	#ifdef _QUAD_TET_
 		MeshFunctions::makeQuadTetSheet<DIM,DIM>(&quadtet,edgemap);
 		mod = new Model(ModelFunctions::rodFunc,quadtet);
@@ -360,7 +360,7 @@ main(int argc, char *argv[])
 	for(int i=(DIM+1) * (DIM+1);i<(DIM+1) * (DIM+1) + DIM;i++)
 		rows.add(edgemap[i][i+1]);
 	#endif
-	
+	*/
 	//MESH();
 	//sheet//
 	//quad tet ele stiffness test
@@ -398,7 +398,7 @@ main(int argc, char *argv[])
 	
 	//quadtet = loadMesh("C:\\Users\\wertkh32\\Desktop\\felineforever\\smalldragon_nodes.txt","C:\\Users\\wertkh32\\Desktop\\felineforever\\smalldragon_tets.txt");
 
-	//quadtet = loadMesh("michelin07.1.node","michelin07.1.ele");
+	quadtet = loadMesh("michelin07.1.node","michelin07.1.ele");
 
 	inte = new INTEGRATOR(quadtet,&rows);
 	

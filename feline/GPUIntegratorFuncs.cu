@@ -255,22 +255,59 @@ void mulK(float x[12], float B[3][3][BLOCK_SIZE], float c1[BLOCK_SIZE], float c2
 }
 
 __device__
-void makeRKRT(float B[3][3][BLOCK_SIZE], float c1[BLOCK_SIZE], float c2[BLOCK_SIZE], float R[3][3], float xt[12], float b[12])
+void makeRKRT(float b[4][3], float c1, float c2, float R[3][3], float xt[12], float out[12])
 {
-	float temp[12];
+	float x[12];
+	float temp[6];
+	float temp2[6];
+
+	float c3 = (c1 - c2)/2.0;
+
+	b[3][0] = -b[0][0] -b[1][0] -b[2][0];
+	b[3][1] = -b[0][1] -b[1][1] -b[2][1];
+	b[3][2] = -b[0][2] -b[1][2] -b[2][2];
 
 	#pragma unroll 4
 	for(int i=0;i<4;i++)
 		#pragma unroll 3
 		for(int j=0;j<3;j++)
 		{
-			temp[i*3 + j] = 0;
+			x[i*3 + j] = 0;
 			#pragma unroll 3
 			for(int k=0;k<3;k++)
-			temp[i*3+j] += R[k][j] * xt[i*3 + k]; //RT first
+			x[i*3+j] += R[k][j] * xt[i*3 + k]; //RT first
 		}
 
-	mulK(temp, B,c1,c2);
+	temp[0] = b[0][0] * x[0] + b[1][0] * x[3] + b[2][0] * x[6] + b[3][0] * x[9];
+	temp[1] = b[0][1] * x[1] + b[1][1] * x[4] + b[2][1] * x[7] + b[3][1] * x[10];
+	temp[2] = b[0][2] * x[2] + b[1][2] * x[5] + b[2][2] * x[8] + b[3][2] * x[11];
+	temp[3] = b[0][1] * x[0] + b[0][0] * x[1] + b[1][1] * x[3] + b[1][0] * x[4] + b[2][1] * x[6] + b[2][0] * x[7] + b[3][1] * x[9] + b[3][0] * x[10];
+	temp[4] = b[0][2] * x[1] + b[0][1] * x[2] + b[1][2] * x[4] + b[1][1] * x[5] + b[2][2] * x[7] + b[2][1] * x[8] + b[3][2] * x[10] + b[3][1] * x[11];
+	temp[5] = b[0][2] * x[0] + b[0][0] * x[2] + b[1][2] * x[3] + b[1][0] * x[5] + b[2][2] * x[6] + b[2][0] * x[8] + b[3][2] * x[9] + b[3][0] * x[11];
+
+	temp2[0] = temp[0] * c1 + temp[1] * c2 + temp[2] * c2;
+	temp2[1] = temp[0] * c2 + temp[1] * c1 + temp[2] * c2;
+	temp2[2] = temp[0] * c2 + temp[1] * c2 + temp[2] * c1;
+	temp2[3] = temp[3] * c3;
+	temp2[4] = temp[4] * c3;
+	temp2[5] = temp[5] * c3;
+
+	x[0] = b[0][0] * temp2[0] + b[0][1] * temp2[3] + b[0][2] * temp2[5];
+	x[1] = b[0][1] * temp2[1] + b[0][0] * temp2[3] + b[0][2] * temp2[4];
+	x[2] = b[0][2] * temp2[2] + b[0][1] * temp2[4] + b[0][0] * temp2[5];
+
+	x[3] = b[1][0] * temp2[0] + b[1][1] * temp2[3] + b[1][2] * temp2[5];
+	x[4] = b[1][1] * temp2[1] + b[1][0] * temp2[3] + b[1][2] * temp2[4];
+	x[5] = b[1][2] * temp2[2] + b[1][1] * temp2[4] + b[1][0] * temp2[5];
+
+	x[6] = b[2][0] * temp2[0] + b[2][1] * temp2[3] + b[2][2] * temp2[5];
+	x[7] = b[2][1] * temp2[1] + b[2][0] * temp2[3] + b[2][2] * temp2[4];
+	x[8] = b[2][2] * temp2[2] + b[2][1] * temp2[4] + b[2][0] * temp2[5];
+
+	x[9] = b[3][0] * temp2[0] + b[3][1] * temp2[3] + b[3][2] * temp2[5];
+	x[10] = b[3][1] * temp2[1] + b[3][0] * temp2[3] + b[3][2] * temp2[4];
+	x[11] = b[3][2] * temp2[2] + b[3][1] * temp2[4] + b[3][0] * temp2[5];
+
 
 	#pragma unroll 4
 	for(int i=0;i<4;i++)
@@ -279,7 +316,7 @@ void makeRKRT(float B[3][3][BLOCK_SIZE], float c1[BLOCK_SIZE], float c2[BLOCK_SI
 		{
 			#pragma unroll 3
 			for(int k=0;k<3;k++)
-			b[i*3+j] -= R[j][k] * temp[i*3 + k];
+			out[i*3+j] -= R[j][k] * x[i*3 + k];
 		}
 
 }
@@ -390,7 +427,8 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, int numele
 		GPUElement* t_ele = &(elements[bid]);
 		mulData* t_solvedata = &(solverData[bid]);
 
-		float nodes[12], b[12], R[3][3]={0}, D[3][3];			
+		float nodes[12], b[12], R[3][3]={0}, D[4][3];			
+		float c1,c2;
 
 		#pragma unroll 4
 		for(int i=0;i<4;i++)
@@ -406,6 +444,9 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, int numele
 			#pragma unroll 3
 			for(int j=0;j<3;j++)
 				D[i][j] = t_ele->B[i][j][ltid];
+
+		c1 = t_ele->c1[ltid];
+		c2 = t_ele->c2[ltid];
 
 		#pragma unroll 3
 		for(int i=0;i<3;i++)
@@ -424,8 +465,8 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, int numele
 				t_solvedata->R[i][j][ltid] =  R[i][j];
 
 		makeFU(t_ele->f0,R,b);
-	
-		makeRKRT(t_ele->B,t_ele->c1,t_ele->c2, R, nodes, b);
+
+		makeRKRT(D,c1,c2, R, nodes, b);
 
 		//float nodalmass = t_ele->nodalmass[ltid];
 
@@ -434,24 +475,39 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, int numele
 			t_solvedata->b[i][ltid] = b[i] * dt;// + nodalmass * vt[index[(i/3)] * 3 + (i%3)];
 
 		float mat[3][3];
+		float diag[3][3];
 		float temp;
+		float c3 = (c1 - c2)/2.0;
+
+		#pragma unroll 4
 		for(int i=0;i<4;i++)
 		{
-			for(int j=0;j<3;j++)
-				for(int k=0;k<3;k++)
-					D[j][k] = t_ele->diag[i][j][k][ltid];
+			diag[0][0] = D[i][0] * D[i][0] * c1 + D[i][1] * D[i][1] * c3 + D[i][2] * D[i][2] * c3;
+			diag[0][1] = D[i][0] * D[i][1] * c2 + D[i][0] * D[i][1] * c3;
+			diag[0][2] = D[i][0] * D[i][2] * c2 + D[i][0] * D[i][2] * c3;
+			diag[1][2] = D[i][1] * D[i][2] * c2 + D[i][1] * D[i][2] * c3;
+			diag[1][1] = diag[0][0];
+			diag[2][2] = diag[0][0];
+			diag[1][0] = diag[0][1];
+			diag[2][0] = diag[0][2];
+			diag[2][1] = diag[1][2];
 
+			#pragma unroll 3
 			for(int j=0;j<3;j++)
+				#pragma unroll 3
 				for(int k=0;k<3;k++)
 				{
 					mat[j][k] = 0;
+					#pragma unroll 3
 					for(int l=0;l<3;l++)
-						mat[j][k] += D[j][l] * R[k][l]; //RT
+						mat[j][k] += diag[j][l] * R[k][l]; //RT
 				}
-
+			
+			#pragma unroll 3
 			for(int j=0;j<3;j++)
 			{
 				temp = 0;
+				#pragma unroll 3
 				for(int k=0;k<3;k++)
 					temp +=R[j][k] * mat[k][j];
 				t_solvedata->product[i * 3 + j][ltid] = temp;

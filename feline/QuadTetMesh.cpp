@@ -5,6 +5,7 @@ QuadTetMesh::QuadTetMesh(Node node_list[], int n)
 {
 	for(int i=0;i<n;i++)
 		nodes.push(node_list+i);
+	
 
 	#ifdef _GPU_
 	if(n%MEM_ALIGN != 0)
@@ -17,8 +18,9 @@ QuadTetMesh::QuadTetMesh(Node node_list[], int n)
 	#endif
 
 	numnodes = nodes.size();
-	//printf("%d",numnodes);
-	//system("pause");
+
+	printf("%d",numnodes);
+	system("pause");
 
 	dt = 1.0/FPS;
 }

@@ -58,9 +58,9 @@ struct GPUElement
 	float B[3][3][BLOCK_SIZE]; //undefShapeMatInv ({1,2,3},{b,c,d}), ({4},{b,c,d}) = SUM(-({1,2,3},{b,c,d}))
 	float c1[BLOCK_SIZE], c2[BLOCK_SIZE];
 
-	#ifdef _LINEAR_TET_
-	float diag[4][3][3][BLOCK_SIZE];
-	#endif
+	//#ifdef _LINEAR_TET_
+	//float diag[NUM_NODES_PER_ELE][3][3][BLOCK_SIZE];
+	//#endif
 
 	float f0[NUM_NODES_PER_ELE * 3][BLOCK_SIZE];
 

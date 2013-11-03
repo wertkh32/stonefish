@@ -10,8 +10,10 @@
 
 //#define BLOCK_SIZE 512
 
-#define ALPHA 0.2
-#define BETA 0.2
+#define ZERO_EPS 0.000001
+
+#define ALPHA 0.1
+#define BETA 0.1
 
 #define MAX_ITER 20
 #define EPSIL 0.05
@@ -27,6 +29,8 @@ float*	 gpuptr_extforces;//dynamic
 float*	 gpuptr_mass;//static
 float*	 gpuptr_b;//dynamic
 char*	 gpuptr_allowed;
+
+float*	gpuptr_minv;
 
 //for CG
 float* gpuptrR;
@@ -68,7 +72,7 @@ gpuInitVars(int numele, int numnodes)
 	HANDLE_ERROR( cudaMalloc(&gpuptr_mass, numnodes * 3 * sizeof(float)) );
 	HANDLE_ERROR( cudaMalloc(&gpuptr_b, numnodes * 3 * sizeof(float)) );
 	HANDLE_ERROR( cudaMalloc(&gpuptr_allowed, numnodes * sizeof(char)) );
-
+	HANDLE_ERROR( cudaMalloc(&gpuptr_minv, numnodes * 3 * sizeof(float)) );
 
 	HANDLE_ERROR( cudaMalloc(&gpuptrR, numnodes * 3 * sizeof(float)) );
 	HANDLE_ERROR( cudaMalloc(&gpuptrD, numnodes * 3 * sizeof(float)) );
@@ -727,9 +731,142 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, int numele
 
 		}
 			
-
+		
 	}
 }
+
+/*FROZEN FOR TESTS
+__global__
+void
+makeMinv(GPUElement* elements, mulData* solverData, int numelements)
+{
+	int bid = blockIdx.x;
+	int ltid = threadIdx.x % BLOCK_SIZE;
+	int etid = threadIdx.x / BLOCK_SIZE;
+	int tid = ltid + blockIdx.x * BLOCK_SIZE;
+
+	__shared__ float R[3][3][BLOCK_SIZE];
+	
+	GPUElement* t_ele = &(elements[bid]);
+	mulData* t_solvedata = &(solverData[bid]);
+
+	if(tid < numelements)
+	{
+		if(etid == 0)
+		{
+			#pragma unroll 3
+			for(int i=0;i<3;i++)
+				#pragma unroll 3
+				for(int j=0;j<3;j++)
+					R[i][j][ltid] = t_solvedata->R[i][j][ltid];
+		}
+	}
+	__syncthreads();
+
+	if(tid < numelements)
+	{
+		float mat[3][3];
+		float mat2[3][3];
+		float temp3;
+
+
+		for(int j=0;j<3;j++)
+			for(int k=0;k<3;k++)
+				mat2[j][k] = t_ele->diag[etid][j][k][ltid];
+
+		for(int j=0;j<3;j++)
+			for(int k=0;k<3;k++)
+			{
+				mat[j][k] = 0;
+				for(int l=0;l<3;l++)
+					mat[j][k] += mat2[j][l] * R[k][l][ltid]; //RT
+			}
+
+		for(int j=0;j<3;j++)
+		{
+			temp3 = 0;
+			for(int k=0;k<3;k++)
+				temp3 +=R[j][k][ltid] * mat[k][j];
+			t_solvedata->product[etid * 3 + j][ltid] = temp3;
+		}
+
+
+		/////////////////////////////////////////////////
+		//second batch
+		/////////////////////////////////////////////////
+		for(int j=0;j<3;j++)
+			for(int k=0;k<3;k++)
+				mat2[j][k] = t_ele->diag[etid + 5][j][k][ltid];
+
+		for(int j=0;j<3;j++)
+			for(int k=0;k<3;k++)
+			{
+				mat[j][k] = 0;
+				for(int l=0;l<3;l++)
+					mat[j][k] += mat2[j][l] * R[k][l][ltid]; //RT
+			}
+
+		for(int j=0;j<3;j++)
+		{
+			temp3 = 0;
+			for(int k=0;k<3;k++)
+				temp3 +=R[j][k][ltid] * mat[k][j];
+			t_solvedata->product[(etid+5) * 3 + j][ltid] = temp3;
+		}
+	}
+
+
+}
+
+__global__
+void gatherMinv(GPUNode* nodes, mulData* solverData, float* minv, int numnodes)
+{
+	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
+	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
+	int nodeno = blockIdx.x * NODE_BLOCK_SIZE + groupid;
+
+	__shared__ float cache[NODE_THREADS][NODE_BLOCK_SIZE][3];
+	GPUNode* node = &(nodes[blockIdx.x]);
+	int n = node->n[grouptid][groupid];
+	
+	if(nodeno < numnodes)
+	{
+
+		cache[grouptid][groupid][0] = 0;
+		cache[grouptid][groupid][1] = 0;
+		cache[grouptid][groupid][2] = 0;
+
+
+		for(int i=0;i<n;i++)
+		{
+			int tetindex = node->elementindex[i][0][grouptid][groupid] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0][grouptid][groupid] % BLOCK_SIZE;
+			int nodeindex = node->elementindex[i][1][grouptid][groupid];
+
+			cache[grouptid][groupid][0] += solverData[tetindex].product[nodeindex * 3][tetindex2];
+			cache[grouptid][groupid][1] += solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];
+			cache[grouptid][groupid][2] += solverData[tetindex].product[nodeindex * 3 + 2][tetindex2];
+		}
+}
+
+	__syncthreads();
+
+	if(nodeno < numnodes)
+	{
+		if(grouptid == 0)
+		{
+			float m1 = cache[0][groupid][0] + cache[1][groupid][0];
+			float m2 = cache[0][groupid][1] + cache[1][groupid][1];
+			float m3 = cache[0][groupid][2] + cache[1][groupid][2];
+
+
+			minv[nodeno]     = 1.0/(fabs(m1) > ZERO_EPS ? m1 : 1.0);
+			minv[nodeno + numnodes] = 1.0/(fabs(m2) > ZERO_EPS ? m2 : 1.0);
+			minv[nodeno + numnodes * 2] = 1.0/(fabs(m3) > ZERO_EPS ? m3 : 1.0);
+		}
+	}
+}
+*/
 
 //step 1.5
 //precompute
@@ -809,7 +946,7 @@ initAx(GPUElement* elements, mulData* solverData, float* x, int numelements, int
 //init CG
 __global__
 void
-initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, float* mass, float* vt, char* allowed, int numnodes)
+initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, float* mass, float* vt, char* allowed, /*float* minv,*/ int numnodes)
 {
 	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
 	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
@@ -847,9 +984,9 @@ initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, flo
 			char bitsy = allowed[nodeno];
 
 			//r = b-Ax
-			float r0 =  (bitsy & 1) ? 0 : (b[nodeno] - ( (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * vt[nodeno] * COEFFM));
-			float r1 =  (bitsy & 2) ? 0 : (b[nodeno + numnodes] - ( (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * vt[nodeno + numnodes] * COEFFM));
-			float r2 =  (bitsy & 4) ? 0 : (b[nodeno + numnodes * 2] - ( (cache[0][groupid][2] + cache[1][groupid][2]) * COEFFK + mass[nodeno + numnodes * 2] * vt[nodeno + numnodes * 2] * COEFFM));
+			float r0 =  (bitsy & 1) ? 0 : (b[nodeno] - ( (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * vt[nodeno] * COEFFM));//* minv[nodeno];
+			float r1 =  (bitsy & 2) ? 0 : (b[nodeno + numnodes] - ( (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * vt[nodeno + numnodes] * COEFFM));//* minv[nodeno + numnodes];
+			float r2 =  (bitsy & 4) ? 0 : (b[nodeno + numnodes * 2] - ( (cache[0][groupid][2] + cache[1][groupid][2]) * COEFFK + mass[nodeno + numnodes * 2] * vt[nodeno + numnodes * 2] * COEFFM));//* minv[nodeno + numnodes * 2];
 
 			r[nodeno] = r0;
 			r[nodeno + numnodes] = r1;
@@ -896,7 +1033,7 @@ makeQprod(GPUElement* elements, mulData* solverData, float* d, int numelements, 
 //q = Ad
 __global__
 void
-gatherQprod(GPUNode* nodes, mulData* solverData, float* q, float* mass, float* d, char* allowed, int numnodes)
+gatherQprod(GPUNode* nodes, mulData* solverData, float* q, float* mass, float* d, char* allowed, /*float* minv,*/ int numnodes)
 {
 	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
 	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
@@ -932,9 +1069,9 @@ gatherQprod(GPUNode* nodes, mulData* solverData, float* q, float* mass, float* d
 		if(grouptid == 0)
 		{
 			char bitsy = allowed[nodeno];
-			q[nodeno]     = (bitsy & 1) ? 0 : ( (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * d[nodeno] * COEFFM);
-			q[nodeno + numnodes] = (bitsy & 2) ? 0 : ( (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * d[nodeno + numnodes] * COEFFM);
-			q[nodeno + numnodes * 2] = (bitsy & 4) ? 0 : ( (cache[0][groupid][2] + cache[1][groupid][2])  * COEFFK + mass[nodeno + numnodes * 2] * d[nodeno + numnodes * 2] * COEFFM);
+			q[nodeno]     = (bitsy & 1) ? 0 : ( (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * d[nodeno] * COEFFM);// * minv[nodeno];
+			q[nodeno + numnodes] = (bitsy & 2) ? 0 : ( (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * d[nodeno + numnodes] * COEFFM);// * minv[nodeno + numnodes];
+			q[nodeno + numnodes * 2] = (bitsy & 4) ? 0 : ( (cache[0][groupid][2] + cache[1][groupid][2])  * COEFFK + mass[nodeno + numnodes * 2] * d[nodeno + numnodes * 2] * COEFFM);// * minv[nodeno + numnodes*2];
 		}
 	}
 
@@ -1043,6 +1180,9 @@ gpuTimeStep(int numelements, int numnodes)
 		//exit(-1);
 	}
 
+	//makeMinv<<<num_blocks_ele, BLOCK_SIZE * 5>>>(gpuptrElements, gpuptrMulData, numelements);
+	//gatherMinv<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_minv, numnodes);
+
 	makeRKRT<<<num_blocks_ele, THREADS_PER_BLOCK>>>(gpuptrElements, gpuptrMulData, gpuptr_xt, numelements, numnodes);
 
 	cudaDeviceSynchronize();
@@ -1081,7 +1221,7 @@ gpuTimeStep(int numelements, int numnodes)
 		//exit(-1);
 	}
 
-	initRandD<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrR, gpuptrD, gpuptr_b, gpuptr_mass, gpuptr_vt,  gpuptr_allowed,numnodes);
+	initRandD<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrR, gpuptrD, gpuptr_b, gpuptr_mass, gpuptr_vt,  gpuptr_allowed,/*gpuptr_minv,*/numnodes);
 
 	cudaDeviceSynchronize();
 	error = cudaGetLastError();
@@ -1126,7 +1266,7 @@ gpuTimeStep(int numelements, int numnodes)
 			//exit(-1);
 		}
 
-		gatherQprod<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, gpuptr_mass, gpuptrD, gpuptr_allowed,numnodes);
+		gatherQprod<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, gpuptr_mass, gpuptrD, gpuptr_allowed,/*gpuptr_minv,*/numnodes);
 
 		cudaDeviceSynchronize();
 		error = cudaGetLastError();

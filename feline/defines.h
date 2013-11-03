@@ -6,7 +6,7 @@
 #define INF 10000000
 
 #define MAX_ELEMENTS 200000
-#define MAX_NODES 100000
+#define MAX_NODES 200000
 #define FPS 30
 #define DT (1.0/FPS)
 #define GRAVITY 9.81
@@ -26,8 +26,8 @@
 
 //#define _QUAD_TET_
 
-//#define _GAUSSIAN_QUADRATURE_
-#define _BERSTEIN_POLY_
+#define _GAUSSIAN_QUADRATURE_
+//#define _BERSTEIN_POLY_
 
 #ifdef _QUAD_TET_
 #define MESH	QuadTetMesh
