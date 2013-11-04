@@ -10,11 +10,11 @@
 
 #define ZERO_EPS 0.000001
 
-#define ALPHA 0.1
-#define BETA 0.1
+#define ALPHA 0.05
+#define BETA 0.05
 
 #define MAX_ITER 20
-#define EPSIL 0.05
+#define EPSIL 0.5
 
 __constant__ float COEFFK, COEFFM, dt;
 

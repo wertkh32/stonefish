@@ -9,7 +9,7 @@
 
 //extern void CGSolverGPU(float* A, float* x, float* b, int n);
 //#define DIM 100 50k
-#define DIM 5
+#define DIM 10
 int edgemap[(DIM+1) * (DIM+1) * 2][(DIM+1) * (DIM+1) * 2] = {0};
 
 /* GLUT callback Handlers */
@@ -116,18 +116,18 @@ static float rot = 0.0;
 		#ifdef _QUAD_TET_
 
 			for(int i=start;i<end-1;i++)
-				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(0,10,0);
+				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(10,10,0);
 
 			for(int i=start2;i<end2-1;i++)
-				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(0,10,0);
+				quadtet->nodes[edgemap[i][i+1]]->force = vector3<float>(10,10,0);
 
 			for(int i=start;i<end;i++)
 				for(int j=start2;j<end2;j++)
-					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(0,10,0);
+					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(10,10,0);
 
 			for(int i=start;i<end-1;i++)
 				for(int j=start2+1;j<end2;j++)
-					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(0,10,0);
+					quadtet->nodes[edgemap[i][j]]->force = vector3<float>(10,10,0);
 		#endif
 	
 	}
@@ -293,6 +293,92 @@ Mesh* loadMesh(char* nodefile, char* tetfile)
 	return mesh;
 }
 
+QuadTetMesh* loadQuadMesh(char* nodefile, char* tetfile)
+{
+	FILE* nodef = fopen(nodefile,"r");
+	FILE* tetf = fopen(tetfile,"r");
+
+	int numnodes;
+
+	fscanf(nodef,"%d %*d %*d %*d",&numnodes);
+
+	Node* list = (Node*)malloc(numnodes * 10 * sizeof(Node));
+
+	int** edgemat = (int**)malloc(numnodes * sizeof(int));
+	for(int i=0;i<numnodes;i++)
+	{
+		edgemat[i] = (int*)malloc(numnodes * sizeof(int));
+		
+		for(int j=0;j<numnodes;j++)
+			edgemat[i][j] = -1;
+	}
+
+	int realcount = numnodes;
+
+	for(int i=0;i<numnodes;i++)
+	{
+		double x,y,z;
+		fscanf(nodef,"%*d %lf %lf %lf",&x, &y, &z);
+		list[i] = Node(vector3<float>(x,y,z),vector3<float>(),vector3<float>());
+	}
+
+
+	int numele;
+	fscanf(tetf,"%d %*d %*d",&numele);
+	for(int i=0;i<numele;i++)
+	{
+		int node[4];
+		fscanf(tetf,"%*d %d %d %d %d",node,node+1,node+2,node+3);
+		
+		for(int a=0;a<4;a++)
+			for(int b=a+1;b<4;b++)
+			{
+				if(edgemat[node[a]][node[b]] == -1)
+				{
+					list[realcount] = Node((list[node[a]].pos + list[node[b]].pos) * 0.5,vector3<float>(),vector3<float>());
+					edgemat[node[a]][node[b]] = edgemat[node[b]][node[a]] = realcount;
+					realcount++;
+				}
+			}
+	}
+
+	QuadTetMesh* mesh = new QuadTetMesh(list,realcount);
+
+	fclose(tetf);
+	tetf = fopen(tetfile,"r");
+
+	fscanf(tetf,"%d %*d %*d",&numele);
+
+	for(int i=0;i<numele;i++)
+	{
+		int node[10];
+		fscanf(tetf,"%*d %d %d %d %d",node,node+1,node+2,node+3);
+		//node[0]--;
+		//node[1]--;
+		//node[2]--;
+		//node[3]--;
+		for(int j=0;j<4;j++)
+			if(node[j] >= numnodes)
+			{
+				printf("ele %d, node: %d",i,node[j]);
+				system("pause");
+			}
+
+		node[4] = edgemat[node[0]][node[1]];
+		node[5] = edgemat[node[1]][node[2]];
+		node[6] = edgemat[node[2]][node[0]];
+		node[7] = edgemat[node[0]][node[3]];
+		node[8] = edgemat[node[1]][node[3]];
+		node[9] = edgemat[node[2]][node[3]];
+
+		mesh->addElement(node,1,0.001,0.1);
+	}
+
+	fclose(nodef);
+	fclose(tetf);
+
+	return mesh;
+}
 
 int 
 main(int argc, char *argv[])
@@ -344,7 +430,7 @@ main(int argc, char *argv[])
 	
 	#ifdef _LINEAR_TET_
 		MeshFunctions::makeSheet(&quadtet,DIM,DIM);	
-		//mod = new Model(ModelFunctions::rodFunc,quadtet);
+		mod = new Model(ModelFunctions::rodFunc,quadtet);
 	#endif
 	
 	for(int i=0;i<DIM+1;i++)
