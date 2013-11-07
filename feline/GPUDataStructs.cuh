@@ -4,7 +4,7 @@
 #ifdef  _GAUSSIAN_QUADRATURE_
 	#define BLOCK_SIZE 32				//element block size
 #else
-	#define BLOCK_SIZE 64
+	#define BLOCK_SIZE 32
 #endif
 
 

@@ -42,7 +42,7 @@ void QuadTetElement::renderCurveLine(int node1, int node2, int node3)
 
 		 //glEnable(GL_MAP1_VERTEX_3);
 
- 
+		glColor3f(1,0,0);
         glBegin(GL_LINE_STRIP);
         for (int i = 0; i <= 5; i++) {
             glVertex3f(beizer(coords[0],coords[3],coords[6],i/5.0),

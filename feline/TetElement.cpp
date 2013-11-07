@@ -374,6 +374,7 @@ void
 TetElement::renderElement()
 {
 	glPushMatrix();
+	//glColor3f(1,0,0);
 	glBegin(GL_LINES);
 	glVertex3fv(nodes[3]->pos_t.coords);
 	glVertex3fv(nodes[0]->pos_t.coords);

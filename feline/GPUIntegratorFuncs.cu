@@ -10,11 +10,11 @@
 
 #define ZERO_EPS 0.000001
 
-#define ALPHA 0.05
-#define BETA 0.05
+#define ALPHA 0.01
+#define BETA 0.01
 
 #define MAX_ITER 20
-#define EPSIL 0.5
+#define EPSIL 0.01
 
 __constant__ float COEFFK, COEFFM, dt;
 
@@ -526,6 +526,7 @@ void gatherB(GPUNode* nodes, mulData* solverData, float* b, float* mass, float* 
 	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
 	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
 	int nodeno = blockIdx.x * NODE_BLOCK_SIZE + groupid;
+	float mass0, mass1, mass2;
 
 	__shared__ float cache[NODE_THREADS][NODE_BLOCK_SIZE][3];
 	GPUNode* node = &(nodes[blockIdx.x]);
@@ -557,9 +558,13 @@ void gatherB(GPUNode* nodes, mulData* solverData, float* b, float* mass, float* 
 	{
 		if(grouptid == 0)
 		{
-			b[nodeno]     = (cache[0][groupid][0] + cache[1][groupid][0] + mass[nodeno] * vt[nodeno] + extforces[nodeno] * dt);// * minv[nodeno];
-			b[nodeno + numnodes] = (cache[0][groupid][1] + cache[1][groupid][1] + mass[nodeno + numnodes] * vt[nodeno + numnodes] + extforces[nodeno + numnodes] * dt);// *minv[nodeno + numnodes];
-			b[nodeno + numnodes * 2] = (cache[0][groupid][2] + cache[1][groupid][2] + mass[nodeno + numnodes * 2] * vt[nodeno + numnodes * 2] + extforces[nodeno + numnodes * 2] * dt);// * minv[nodeno + numnodes * 2];
+			mass0 = mass[nodeno];
+			mass1 = mass[nodeno + numnodes];
+			mass2 = mass[nodeno + numnodes * 2];
+
+			b[nodeno]     = (cache[0][groupid][0] + cache[1][groupid][0] + mass0 * vt[nodeno] + extforces[nodeno] * dt);// * minv[nodeno];
+			b[nodeno + numnodes] = (cache[0][groupid][1] + cache[1][groupid][1] + mass1 * vt[nodeno + numnodes] + extforces[nodeno + numnodes] * dt);// *minv[nodeno + numnodes];
+			b[nodeno + numnodes * 2] = (cache[0][groupid][2] + cache[1][groupid][2] + mass2 * vt[nodeno + numnodes * 2] + extforces[nodeno + numnodes * 2] * dt);// * minv[nodeno + numnodes * 2];
 
 			char bitsy = allowed[nodeno];
 			if(bitsy & 1)
@@ -601,9 +606,9 @@ void gatherB(GPUNode* nodes, mulData* solverData, float* b, float* mass, float* 
 	{
 		if(grouptid == 0)
 		{
-			float m1 = cache[0][groupid][0] + cache[1][groupid][0];
-			float m2 = cache[0][groupid][1] + cache[1][groupid][1];
-			float m3 = cache[0][groupid][2] + cache[1][groupid][2];
+			float m1 = (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass0 * COEFFM;
+			float m2 = (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass1 * COEFFM;
+			float m3 = (cache[0][groupid][2] + cache[1][groupid][2]) * COEFFK + mass2 * COEFFM;
 
 
 			minv[nodeno]     = 1.0/(fabs(m1) > ZERO_EPS ? m1 : 1.0);

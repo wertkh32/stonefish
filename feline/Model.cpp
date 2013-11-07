@@ -23,30 +23,33 @@ Model::Model(char* filename, MESH* _mesh)
 	FILE*f=fopen(filename,"r");
     vector3<float> v;
 	int i=0;
-    while(fscanf(f,"%f %f %f",&v.x, &v.y, &v.z)!=EOF)
-	{
-		
-		if(i>0 && i%4 ==0)
-		{
-			face f;
-			f.type = QUAD;
-			f.vindex[3] = i-1;
-			f.vindex[2] = i-2;
-			f.vindex[1] = i-3;
-			f.vindex[0] = i-4;
-			faces.push(f);
+	int numverts;
+	int numfaces;
 
-			vector3<float> norm = (verts[i-3].coords - verts[i-4].coords).cross(verts[i-1].coords - verts[i-4].coords);
-			verts[i-4].norm = norm;
-			verts[i-3].norm = norm;
-			verts[i-2].norm = norm;
-			verts[i-1].norm = norm;
-		}
-		vertex vv;
-		vv.coords = v;
-		verts.push(vv);	
-		i++;
-	}   
+	fscanf(f,"%d",&numverts);
+	fscanf(f,"%d",&numfaces);
+	//vector3<float> v;
+	for(int i=0;i<numverts;i++)
+	{
+		fscanf(f,"%f %f %f",&v.x, &v.y, &v.z);
+		vertex vvv;
+		vvv.coords = v;
+		vvv.norm = v;
+		verts.push(vvv);
+	}
+
+	for(int i=0;i<numfaces;i++)
+	{
+		int u,v,w;
+		fscanf(f,"%*d %d %d %d",&u, &v, &w);
+		face f;
+		f.type = TRIANGLE;
+		f.vindex[0] = u;
+		f.vindex[1] = v;
+		f.vindex[2] = w;
+		faces.push(f);
+	}
+
       fclose(f);
 	  mesh = _mesh;
 	  computeBarycentricCoords();
@@ -72,8 +75,12 @@ Model::computeBarycentricCoords()
 		}
 		bary temp = {j,barytest};
 		
-		if(!valid) 
+		if(!valid)
+		{
+			//printf("oh thats a problem:%d\n",i);
+			//system("pause");
 			temp.element_no = -1;
+		}
 		
 		barys.push(temp);
 	}
