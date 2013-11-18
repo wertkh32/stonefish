@@ -34,7 +34,7 @@ Model::Model(char* filename, MESH* _mesh)
 		fscanf(f,"%f %f %f",&v.x, &v.y, &v.z);
 		vertex vvv;
 		vvv.coords = v;
-		vvv.norm = v;
+		vvv.norm = vector3<float>();
 		verts.push(vvv);
 	}
 
@@ -47,6 +47,27 @@ Model::Model(char* filename, MESH* _mesh)
 		f.vindex[0] = u;
 		f.vindex[1] = v;
 		f.vindex[2] = w;
+
+		vector3<float> v1 = verts[v].coords - verts[u].coords;
+		vector3<float> v2 = verts[w].coords - verts[u].coords;
+		vector3<float> norm = v1.cross(v2);
+
+		if(verts[u].norm.mag() < 0.0001)
+			verts[u].norm = norm;
+		else
+			verts[u].norm = (verts[u].norm + norm)/2.0;
+
+		if(verts[v].norm.mag() < 0.0001)
+			verts[v].norm = norm;
+		else
+			verts[v].norm = (verts[v].norm + norm)/2.0;
+
+		if(verts[w].norm.mag() < 0.0001)
+			verts[w].norm = norm;
+		else
+			verts[w].norm = (verts[w].norm + norm)/2.0;
+
+
 		faces.push(f);
 	}
 
@@ -66,8 +87,8 @@ Model::computeBarycentricCoords()
 
 		for(j=0;j<mesh->elements.size();j++)
 		{
-			barytest = mesh->elements[j]->getUndeformShapeMatInv() * (verts[i].coords - mesh->elements[j]->nodes[3]->pos_t);
-			if(barytest.x >= 0 && barytest.y >= 0 && barytest.z >= 0)
+			barytest = mesh->elements[j]->getUndeformShapeMatInv() * (verts[i].coords - mesh->elements[j]->nodes[3]->pos);
+			if(barytest.x >= 0 && barytest.y >= 0 && barytest.z >= 0 && (barytest.x + barytest.y + barytest.z) < 1)
 			{
 					valid = true;
 					break;
@@ -101,7 +122,7 @@ Model::interpolateVerts()
 	{
 		if(barys[i].element_no == -1) continue;
 		#ifdef _LINEAR_TET_
-		verts[i].coords = (mesh->elements[barys[i].element_no]->computeDeformShapeMat() * barys[i].barycoords) + mesh->elements[barys[i].element_no]->getNodes()[3]->pos_t;
+		verts[i].coords = (mesh->elements[barys[i].element_no]->computeDeformShapeMat() * barys[i].barycoords) + mesh->elements[barys[i].element_no]->nodes[3]->pos_t;
 		#endif
 		#ifdef _QUAD_TET_
 		{
@@ -165,6 +186,7 @@ Model::render()
 		}
 		else if(faces[i].type == TRIANGLE)
 		{
+			//glPointSize(5);
 			glBegin(GL_TRIANGLES);
 
 			glNormal3fv( verts[faces[i].vindex[0]].norm.coords );

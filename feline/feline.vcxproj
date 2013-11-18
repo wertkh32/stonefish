@@ -94,7 +94,7 @@
       <AdditionalDependencies>cudart.lib;cuda.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <CudaCompile>
-      <FastMath>false</FastMath>
+      <FastMath>true</FastMath>
       <Optimization>Od</Optimization>
       <CodeGeneration>compute_11,sm_11</CodeGeneration>
     </CudaCompile>

@@ -59,10 +59,10 @@ static float rot = 0.0;
 	p.stopTimer();
 	p.print();
 
-	for(int i=0;i<quadtet->getNoOfElements();i++)
-		quadtet->elements[i]->renderElement();
-	//mod->interpolateVerts();
-	//mod->render();
+	//for(int i=0;i<quadtet->getNoOfElements();i++)
+	//	quadtet->elements[i]->renderElement();
+	mod->interpolateVerts();
+	mod->render();
 	//for(int i=0;i<tet->getNoOfElements();i++)
 	//	tet->elements[i]->renderElement();
 	//}
@@ -485,7 +485,8 @@ main(int argc, char *argv[])
 	//quadtet = loadMesh("C:\\Users\\wertkh32\\Desktop\\felineforever\\smalldragon_nodes.txt","C:\\Users\\wertkh32\\Desktop\\felineforever\\smalldragon_tets.txt");
 	
 	quadtet = loadMesh("michelin07.1.node","michelin07.1.ele");
-	//mod = new Model("michelin04_fine.ply",quadtet);
+	//quadtet = loadMesh("dragon.node","dragon.ele");
+	mod = new Model("michelin04_fine.ply",quadtet);
 	inte = new INTEGRATOR(quadtet,&rows);
 	
 	//conjugate gradient test
