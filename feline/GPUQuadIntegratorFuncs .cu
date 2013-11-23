@@ -542,37 +542,36 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numeleme
 			out[i] = nodes[i][ltid];
 
 		mulK(out, B, t_ele->c1, t_ele->c2);
-
-
-		if(etid == 0)
-			#pragma unroll 30
-			for(int i=0;i<30;i++)
-				nodes[i][ltid] = out[i];
 	}
 
 	__syncthreads();
 
-	if(tid < numelements && etid == 1)
+	//sync by warp level synchronization
+	if(tid < numelements)
+	{
+		if(etid == 0)
 		#pragma unroll 30
 		for(int i=0;i<30;i++)
-			nodes[i][ltid] += out[i];
-	
-	__syncthreads();
+			nodes[i][ltid] = out[i];
 
-	if(tid < numelements && etid == 2)
-		#pragma unroll 30
-		for(int i=0;i<30;i++)
-			nodes[i][ltid] += out[i];
-	
-	__syncthreads();
-	
-	if(tid < numelements && etid == 3)
-		#pragma unroll 30
-		for(int i=0;i<30;i++)
-			nodes[i][ltid] += out[i];
-		
-	__syncthreads();
+		if(etid == 1)
+			#pragma unroll 30
+			for(int i=0;i<30;i++)
+				nodes[i][ltid] += out[i];
 
+		if(etid == 2)
+			#pragma unroll 30
+			for(int i=0;i<30;i++)
+				nodes[i][ltid] += out[i];
+	
+		if(etid == 3)
+			#pragma unroll 30
+			for(int i=0;i<30;i++)
+				nodes[i][ltid] += out[i];
+	
+	}
+	//end warp level sync	
+	__syncthreads();
 
 	if(tid < numelements)
 	{
