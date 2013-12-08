@@ -128,7 +128,7 @@ Model::interpolateVerts()
 		{
 			
 			float s1 = barys[i].barycoords.x,s2 = barys[i].barycoords.y,s3 = barys[i].barycoords.z;
-			float s4 = 1-s1-s2-s3;
+			float s4 = 1.0-s1-s2-s3;
 			Node** nds =  (mesh->elements[barys[i].element_no]->nodes);
 			#if defined(_GAUSSIAN_QUADRATURE_)
 				verts[i].coords = nds[0]->pos_t * s1*(2 * s1 - 1) 

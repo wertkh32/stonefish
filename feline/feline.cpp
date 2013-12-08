@@ -63,9 +63,6 @@ static float rot = 0.0;
 	//	quadtet->elements[i]->renderElement();
 	mod->interpolateVerts();
 	mod->render();
-	//for(int i=0;i<tet->getNoOfElements();i++)
-	//	tet->elements[i]->renderElement();
-	//}
 	
 	int end = (DIM+1) * (DIM+1);
 	int start = end - (DIM+1) - 1;
