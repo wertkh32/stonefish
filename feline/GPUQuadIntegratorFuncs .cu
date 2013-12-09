@@ -739,7 +739,7 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, int numele
 	}
 }
 
-/*FROZEN FOR TESTS
+#ifdef _GAUSSIAN_QUADRATURE_
 __global__
 void
 makeMinv(GPUElement* elements, mulData* solverData, int numelements)
@@ -750,7 +750,13 @@ makeMinv(GPUElement* elements, mulData* solverData, int numelements)
 	int tid = ltid + blockIdx.x * BLOCK_SIZE;
 
 	__shared__ float R[3][3][BLOCK_SIZE];
+	__shared__ float b[4][3][BLOCK_SIZE];
+	__shared__ float c1[BLOCK_SIZE];
+	__shared__ float c2[BLOCK_SIZE];
+	__shared__ float final[30][BLOCK_SIZE];
 	
+	float minv[30];
+
 	GPUElement* t_ele = &(elements[bid]);
 	mulData* t_solvedata = &(solverData[bid]);
 
@@ -763,64 +769,160 @@ makeMinv(GPUElement* elements, mulData* solverData, int numelements)
 				#pragma unroll 3
 				for(int j=0;j<3;j++)
 					R[i][j][ltid] = t_solvedata->R[i][j][ltid];
+
+			#pragma unroll 3
+			for(int i=0;i<3;i++)
+				#pragma unroll 3
+				for(int j=0;j<3;j++)
+					b[i][j][ltid] = t_ele->B[i][j][ltid];
+
+			b[3][0][ltid] = -b[0][0][ltid]-b[1][0][ltid]-b[2][0][ltid];
+			b[3][1][ltid] = -b[0][1][ltid]-b[1][1][ltid]-b[2][1][ltid];
+			b[3][2][ltid] = -b[0][2][ltid]-b[1][2][ltid]-b[2][2][ltid];
+
+			c1[ltid] = t_ele->c1[ltid];
+			c2[ltid] = t_ele->c2[ltid];
 		}
 	}
 	__syncthreads();
 
 	if(tid < numelements)
 	{
+		
+		float con1 = c1[ltid];
+		float con2 = c2[ltid];
+		float con3 = (con1 - con2)/2.0;
+		float* s = &S[etid * 4];
+
+		float dndx[3][10];
+					
+		dndx[0][0] = (s[0]-1.0) * b[0][0][ltid];
+		dndx[0][1] = (s[1]-1.0) * b[1][0][ltid];
+		dndx[0][2] = (s[2]-1.0) * b[2][0][ltid];
+		dndx[0][3] = (s[3]-1.0) * b[3][0][ltid];
+		dndx[0][4] = (b[1][0][ltid] * s[0] +  b[0][0][ltid] * s[1]);
+		dndx[0][5] = (b[2][0][ltid] * s[1] +  b[1][0][ltid] * s[2]);
+		dndx[0][6] = (b[0][0][ltid] * s[2] +  b[2][0][ltid] * s[0]);
+		dndx[0][7] = (b[3][0][ltid] * s[0] +  b[0][0][ltid] * s[3]);
+		dndx[0][8] = (b[3][0][ltid] * s[1] +  b[1][0][ltid] * s[3]);
+		dndx[0][9] = (b[3][0][ltid] * s[2] +  b[2][0][ltid] * s[3]);
+	
+		dndx[1][0] = (s[0]-1.0) * b[0][1][ltid];
+		dndx[1][1] = (s[1]-1.0) * b[1][1][ltid];
+		dndx[1][2] = (s[2]-1.0) * b[2][1][ltid];
+		dndx[1][3] = (s[3]-1.0) * b[3][1][ltid];
+		dndx[1][4] = (b[1][1][ltid] * s[0] +  b[0][1][ltid] * s[1]);
+		dndx[1][5] = (b[2][1][ltid] * s[1] +  b[1][1][ltid] * s[2]);
+		dndx[1][6] = (b[0][1][ltid] * s[2] +  b[2][1][ltid] * s[0]);
+		dndx[1][7] = (b[3][1][ltid] * s[0] +  b[0][1][ltid] * s[3]);
+		dndx[1][8] = (b[3][1][ltid] * s[1] +  b[1][1][ltid] * s[3]);
+		dndx[1][9] = (b[3][1][ltid] * s[2] +  b[2][1][ltid] * s[3]);
+	
+		dndx[2][0] = (s[0]-1.0) * b[0][2][ltid];
+		dndx[2][1] = (s[1]-1.0) * b[1][2][ltid];
+		dndx[2][2] = (s[2]-1.0) * b[2][2][ltid];
+		dndx[2][3] = (s[3]-1.0) * b[3][2][ltid];
+		dndx[2][4] = (b[1][2][ltid] * s[0] +  b[0][2][ltid] * s[1]);
+		dndx[2][5] = (b[2][2][ltid] * s[1] +  b[1][2][ltid] * s[2]);
+		dndx[2][6] = (b[0][2][ltid] * s[2] +  b[2][2][ltid] * s[0]);
+		dndx[2][7] = (b[3][2][ltid] * s[0] +  b[0][2][ltid] * s[3]);
+		dndx[2][8] = (b[3][2][ltid] * s[1] +  b[1][2][ltid] * s[3]);
+		dndx[2][9] = (b[3][2][ltid] * s[2] +  b[2][2][ltid] * s[3]);
+
 		float mat[3][3];
-		float mat2[3][3];
-		float temp3;
+		float diag[3][3];
+		float temp;
 
-
-		for(int j=0;j<3;j++)
-			for(int k=0;k<3;k++)
-				mat2[j][k] = t_ele->diag[etid][j][k][ltid];
-
-		for(int j=0;j<3;j++)
-			for(int k=0;k<3;k++)
-			{
-				mat[j][k] = 0;
-				for(int l=0;l<3;l++)
-					mat[j][k] += mat2[j][l] * R[k][l][ltid]; //RT
-			}
-
-		for(int j=0;j<3;j++)
+		#pragma unroll 10
+		for(int i=0;i<10;i++)
 		{
-			temp3 = 0;
-			for(int k=0;k<3;k++)
-				temp3 +=R[j][k][ltid] * mat[k][j];
-			t_solvedata->product[etid * 3 + j][ltid] = temp3;
+			diag[0][0] = dndx[0][i] * dndx[0][i] * con1 + dndx[1][i] * dndx[1][i] * con3 + dndx[2][i] * dndx[2][i] * con3;
+			diag[0][1] = dndx[0][i] * dndx[1][i] * con2 + dndx[0][i] * dndx[1][i] * con3;
+			diag[0][2] = dndx[0][i] * dndx[2][i] * con2 + dndx[0][i] * dndx[2][i] * con3;
+			diag[1][2] = dndx[1][i] * dndx[2][i] * con2 + dndx[1][i] * dndx[2][i] * con3;
+			diag[1][1] = diag[0][0];
+			diag[2][2] = diag[0][0];
+			diag[1][0] = diag[0][1];
+			diag[2][0] = diag[0][2];
+			diag[2][1] = diag[1][2];
+
+			#pragma unroll 3
+			for(int j=0;j<3;j++)
+				#pragma unroll 3
+				for(int k=0;k<3;k++)
+				{
+					mat[j][k] = 0;
+					#pragma unroll 3
+					for(int l=0;l<3;l++)
+						mat[j][k] += diag[j][l] * R[k][l][ltid]; //RT
+				}
+			
+			#pragma unroll 3
+			for(int j=0;j<3;j++)
+			{
+				temp = 0;
+				#pragma unroll 3
+				for(int k=0;k<3;k++)
+					temp +=R[j][k][ltid] * mat[k][j];
+				minv[i * 3 + j] = temp;
+			}
 		}
 
+		if(etid == 0)
+			#pragma unroll 30
+			for(int i=0;i<30;i++)
+				final[i][ltid] = minv[i];
+	}
 
-		/////////////////////////////////////////////////
-		//second batch
-		/////////////////////////////////////////////////
-		for(int j=0;j<3;j++)
-			for(int k=0;k<3;k++)
-				mat2[j][k] = t_ele->diag[etid + 5][j][k][ltid];
+	__syncthreads();
 
-		for(int j=0;j<3;j++)
-			for(int k=0;k<3;k++)
-			{
-				mat[j][k] = 0;
-				for(int l=0;l<3;l++)
-					mat[j][k] += mat2[j][l] * R[k][l][ltid]; //RT
-			}
+	if(tid < numelements && etid == 1)
+	{
+		#pragma unroll 30
+		for(int i=0;i<30;i++)
+			final[i][ltid] += minv[i];
+	}
 
+	__syncthreads();
+
+	if(tid < numelements && etid == 2)
+	{
+		#pragma unroll 30
+		for(int i=0;i<30;i++)
+			final[i][ltid] += minv[i];
+	}
+
+	__syncthreads();
+
+	if(tid < numelements && etid == 3)
+	{
+		#pragma unroll 30
+		for(int i=0;i<30;i++)
+			final[i][ltid] += minv[i];
+	}
+
+	__syncthreads();
+
+	if(tid < numelements)
+	{
+		#pragma unroll 3
 		for(int j=0;j<3;j++)
+			t_solvedata->product[etid*3 + j][ltid] = final[etid*3 + j][ltid];
+
+		#pragma unroll 3
+		for(int j=0;j<3;j++)
+			t_solvedata->product[(etid+THREADS_PER_ELE)*3 + j][ltid] = final[(etid+THREADS_PER_ELE)*3 + j][ltid];
+
+		if(etid <2)
 		{
-			temp3 = 0;
-			for(int k=0;k<3;k++)
-				temp3 +=R[j][k][ltid] * mat[k][j];
-			t_solvedata->product[(etid+5) * 3 + j][ltid] = temp3;
+			#pragma unroll 3
+			for(int j=0;j<3;j++)
+				t_solvedata->product[(etid+THREADS_PER_ELE * 2)*3 + j][ltid] = final[(etid+THREADS_PER_ELE * 2)*3 + j][ltid];
 		}
 	}
 
-
 }
+
 
 __global__
 void gatherMinv(GPUNode* nodes, mulData* solverData, float* minv, int numnodes)
@@ -870,7 +972,7 @@ void gatherMinv(GPUNode* nodes, mulData* solverData, float* minv, int numnodes)
 		}
 	}
 }
-*/
+#endif
 
 //step 1.5
 //precompute
@@ -950,7 +1052,9 @@ initAx(GPUElement* elements, mulData* solverData, float* x, int numelements, int
 //init CG
 __global__
 void
-initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, float* mass, float* vt, char* allowed, /*float* minv,*/ int numnodes)
+initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, float* mass, float* vt, char* allowed, 
+			float* minv,
+			int numnodes)
 {
 	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
 	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
@@ -988,9 +1092,9 @@ initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, flo
 			char bitsy = allowed[nodeno];
 
 			//r = b-Ax
-			float r0 =  (bitsy & 1) ? 0 : (b[nodeno] - ( (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * vt[nodeno] * COEFFM));//* minv[nodeno];
-			float r1 =  (bitsy & 2) ? 0 : (b[nodeno + numnodes] - ( (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * vt[nodeno + numnodes] * COEFFM));//* minv[nodeno + numnodes];
-			float r2 =  (bitsy & 4) ? 0 : (b[nodeno + numnodes * 2] - ( (cache[0][groupid][2] + cache[1][groupid][2]) * COEFFK + mass[nodeno + numnodes * 2] * vt[nodeno + numnodes * 2] * COEFFM));//* minv[nodeno + numnodes * 2];
+			float r0 =  (bitsy & 1) ? 0 : (b[nodeno] - ( (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * vt[nodeno] * COEFFM)) * minv[nodeno];
+			float r1 =  (bitsy & 2) ? 0 : (b[nodeno + numnodes] - ( (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * vt[nodeno + numnodes] * COEFFM)) * minv[nodeno + numnodes];
+			float r2 =  (bitsy & 4) ? 0 : (b[nodeno + numnodes * 2] - ( (cache[0][groupid][2] + cache[1][groupid][2]) * COEFFK + mass[nodeno + numnodes * 2] * vt[nodeno + numnodes * 2] * COEFFM)) * minv[nodeno + numnodes * 2];
 
 			r[nodeno] = r0;
 			r[nodeno + numnodes] = r1;
@@ -1037,7 +1141,9 @@ makeQprod(GPUElement* elements, mulData* solverData, float* d, int numelements, 
 //q = Ad
 __global__
 void
-gatherQprod(GPUNode* nodes, mulData* solverData, float* q, float* mass, float* d, char* allowed, /*float* minv,*/ int numnodes)
+gatherQprod(GPUNode* nodes, mulData* solverData, float* q, float* mass, float* d, char* allowed, 
+			float* minv, 
+			int numnodes)
 {
 	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
 	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
@@ -1073,9 +1179,9 @@ gatherQprod(GPUNode* nodes, mulData* solverData, float* q, float* mass, float* d
 		if(grouptid == 0)
 		{
 			char bitsy = allowed[nodeno];
-			q[nodeno]     = (bitsy & 1) ? 0 : ( (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * d[nodeno] * COEFFM);// * minv[nodeno];
-			q[nodeno + numnodes] = (bitsy & 2) ? 0 : ( (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * d[nodeno + numnodes] * COEFFM);// * minv[nodeno + numnodes];
-			q[nodeno + numnodes * 2] = (bitsy & 4) ? 0 : ( (cache[0][groupid][2] + cache[1][groupid][2])  * COEFFK + mass[nodeno + numnodes * 2] * d[nodeno + numnodes * 2] * COEFFM);// * minv[nodeno + numnodes*2];
+			q[nodeno]     = (bitsy & 1) ? 0 : ( (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * d[nodeno] * COEFFM) * minv[nodeno];
+			q[nodeno + numnodes] = (bitsy & 2) ? 0 : ( (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * d[nodeno + numnodes] * COEFFM) * minv[nodeno + numnodes];
+			q[nodeno + numnodes * 2] = (bitsy & 4) ? 0 : ( (cache[0][groupid][2] + cache[1][groupid][2])  * COEFFK + mass[nodeno + numnodes * 2] * d[nodeno + numnodes * 2] * COEFFM) * minv[nodeno + numnodes*2];
 		}
 	}
 
@@ -1184,8 +1290,10 @@ gpuTimeStep(int numelements, int numnodes)
 		//exit(-1);
 	}
 
-	//makeMinv<<<num_blocks_ele, BLOCK_SIZE * 5>>>(gpuptrElements, gpuptrMulData, numelements);
-	//gatherMinv<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_minv, numnodes);
+	#ifdef _GAUSSIAN_QUADRATURE_
+	makeMinv<<<num_blocks_ele, THREADS_PER_BLOCK>>>(gpuptrElements, gpuptrMulData, numelements);
+	gatherMinv<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_minv, numnodes);
+	#endif
 
 	makeRKRT<<<num_blocks_ele, THREADS_PER_BLOCK>>>(gpuptrElements, gpuptrMulData, gpuptr_xt, numelements, numnodes);
 
@@ -1225,7 +1333,9 @@ gpuTimeStep(int numelements, int numnodes)
 		//exit(-1);
 	}
 
-	initRandD<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrR, gpuptrD, gpuptr_b, gpuptr_mass, gpuptr_vt,  gpuptr_allowed,/*gpuptr_minv,*/numnodes);
+	initRandD<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrR, gpuptrD, gpuptr_b, gpuptr_mass, gpuptr_vt,  gpuptr_allowed,
+		gpuptr_minv,
+		numnodes);
 
 	cudaDeviceSynchronize();
 	error = cudaGetLastError();
@@ -1270,7 +1380,9 @@ gpuTimeStep(int numelements, int numnodes)
 			//exit(-1);
 		}
 
-		gatherQprod<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, gpuptr_mass, gpuptrD, gpuptr_allowed,/*gpuptr_minv,*/numnodes);
+		gatherQprod<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, gpuptr_mass, gpuptrD, gpuptr_allowed,
+			gpuptr_minv,
+			numnodes);
 
 		cudaDeviceSynchronize();
 		error = cudaGetLastError();
