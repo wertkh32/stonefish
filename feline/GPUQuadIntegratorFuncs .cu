@@ -662,6 +662,8 @@ void dot(float*a, float*b, float* out, int n)
 		*out = temp[0];
 }
 
+
+
 //step 1
 //precompute
 __global__
@@ -739,7 +741,73 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, int numele
 	}
 }
 
+//step 1.5
+//precompute
+__global__
+void
+makeRKRT(GPUElement* elements, mulData* solverData, float* x, int numelements, int numnodes)
+{
+		mulSystem(elements, solverData, x, numelements, numnodes);
+}
+
+//step 2
+//precompute
+__global__
+void gatherB(GPUNode* nodes, mulData* solverData, float* b, float* mass, float* vt, float* extforces, char* allowed,int numnodes)
+{
+	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
+	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
+	int nodeno = blockIdx.x * NODE_BLOCK_SIZE + groupid;
+
+	__shared__ float cache[NODE_THREADS][NODE_BLOCK_SIZE][3];
+	GPUNode* node = &(nodes[blockIdx.x]);
+	int n = node->n[grouptid][groupid];
+	
+	if(nodeno < numnodes)
+	{
+
+		cache[grouptid][groupid][0] = 0;
+		cache[grouptid][groupid][1] = 0;
+		cache[grouptid][groupid][2] = 0;
+
+
+		for(int i=0;i<n;i++)
+		{
+			int tetindex = node->elementindex[i][0][grouptid][groupid] / BLOCK_SIZE;
+			int tetindex2 = node->elementindex[i][0][grouptid][groupid] % BLOCK_SIZE;
+			int nodeindex = node->elementindex[i][1][grouptid][groupid];
+
+			cache[grouptid][groupid][0] += solverData[tetindex].b[nodeindex * 3][tetindex2] - solverData[tetindex].product[nodeindex * 3][tetindex2];
+			cache[grouptid][groupid][1] += solverData[tetindex].b[nodeindex * 3 + 1][tetindex2] - solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];
+			cache[grouptid][groupid][2] += solverData[tetindex].b[nodeindex * 3 + 2][tetindex2] - solverData[tetindex].product[nodeindex * 3 + 2][tetindex2];
+		}
+	}
+
+	__syncthreads();
+
+	if(nodeno < numnodes)
+	{
+		if(grouptid == 0)
+		{
+			b[nodeno]     = (cache[0][groupid][0] + cache[1][groupid][0]) * dt + mass[nodeno] * vt[nodeno] + extforces[nodeno] * dt;
+			b[nodeno + numnodes] = (cache[0][groupid][1] + cache[1][groupid][1]) * dt + mass[nodeno + numnodes] * vt[nodeno + numnodes] + extforces[nodeno + numnodes] * dt;
+			b[nodeno + numnodes * 2] = (cache[0][groupid][2] + cache[1][groupid][2]) * dt + mass[nodeno + numnodes * 2] * vt[nodeno + numnodes * 2] + extforces[nodeno + numnodes * 2] * dt;
+
+			char bitsy = allowed[nodeno];
+			if(bitsy & 1)
+				vt[nodeno] = 0;
+			if(bitsy & 2)
+				vt[nodeno + numnodes] = 0;
+			if(bitsy & 4)
+				vt[nodeno + numnodes * 2] = 0;
+
+		}
+	}
+}
+
+
 #ifdef _GAUSSIAN_QUADRATURE_
+
 __global__
 void
 makeMinv(GPUElement* elements, mulData* solverData, int numelements)
@@ -923,7 +991,6 @@ makeMinv(GPUElement* elements, mulData* solverData, int numelements)
 
 }
 
-
 __global__
 void gatherMinv(GPUNode* nodes, mulData* solverData, float* minv, int numnodes)
 {
@@ -972,71 +1039,8 @@ void gatherMinv(GPUNode* nodes, mulData* solverData, float* minv, int numnodes)
 		}
 	}
 }
+
 #endif
-
-//step 1.5
-//precompute
-__global__
-void
-makeRKRT(GPUElement* elements, mulData* solverData, float* x, int numelements, int numnodes)
-{
-		mulSystem(elements, solverData, x, numelements, numnodes);
-}
-
-//step 2
-//precompute
-__global__
-void gatherB(GPUNode* nodes, mulData* solverData, float* b, float* mass, float* vt, float* extforces, char* allowed,int numnodes)
-{
-	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
-	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
-	int nodeno = blockIdx.x * NODE_BLOCK_SIZE + groupid;
-
-	__shared__ float cache[NODE_THREADS][NODE_BLOCK_SIZE][3];
-	GPUNode* node = &(nodes[blockIdx.x]);
-	int n = node->n[grouptid][groupid];
-	
-	if(nodeno < numnodes)
-	{
-
-		cache[grouptid][groupid][0] = 0;
-		cache[grouptid][groupid][1] = 0;
-		cache[grouptid][groupid][2] = 0;
-
-
-		for(int i=0;i<n;i++)
-		{
-			int tetindex = node->elementindex[i][0][grouptid][groupid] / BLOCK_SIZE;
-			int tetindex2 = node->elementindex[i][0][grouptid][groupid] % BLOCK_SIZE;
-			int nodeindex = node->elementindex[i][1][grouptid][groupid];
-
-			cache[grouptid][groupid][0] += solverData[tetindex].b[nodeindex * 3][tetindex2] - solverData[tetindex].product[nodeindex * 3][tetindex2];
-			cache[grouptid][groupid][1] += solverData[tetindex].b[nodeindex * 3 + 1][tetindex2] - solverData[tetindex].product[nodeindex * 3 + 1][tetindex2];
-			cache[grouptid][groupid][2] += solverData[tetindex].b[nodeindex * 3 + 2][tetindex2] - solverData[tetindex].product[nodeindex * 3 + 2][tetindex2];
-		}
-	}
-
-	__syncthreads();
-
-	if(nodeno < numnodes)
-	{
-		if(grouptid == 0)
-		{
-			b[nodeno]     = (cache[0][groupid][0] + cache[1][groupid][0]) * dt + mass[nodeno] * vt[nodeno] + extforces[nodeno] * dt;
-			b[nodeno + numnodes] = (cache[0][groupid][1] + cache[1][groupid][1]) * dt + mass[nodeno + numnodes] * vt[nodeno + numnodes] + extforces[nodeno + numnodes] * dt;
-			b[nodeno + numnodes * 2] = (cache[0][groupid][2] + cache[1][groupid][2]) * dt + mass[nodeno + numnodes * 2] * vt[nodeno + numnodes * 2] + extforces[nodeno + numnodes * 2] * dt;
-
-			char bitsy = allowed[nodeno];
-			if(bitsy & 1)
-				vt[nodeno] = 0;
-			if(bitsy & 2)
-				vt[nodeno + numnodes] = 0;
-			if(bitsy & 4)
-				vt[nodeno + numnodes * 2] = 0;
-
-		}
-	}
-}
 
 //step 1
 //init CG
@@ -1092,10 +1096,16 @@ initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, flo
 			char bitsy = allowed[nodeno];
 
 			//r = b-Ax
+
+	#if defined(_GAUSSIAN_QUADRATURE_)
 			float r0 =  (bitsy & 1) ? 0 : (b[nodeno] - ( (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * vt[nodeno] * COEFFM)) * minv[nodeno];
 			float r1 =  (bitsy & 2) ? 0 : (b[nodeno + numnodes] - ( (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * vt[nodeno + numnodes] * COEFFM)) * minv[nodeno + numnodes];
 			float r2 =  (bitsy & 4) ? 0 : (b[nodeno + numnodes * 2] - ( (cache[0][groupid][2] + cache[1][groupid][2]) * COEFFK + mass[nodeno + numnodes * 2] * vt[nodeno + numnodes * 2] * COEFFM)) * minv[nodeno + numnodes * 2];
-
+	#else
+			float r0 =  (bitsy & 1) ? 0 : (b[nodeno] - ( (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * vt[nodeno] * COEFFM));
+			float r1 =  (bitsy & 2) ? 0 : (b[nodeno + numnodes] - ( (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * vt[nodeno + numnodes] * COEFFM));
+			float r2 =  (bitsy & 4) ? 0 : (b[nodeno + numnodes * 2] - ( (cache[0][groupid][2] + cache[1][groupid][2]) * COEFFK + mass[nodeno + numnodes * 2] * vt[nodeno + numnodes * 2] * COEFFM));
+	#endif
 			r[nodeno] = r0;
 			r[nodeno + numnodes] = r1;
 			r[nodeno + numnodes * 2] = r2;
@@ -1179,9 +1189,15 @@ gatherQprod(GPUNode* nodes, mulData* solverData, float* q, float* mass, float* d
 		if(grouptid == 0)
 		{
 			char bitsy = allowed[nodeno];
+	#if defined(_GAUSSIAN_QUADRATURE_)
 			q[nodeno]     = (bitsy & 1) ? 0 : ( (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * d[nodeno] * COEFFM) * minv[nodeno];
 			q[nodeno + numnodes] = (bitsy & 2) ? 0 : ( (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * d[nodeno + numnodes] * COEFFM) * minv[nodeno + numnodes];
 			q[nodeno + numnodes * 2] = (bitsy & 4) ? 0 : ( (cache[0][groupid][2] + cache[1][groupid][2])  * COEFFK + mass[nodeno + numnodes * 2] * d[nodeno + numnodes * 2] * COEFFM) * minv[nodeno + numnodes*2];
+	#else
+			q[nodeno]     = (bitsy & 1) ? 0 : ( (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * d[nodeno] * COEFFM);
+			q[nodeno + numnodes] = (bitsy & 2) ? 0 : ( (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * d[nodeno + numnodes] * COEFFM);
+			q[nodeno + numnodes * 2] = (bitsy & 4) ? 0 : ( (cache[0][groupid][2] + cache[1][groupid][2])  * COEFFK + mass[nodeno + numnodes * 2] * d[nodeno + numnodes * 2] * COEFFM);
+	#endif
 		}
 	}
 
@@ -1290,11 +1306,6 @@ gpuTimeStep(int numelements, int numnodes)
 		//exit(-1);
 	}
 
-	#ifdef _GAUSSIAN_QUADRATURE_
-	makeMinv<<<num_blocks_ele, THREADS_PER_BLOCK>>>(gpuptrElements, gpuptrMulData, numelements);
-	gatherMinv<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_minv, numnodes);
-	#endif
-
 	makeRKRT<<<num_blocks_ele, THREADS_PER_BLOCK>>>(gpuptrElements, gpuptrMulData, gpuptr_xt, numelements, numnodes);
 
 	cudaDeviceSynchronize();
@@ -1320,6 +1331,12 @@ gpuTimeStep(int numelements, int numnodes)
 	}
 
 	//inspectGPUBuffer(gpuptr_b,numnodes);
+
+	
+	#ifdef _GAUSSIAN_QUADRATURE_
+	makeMinv<<<num_blocks_ele, THREADS_PER_BLOCK>>>(gpuptrElements, gpuptrMulData, numelements);
+	gatherMinv<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_minv, numnodes);
+	#endif
 
 	initAx<<<num_blocks_ele, THREADS_PER_BLOCK>>>(gpuptrElements, gpuptrMulData, gpuptr_vt, numelements, numnodes);
 
