@@ -992,7 +992,7 @@ makeMinv(GPUElement* elements, mulData* solverData, int numelements)
 }
 
 __global__
-void gatherMinv(GPUNode* nodes, mulData* solverData, float* minv, int numnodes)
+void gatherMinv(GPUNode* nodes, mulData* solverData, float* mass, float* minv, int numnodes)
 {
 	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
 	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
@@ -1028,9 +1028,9 @@ void gatherMinv(GPUNode* nodes, mulData* solverData, float* minv, int numnodes)
 	{
 		if(grouptid == 0)
 		{
-			float m1 = cache[0][groupid][0] + cache[1][groupid][0];
-			float m2 = cache[0][groupid][1] + cache[1][groupid][1];
-			float m3 = cache[0][groupid][2] + cache[1][groupid][2];
+			float m1 = (cache[0][groupid][0] + cache[1][groupid][0]) * COEFFK + mass[nodeno] * COEFFM;
+			float m2 = (cache[0][groupid][1] + cache[1][groupid][1]) * COEFFK + mass[nodeno + numnodes] * COEFFM;
+			float m3 = (cache[0][groupid][2] + cache[1][groupid][2]) * COEFFK + mass[nodeno + numnodes * 2] * COEFFM;
 
 
 			minv[nodeno]     = 1.0/(fabs(m1) > ZERO_EPS ? m1 : 1.0);
@@ -1335,7 +1335,7 @@ gpuTimeStep(int numelements, int numnodes)
 	
 	#ifdef _GAUSSIAN_QUADRATURE_
 	makeMinv<<<num_blocks_ele, THREADS_PER_BLOCK>>>(gpuptrElements, gpuptrMulData, numelements);
-	gatherMinv<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_minv, numnodes);
+	gatherMinv<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_mass, gpuptr_minv, numnodes);
 	#endif
 
 	initAx<<<num_blocks_ele, THREADS_PER_BLOCK>>>(gpuptrElements, gpuptrMulData, gpuptr_vt, numelements, numnodes);

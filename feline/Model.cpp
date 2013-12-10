@@ -88,7 +88,7 @@ Model::computeBarycentricCoords()
 		for(j=0;j<mesh->elements.size();j++)
 		{
 			barytest = mesh->elements[j]->getUndeformShapeMatInv() * (verts[i].coords - mesh->elements[j]->nodes[3]->pos);
-			if(barytest.x >= 0 && barytest.y >= 0 && barytest.z >= 0 && (barytest.x + barytest.y + barytest.z) < 1)
+			if(barytest.x >= 0 && barytest.y >= 0 && barytest.z >= 0 && (barytest.x + barytest.y + barytest.z) <= 1.0)
 			{
 					valid = true;
 					break;

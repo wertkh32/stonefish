@@ -59,8 +59,8 @@ static float rot = 0.0;
 	p.stopTimer();
 	p.print();
 
-	//for(int i=0;i<quadtet->getNoOfElements();i++)
-	//	quadtet->elements[i]->renderElement();
+	for(int i=0;i<quadtet->getNoOfElements();i++)
+		quadtet->elements[i]->renderElement();
 	mod->interpolateVerts();
 	mod->render();
 	
@@ -481,6 +481,7 @@ main(int argc, char *argv[])
 	
 	//quadtet = loadMesh("C:\\Users\\wertkh32\\Desktop\\felineforever\\smalldragon_nodes.txt","C:\\Users\\wertkh32\\Desktop\\felineforever\\smalldragon_tets.txt");
 	
+	//quadtet = loadMesh("michelin04_fine.1.node","michelin04_fine.1.ele");
 	quadtet = loadQuadMesh("michelin07.1.node","michelin07.1.ele");
 	//quadtet = loadMesh("dragon.node","dragon.ele");
 	mod = new Model("michelin04_fine.ply",quadtet);
