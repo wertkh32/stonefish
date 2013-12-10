@@ -482,7 +482,11 @@ main(int argc, char *argv[])
 	//quadtet = loadMesh("C:\\Users\\wertkh32\\Desktop\\felineforever\\smalldragon_nodes.txt","C:\\Users\\wertkh32\\Desktop\\felineforever\\smalldragon_tets.txt");
 	
 	//quadtet = loadMesh("michelin04_fine.1.node","michelin04_fine.1.ele");
-	quadtet = loadQuadMesh("michelin07.1.node","michelin07.1.ele");
+	#if defined(_QUAD_TET_)
+		quadtet = loadQuadMesh("michelin07.1.node","michelin07.1.ele");
+	#elif defined(_LINEAR_TET_)
+		quadtet = loadMesh("michelin07.1.node","michelin07.1.ele");
+	#endif
 	//quadtet = loadMesh("dragon.node","dragon.ele");
 	mod = new Model("michelin04_fine.ply",quadtet);
 	inte = new INTEGRATOR(quadtet,&rows);

@@ -483,11 +483,13 @@ void precompute(GPUElement* elements, mulData* solverData, float* xt, int numele
 		for(int i=0;i<4;i++)
 		{
 			diag[0][0] = D[i][0] * D[i][0] * c1 + D[i][1] * D[i][1] * c3 + D[i][2] * D[i][2] * c3;
+			diag[1][1] = D[i][1] * D[i][1] * c1 + D[i][0] * D[i][0] * c3 + D[i][2] * D[i][2] * c3;
+			diag[2][2] = D[i][2] * D[i][2] * c1 + D[i][1] * D[i][1] * c3 + D[i][0] * D[i][0] * c3;
+
 			diag[0][1] = D[i][0] * D[i][1] * c2 + D[i][0] * D[i][1] * c3;
 			diag[0][2] = D[i][0] * D[i][2] * c2 + D[i][0] * D[i][2] * c3;
 			diag[1][2] = D[i][1] * D[i][2] * c2 + D[i][1] * D[i][2] * c3;
-			diag[1][1] = diag[0][0];
-			diag[2][2] = diag[0][0];
+
 			diag[1][0] = diag[0][1];
 			diag[2][0] = diag[0][2];
 			diag[2][1] = diag[1][2];

@@ -905,11 +905,13 @@ makeMinv(GPUElement* elements, mulData* solverData, int numelements)
 		for(int i=0;i<10;i++)
 		{
 			diag[0][0] = dndx[0][i] * dndx[0][i] * con1 + dndx[1][i] * dndx[1][i] * con3 + dndx[2][i] * dndx[2][i] * con3;
+			diag[1][1] = dndx[1][i] * dndx[1][i] * con1 + dndx[0][i] * dndx[0][i] * con3 + dndx[2][i] * dndx[2][i] * con3;
+			diag[2][2] = dndx[2][i] * dndx[2][i] * con1 + dndx[1][i] * dndx[1][i] * con3 + dndx[0][i] * dndx[0][i] * con3;
+
 			diag[0][1] = dndx[0][i] * dndx[1][i] * con2 + dndx[0][i] * dndx[1][i] * con3;
 			diag[0][2] = dndx[0][i] * dndx[2][i] * con2 + dndx[0][i] * dndx[2][i] * con3;
 			diag[1][2] = dndx[1][i] * dndx[2][i] * con2 + dndx[1][i] * dndx[2][i] * con3;
-			diag[1][1] = diag[0][0];
-			diag[2][2] = diag[0][0];
+
 			diag[1][0] = diag[0][1];
 			diag[2][0] = diag[0][2];
 			diag[2][1] = diag[1][2];
