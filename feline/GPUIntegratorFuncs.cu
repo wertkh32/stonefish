@@ -381,7 +381,7 @@ void mulSystem(GPUElement* elements, mulData* solverData, float* x, int numnodes
 }
 
 __device__
-void dot(float*a, float*b, float* out, int n) 
+void dot(const float* __restrict__ a, const float* __restrict__ b, float*  __restrict__ out, int n) 
 {
 	__shared__ float temp[DOT_BLOCK_SIZE];
 	int index = threadIdx.x;
@@ -639,7 +639,7 @@ initAx(GPUElement* elements, mulData* solverData, float* x, int numelements, int
 //init CG
 __global__
 void
-initRandD(GPUNode* nodes, mulData* solverData, float* r, float* d, float* b, float* mass, float* vt, char* allowed, float* minv, int numnodes)
+initRandD(GPUNode* nodes, mulData* solverData, float* __restrict__ r, float*  __restrict__ d, const float*  __restrict__ b, const float*  __restrict__ mass, const float*  __restrict__ vt, const char*  __restrict__ allowed, const float*  __restrict__ minv, int numnodes)
 {
 	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
 	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
@@ -731,7 +731,7 @@ makeQprod(GPUElement* elements, mulData* solverData, float* d, int numelements, 
 //q = Ad
 __global__
 void
-gatherQprod(GPUNode* nodes, mulData* solverData, float* q, float* mass, float* d, char* allowed, float* minv, int numnodes)
+gatherQprod(GPUNode* nodes, mulData* solverData, float*  __restrict__ q, const float*  __restrict__ mass, const float*  __restrict__ d, const char*  __restrict__ allowed, const float*  __restrict__ minv, int numnodes)
 {
 	int groupid = threadIdx.x % NODE_BLOCK_SIZE;// / NODE_THREADS;
 	int grouptid = threadIdx.x / NODE_BLOCK_SIZE; //% NODE_THREADS;
@@ -781,7 +781,7 @@ gatherQprod(GPUNode* nodes, mulData* solverData, float* q, float* mass, float* d
 //1 block, BLOCK_SIZE threads
 __global__
 void
-makeVars(CGVars* vars, float* d, float* q, float* r, int numnodes)
+makeVars(CGVars* vars, const float*  __restrict__ d, const float*  __restrict__ q, const float*  __restrict__ r, int numnodes)
 {
 	float dq, rq, qq;
 	dot(d,q,&dq,numnodes * 3);
@@ -807,7 +807,7 @@ makeVars(CGVars* vars, float* d, float* q, float* r, int numnodes)
 //x = velocity
 __global__
 void
-makeXRandD(CGVars* vars, float *x, float* r, float* d, float* q, int numnodes)
+makeXRandD(CGVars* vars, float * __restrict__ x, float*  __restrict__ r, float*  __restrict__ d, const float*  __restrict__ q, int numnodes)
 {
 	int tid = threadIdx.x + blockIdx.x * VECTOR_BLOCK_SIZE;
 	if(tid < numnodes)
@@ -843,7 +843,7 @@ makeXRandD(CGVars* vars, float *x, float* r, float* d, float* q, int numnodes)
 //make x(t+1)
 __global__
 void
-integrate(float *x, float* v, int numnodes)
+integrate(float *  __restrict__ x, const float*  __restrict__ v, int numnodes)
 {
 	int tid = threadIdx.x + blockIdx.x * VECTOR_BLOCK_SIZE;
 	if(tid < numnodes)
