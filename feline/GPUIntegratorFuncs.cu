@@ -867,121 +867,35 @@ gpuTimeStep(int numelements, int numnodes)
 	printf("Started\n");
 	
 	precompute<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptr_xt, numelements, numnodes);
-	
-	cudaDeviceSynchronize();
-	error = cudaGetLastError();
-	if(error != cudaSuccess)
-	{
-		printf("1");
-		// print the CUDA error message and exit
-		printf("CUDA error: %s\n", cudaGetErrorString(error));
-		//exit(-1);
-	}
+
 
 	gatherB<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptr_b, gpuptr_mass, gpuptr_vt, gpuptr_extforces, gpuptr_allowed, gpuptr_minv, numnodes);
 
-	cudaDeviceSynchronize();
-	error = cudaGetLastError();
-	if(error != cudaSuccess)
-	{
-		printf("2");
-		// print the CUDA error message and exit
-		printf("CUDA error: %s\n", cudaGetErrorString(error));
-		//exit(-1);
-	}
 
 	initAx<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptr_vt, numelements, numnodes);
 
-	cudaDeviceSynchronize();
-	error = cudaGetLastError();
-	if(error != cudaSuccess)
-	{
-		printf("3");
-		// print the CUDA error message and exit
-		printf("CUDA error: %s\n", cudaGetErrorString(error));
-		//exit(-1);
-	}
-
 	initRandD<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrR, gpuptrD, gpuptr_b, gpuptr_mass, gpuptr_vt,  gpuptr_allowed, gpuptr_minv,numnodes);
 
-	cudaDeviceSynchronize();
-	error = cudaGetLastError();
-	if(error != cudaSuccess)
-	{
-		printf("4");
-		// print the CUDA error message and exit
-		printf("CUDA error: %s\n", cudaGetErrorString(error));
-		//exit(-1);
-	}
-
 	initDeltaVars<<<1, DOT_BLOCK_SIZE>>>(gpuptrVars, gpuptrR, numnodes);
-
-	cudaDeviceSynchronize();
-	error = cudaGetLastError();
-	if(error != cudaSuccess)
-	{
-		printf("5");
-		// print the CUDA error message and exit
-		printf("CUDA error: %s\n", cudaGetErrorString(error));
-		//exit(-1);
-	}
 
 	int i=0;
 
 	CGVars vars;
 	cudaMemcpy(&vars, gpuptrVars, sizeof(CGVars), cudaMemcpyDeviceToHost);
 
-	printf("Loop Started");
-
 	while(i < MAX_ITER && vars.deltaNew > (EPSIL * EPSIL) * vars.delta0)
 	{
 		makeQprod<<<num_blocks_ele, BLOCK_SIZE>>>(gpuptrElements, gpuptrMulData, gpuptrD, numelements, numnodes);
 
-		cudaDeviceSynchronize();
-		error = cudaGetLastError();
-		if(error != cudaSuccess)
-		{
-			printf("6");
-			// print the CUDA error message and exit
-			printf("CUDA error: %s\n", cudaGetErrorString(error));
-			//exit(-1);
-		}
 
 		gatherQprod<<<num_blocks_node, GATHER_THREAD_NO>>>(gpuptrNodes, gpuptrMulData, gpuptrQ, gpuptr_mass, gpuptrD, gpuptr_allowed,gpuptr_minv,numnodes);
 
-		cudaDeviceSynchronize();
-		error = cudaGetLastError();
-		if(error != cudaSuccess)
-		{
-			printf("7");
-			// print the CUDA error message and exit
-			printf("CUDA error: %s\n", cudaGetErrorString(error));
-			//exit(-1);
-		}
+
 
 		makeVars<<<1, DOT_BLOCK_SIZE>>>(gpuptrVars, gpuptrD, gpuptrQ, gpuptrR, numnodes);
 
-		cudaDeviceSynchronize();
-		error = cudaGetLastError();
-		if(error != cudaSuccess)
-		{
-			printf("8");
-			// print the CUDA error message and exit
-			printf("CUDA error: %s\n", cudaGetErrorString(error));
-			//exit(-1);
-		}
 
 		makeXRandD<<<num_blocks_vec, VECTOR_BLOCK_SIZE>>>(gpuptrVars, gpuptr_vt, gpuptrR, gpuptrD, gpuptrQ, numnodes);
-
-		cudaDeviceSynchronize();
-		error = cudaGetLastError();
-		if(error != cudaSuccess)
-		{
-			printf("9");
-			// print the CUDA error message and exit
-			printf("CUDA error: %s\n", cudaGetErrorString(error));
-			//exit(-1);
-		}
 
 		cudaMemcpy(&vars, gpuptrVars, sizeof(CGVars), cudaMemcpyDeviceToHost);
 		i++;
